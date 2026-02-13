@@ -1,0 +1,22 @@
+{
+  "grpc_addr": "127.0.0.1:9090",
+  "drand_api_base_url": "https://api.drand.sh",
+  "drand_chain_hash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+  "poll_interval_seconds": 3,
+  "request_timeout_seconds": 10,
+  "submit": {
+    "binary": "content-grid-d",
+    "chain_id": "content-grid-1",
+    "node": "tcp://localhost:26657",
+    "from": "drand-relayer",
+    "keyring_backend": "os",
+    "keyring_dir": "",
+    "home": "",
+    "gas": "220000",
+    "gas_adjustment": 1.0,
+    "fees": "5000ucongrid",
+    "gas_prices": "",
+    "broadcast_mode": "sync",
+    "yes": true
+  }
+}

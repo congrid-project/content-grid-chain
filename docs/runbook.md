@@ -1,6 +1,6 @@
 # 生产运行手册（Runbook）
 
-> 适用于：`content-grid-d`、`verifierd`、`congrid-site`。  
+> 适用于：`content-grid-d`、`verifierd`、`drand-relayer`、`congrid-site`。  
 > 目标：出现问题时，值班同学 5 分钟内定位方向，15 分钟内执行缓解动作。
 
 ---
@@ -10,6 +10,7 @@
 - 代码目录：`/home/eking/workspace/congrid.net`
 - 链节点 HOME：`/home/eking/.content-grid-d`（当前默认基线）
 - verifierd 配置：`/home/eking/workspace/congrid.net/offchain/verifierd/config.json`
+- drand-relayer 配置：`/home/eking/workspace/congrid.net/offchain/drandrelayer/config.json`
 - site 配置（建议 env 文件）：`/home/eking/workspace/congrid.net/.env.site`
 - 日志目录（建议）：`/home/eking/workspace/congrid.net/logs/`
 - 时区：`America/Toronto`
@@ -28,6 +29,8 @@
   - 责任：共识、状态执行、gRPC/RPC 提供
 - 验证代理：`verifierd`
   - 责任：拉取 assignment，commit/reveal，站点验证
+- 随机信标中继：`drand-relayer`
+  - 责任：拉取 drand 最新 beacon 并上链提交
 - 官网/市场：`congrid-site`
   - 责任：展示与用户入口，链上 slot/lease 提交
 
@@ -77,7 +80,24 @@ cd /home/eking/workspace/congrid.net
 - `revealed result (passed=true|false)`
 - `commit failed` / `reveal failed`
 
-## 2.3 congrid-site
+## 2.3 drand-relayer
+
+### 启动（手工模式）
+```bash
+cd /home/eking/workspace/congrid.net
+./drand-relayer --config /home/eking/workspace/congrid.net/offchain/drandrelayer/config.json
+```
+
+### 单轮探活
+```bash
+./drand-relayer --config /home/eking/workspace/congrid.net/offchain/drandrelayer/config.json --once
+```
+
+关键日志关键词：
+- `submitted beacon round=`
+- `sync error`
+
+## 2.4 congrid-site
 
 ### 启动（示例）
 ```bash
@@ -104,6 +124,7 @@ go run ./cmd/congrid-site \
 
 - [ ] 链高度正常增长
 - [ ] verifierd 最近 15 分钟 commit/reveal 成功率达标
+- [ ] drand beacon 上链轮次持续增长（无长时间停滞）
 - [ ] publisher VERIFIED 比例无异常下降
 - [ ] lease 违约（VIOLATED）比例无异常上升
 - [ ] site 可用，提交路径可用
