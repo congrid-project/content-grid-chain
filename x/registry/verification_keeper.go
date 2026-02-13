@@ -53,6 +53,62 @@ func (k Keeper) GetRoundMeta(ctx sdk.Context, roundStartUnix int64) (Verificatio
 	return meta, true
 }
 
+func (k Keeper) SetDrandBeacon(ctx sdk.Context, beacon DrandBeacon) error {
+	if err := beacon.ValidateBasic(); err != nil {
+		return err
+	}
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), drandStorePrefix)
+	key := drandBeaconKey(beacon.Round)
+	if store.Has(key) {
+		return fmt.Errorf("drand beacon for round %d already exists", beacon.Round)
+	}
+	bz, err := json.Marshal(beacon)
+	if err != nil {
+		return err
+	}
+	store.Set(key, bz)
+
+	latestRound := uint64(0)
+	if lbz := store.Get(drandLatestRoundKey); len(lbz) == 8 {
+		latestRound = binary.BigEndian.Uint64(lbz)
+	}
+	if beacon.Round >= latestRound {
+		rbz := make([]byte, 8)
+		binary.BigEndian.PutUint64(rbz, beacon.Round)
+		store.Set(drandLatestRoundKey, rbz)
+	}
+	return nil
+}
+
+func (k Keeper) GetDrandBeacon(ctx sdk.Context, round uint64) (DrandBeacon, bool) {
+	if round == 0 {
+		return DrandBeacon{}, false
+	}
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), drandStorePrefix)
+	bz := store.Get(drandBeaconKey(round))
+	if len(bz) == 0 {
+		return DrandBeacon{}, false
+	}
+	var beacon DrandBeacon
+	if err := json.Unmarshal(bz, &beacon); err != nil {
+		panic(fmt.Errorf("failed to decode drand beacon: %w", err))
+	}
+	return beacon, true
+}
+
+func (k Keeper) GetLatestDrandBeacon(ctx sdk.Context) (DrandBeacon, bool) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), drandStorePrefix)
+	lbz := store.Get(drandLatestRoundKey)
+	if len(lbz) != 8 {
+		return DrandBeacon{}, false
+	}
+	round := binary.BigEndian.Uint64(lbz)
+	if round == 0 {
+		return DrandBeacon{}, false
+	}
+	return k.GetDrandBeacon(ctx, round)
+}
+
 func (k Keeper) SetAssignment(ctx sdk.Context, assignment PublisherVerificationAssignment) error {
 	assignment.Domain = NormalizeDomain(assignment.Domain)
 	if err := assignment.ValidateBasic(); err != nil {
@@ -304,6 +360,13 @@ func roundMetaKey(roundStartUnix int64) []byte {
 	key := make([]byte, len(roundMetaKeyPrefix)+8)
 	copy(key, roundMetaKeyPrefix)
 	binary.BigEndian.PutUint64(key[len(roundMetaKeyPrefix):], uint64(roundStartUnix))
+	return key
+}
+
+func drandBeaconKey(round uint64) []byte {
+	key := make([]byte, len(drandBeaconKeyPrefix)+8)
+	copy(key, drandBeaconKeyPrefix)
+	binary.BigEndian.PutUint64(key[len(drandBeaconKeyPrefix):], round)
 	return key
 }
 

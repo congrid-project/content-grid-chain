@@ -23,6 +23,7 @@ var (
 	commitStorePrefix        = []byte{0x13}
 	publisherFailStorePrefix = []byte{0x14}
 	verifierPenaltyPrefix    = []byte{0x15}
+	drandStorePrefix         = []byte{0x16}
 	slotStorePrefix          = []byte{0x20}
 	leaseStorePrefix         = []byte{0x21}
 	slotMetaPrefix           = []byte{0x22}
@@ -30,6 +31,8 @@ var (
 	leaseSeqKey              = []byte{0x02}
 	lastRoundStartKey        = []byte{0x00}
 	roundMetaKeyPrefix       = []byte{0x01}
+	drandLatestRoundKey      = []byte{0x02}
+	drandBeaconKeyPrefix     = []byte{0x03}
 
 	// ErrWebsiteExists is returned when attempting to register an already tracked domain.
 	ErrWebsiteExists = errors.New("website already registered")

@@ -15,6 +15,8 @@ const (
 	EventTypeLeaseViolated         = "slot_lease_violated"
 	EventTypePublisherCooldown     = "publisher_cooldown"
 	EventTypeVerifierPenalized     = "verifier_penalized"
+	EventTypeDrandBeaconSubmitted  = "drand_beacon_submitted"
+	EventTypeDrandBeaconSkipped    = "drand_beacon_skipped"
 
 	AttributeKeyDomain          = "domain"
 	AttributeKeyOwner           = "owner"
@@ -50,4 +52,7 @@ const (
 	AttributeKeyPenaltyReason   = "penalty_reason"
 	AttributeKeyPenaltyCount    = "penalty_count"
 	AttributeKeySuspendedUntil  = "suspended_until_unix"
+	AttributeKeyDrandRound      = "drand_round"
+	AttributeKeyDrandRandomness = "drand_randomness_hex"
+	AttributeKeyAnchorHeight    = "anchor_height"
 )

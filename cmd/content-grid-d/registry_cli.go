@@ -25,6 +25,7 @@ func registryTxCmd() *cobra.Command {
 		registryCreateSlotTxCmd(),
 		registryUpdateSlotStatusTxCmd(),
 		registryLeaseSlotTxCmd(),
+		registrySubmitDrandBeaconTxCmd(),
 	)
 	return cmd
 }
@@ -249,6 +250,46 @@ func registryLeaseSlotTxCmd() *cobra.Command {
 	return cmd
 }
 
+func registrySubmitDrandBeaconTxCmd() *cobra.Command {
+	var round uint64
+	var randomnessHex string
+	var signatureHex string
+
+	cmd := &cobra.Command{
+		Use:   "submit-drand-beacon",
+		Short: "Submit a drand beacon for randomness mixing",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+			if round == 0 {
+				return fmt.Errorf("--round required")
+			}
+			if strings.TrimSpace(randomnessHex) == "" {
+				return fmt.Errorf("--randomness-hex required")
+			}
+			msg := &typespb.MsgSubmitDrandBeacon{
+				Submitter:     clientCtx.GetFromAddress().String(),
+				Round:         round,
+				RandomnessHex: strings.TrimSpace(strings.ToLower(randomnessHex)),
+				SignatureHex:  strings.TrimSpace(strings.ToLower(signatureHex)),
+			}
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+		},
+	}
+
+	cmd.Flags().Uint64Var(&round, "round", 0, "drand round")
+	cmd.Flags().StringVar(&randomnessHex, "randomness-hex", "", "drand randomness hex")
+	cmd.Flags().StringVar(&signatureHex, "signature-hex", "", "drand signature hex (optional, recommended)")
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
 func registryQueryCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "registry",
@@ -257,6 +298,8 @@ func registryQueryCmd() *cobra.Command {
 	cmd.AddCommand(
 		registryQueryPublisherCmd(),
 		registryQueryRoundMetaCmd(),
+		registryQueryDrandBeaconCmd(),
+		registryQueryLatestDrandBeaconCmd(),
 		registryQuerySlotsCmd(),
 		registryQueryLeasesCmd(),
 	)
@@ -313,6 +356,55 @@ func registryQueryRoundMetaCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().Int64Var(&roundStartUnix, "round-start-unix", 0, "round start unix seconds")
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+func registryQueryDrandBeaconCmd() *cobra.Command {
+	var round uint64
+	cmd := &cobra.Command{
+		Use:   "drand-beacon",
+		Short: "Query drand beacon by round",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			qctx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+			if round == 0 {
+				return fmt.Errorf("--round required")
+			}
+			queryClient := typespb.NewQueryClient(qctx)
+			resp, err := queryClient.DrandBeacon(cmd.Context(), &typespb.QueryDrandBeaconRequest{Round: round})
+			if err != nil {
+				return err
+			}
+			return qctx.PrintProto(resp)
+		},
+	}
+	cmd.Flags().Uint64Var(&round, "round", 0, "drand round")
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+func registryQueryLatestDrandBeaconCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "latest-drand-beacon",
+		Short: "Query latest drand beacon",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			qctx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+			queryClient := typespb.NewQueryClient(qctx)
+			resp, err := queryClient.LatestDrandBeacon(cmd.Context(), &typespb.QueryLatestDrandBeaconRequest{})
+			if err != nil {
+				return err
+			}
+			return qctx.PrintProto(resp)
+		},
+	}
 	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
 }

@@ -30,6 +30,22 @@ func TestComputeRoundSeedWithAnchorDeterministic(t *testing.T) {
 	}
 }
 
+func TestComputeRoundSeedWithDrandDeterministic(t *testing.T) {
+	a1 := ComputeRoundSeedWithDrand("grid-1", 1700000000, 100, []byte{0x01, 0x02, 0x03}, 12345, []byte{0xaa, 0xbb})
+	a2 := ComputeRoundSeedWithDrand("grid-1", 1700000000, 100, []byte{0x01, 0x02, 0x03}, 12345, []byte{0xaa, 0xbb})
+	if a1 != a2 {
+		t.Fatalf("drand seed should be deterministic")
+	}
+	a3 := ComputeRoundSeedWithDrand("grid-1", 1700000000, 100, []byte{0x01, 0x02, 0x03}, 12346, []byte{0xaa, 0xbb})
+	if a1 == a3 {
+		t.Fatalf("different drand round should produce different seed")
+	}
+	a4 := ComputeRoundSeedWithDrand("grid-1", 1700000000, 100, []byte{0x01, 0x02, 0x03}, 12345, []byte{0xaa, 0xbc})
+	if a1 == a4 {
+		t.Fatalf("different drand randomness should produce different seed")
+	}
+}
+
 func TestComputeAssignmentOffsetHourlyUsesMinuteSlots(t *testing.T) {
 	seed := ComputeRoundSeed("grid-1", 1700000000)
 	off := ComputeAssignmentOffsetSeconds(seed, "Example.com", 3600, 3600)

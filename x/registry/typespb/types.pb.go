@@ -535,6 +535,8 @@ type VerificationRoundMeta struct {
 	AnchorHashHex             string                 `protobuf:"bytes,7,opt,name=anchor_hash_hex,json=anchorHashHex,proto3" json:"anchor_hash_hex,omitempty"`
 	VerifierSetHash           string                 `protobuf:"bytes,8,opt,name=verifier_set_hash,json=verifierSetHash,proto3" json:"verifier_set_hash,omitempty"`
 	VerifierSetSize           int32                  `protobuf:"varint,9,opt,name=verifier_set_size,json=verifierSetSize,proto3" json:"verifier_set_size,omitempty"`
+	DrandRound                uint64                 `protobuf:"varint,10,opt,name=drand_round,json=drandRound,proto3" json:"drand_round,omitempty"`
+	DrandRandomnessHex        string                 `protobuf:"bytes,11,opt,name=drand_randomness_hex,json=drandRandomnessHex,proto3" json:"drand_randomness_hex,omitempty"`
 	unknownFields             protoimpl.UnknownFields
 	sizeCache                 protoimpl.SizeCache
 }
@@ -632,6 +634,96 @@ func (x *VerificationRoundMeta) GetVerifierSetSize() int32 {
 	return 0
 }
 
+func (x *VerificationRoundMeta) GetDrandRound() uint64 {
+	if x != nil {
+		return x.DrandRound
+	}
+	return 0
+}
+
+func (x *VerificationRoundMeta) GetDrandRandomnessHex() string {
+	if x != nil {
+		return x.DrandRandomnessHex
+	}
+	return ""
+}
+
+type DrandBeacon struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Round           uint64                 `protobuf:"varint,1,opt,name=round,proto3" json:"round,omitempty"`
+	RandomnessHex   string                 `protobuf:"bytes,2,opt,name=randomness_hex,json=randomnessHex,proto3" json:"randomness_hex,omitempty"`
+	SignatureHex    string                 `protobuf:"bytes,3,opt,name=signature_hex,json=signatureHex,proto3" json:"signature_hex,omitempty"`
+	SubmittedAtUnix int64                  `protobuf:"varint,4,opt,name=submitted_at_unix,json=submittedAtUnix,proto3" json:"submitted_at_unix,omitempty"`
+	Submitter       string                 `protobuf:"bytes,5,opt,name=submitter,proto3" json:"submitter,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *DrandBeacon) Reset() {
+	*x = DrandBeacon{}
+	mi := &file_contentgrid_registry_v1_types_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DrandBeacon) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DrandBeacon) ProtoMessage() {}
+
+func (x *DrandBeacon) ProtoReflect() protoreflect.Message {
+	mi := &file_contentgrid_registry_v1_types_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DrandBeacon.ProtoReflect.Descriptor instead.
+func (*DrandBeacon) Descriptor() ([]byte, []int) {
+	return file_contentgrid_registry_v1_types_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *DrandBeacon) GetRound() uint64 {
+	if x != nil {
+		return x.Round
+	}
+	return 0
+}
+
+func (x *DrandBeacon) GetRandomnessHex() string {
+	if x != nil {
+		return x.RandomnessHex
+	}
+	return ""
+}
+
+func (x *DrandBeacon) GetSignatureHex() string {
+	if x != nil {
+		return x.SignatureHex
+	}
+	return ""
+}
+
+func (x *DrandBeacon) GetSubmittedAtUnix() int64 {
+	if x != nil {
+		return x.SubmittedAtUnix
+	}
+	return 0
+}
+
+func (x *DrandBeacon) GetSubmitter() string {
+	if x != nil {
+		return x.Submitter
+	}
+	return ""
+}
+
 type VerifierAssignment struct {
 	state         protoimpl.MessageState           `protogen:"open.v1"`
 	Assignment    *PublisherVerificationAssignment `protobuf:"bytes,1,opt,name=assignment,proto3" json:"assignment,omitempty"`
@@ -642,7 +734,7 @@ type VerifierAssignment struct {
 
 func (x *VerifierAssignment) Reset() {
 	*x = VerifierAssignment{}
-	mi := &file_contentgrid_registry_v1_types_proto_msgTypes[4]
+	mi := &file_contentgrid_registry_v1_types_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -654,7 +746,7 @@ func (x *VerifierAssignment) String() string {
 func (*VerifierAssignment) ProtoMessage() {}
 
 func (x *VerifierAssignment) ProtoReflect() protoreflect.Message {
-	mi := &file_contentgrid_registry_v1_types_proto_msgTypes[4]
+	mi := &file_contentgrid_registry_v1_types_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -667,7 +759,7 @@ func (x *VerifierAssignment) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VerifierAssignment.ProtoReflect.Descriptor instead.
 func (*VerifierAssignment) Descriptor() ([]byte, []int) {
-	return file_contentgrid_registry_v1_types_proto_rawDescGZIP(), []int{4}
+	return file_contentgrid_registry_v1_types_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *VerifierAssignment) GetAssignment() *PublisherVerificationAssignment {
@@ -698,7 +790,7 @@ type PublisherSimilarStats struct {
 
 func (x *PublisherSimilarStats) Reset() {
 	*x = PublisherSimilarStats{}
-	mi := &file_contentgrid_registry_v1_types_proto_msgTypes[5]
+	mi := &file_contentgrid_registry_v1_types_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -710,7 +802,7 @@ func (x *PublisherSimilarStats) String() string {
 func (*PublisherSimilarStats) ProtoMessage() {}
 
 func (x *PublisherSimilarStats) ProtoReflect() protoreflect.Message {
-	mi := &file_contentgrid_registry_v1_types_proto_msgTypes[5]
+	mi := &file_contentgrid_registry_v1_types_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -723,7 +815,7 @@ func (x *PublisherSimilarStats) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PublisherSimilarStats.ProtoReflect.Descriptor instead.
 func (*PublisherSimilarStats) Descriptor() ([]byte, []int) {
-	return file_contentgrid_registry_v1_types_proto_rawDescGZIP(), []int{5}
+	return file_contentgrid_registry_v1_types_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *PublisherSimilarStats) GetDomain() string {
@@ -786,7 +878,7 @@ type Slot struct {
 
 func (x *Slot) Reset() {
 	*x = Slot{}
-	mi := &file_contentgrid_registry_v1_types_proto_msgTypes[6]
+	mi := &file_contentgrid_registry_v1_types_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -798,7 +890,7 @@ func (x *Slot) String() string {
 func (*Slot) ProtoMessage() {}
 
 func (x *Slot) ProtoReflect() protoreflect.Message {
-	mi := &file_contentgrid_registry_v1_types_proto_msgTypes[6]
+	mi := &file_contentgrid_registry_v1_types_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -811,7 +903,7 @@ func (x *Slot) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Slot.ProtoReflect.Descriptor instead.
 func (*Slot) Descriptor() ([]byte, []int) {
-	return file_contentgrid_registry_v1_types_proto_rawDescGZIP(), []int{6}
+	return file_contentgrid_registry_v1_types_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *Slot) GetId() string {
@@ -958,7 +1050,7 @@ type SlotLease struct {
 
 func (x *SlotLease) Reset() {
 	*x = SlotLease{}
-	mi := &file_contentgrid_registry_v1_types_proto_msgTypes[7]
+	mi := &file_contentgrid_registry_v1_types_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -970,7 +1062,7 @@ func (x *SlotLease) String() string {
 func (*SlotLease) ProtoMessage() {}
 
 func (x *SlotLease) ProtoReflect() protoreflect.Message {
-	mi := &file_contentgrid_registry_v1_types_proto_msgTypes[7]
+	mi := &file_contentgrid_registry_v1_types_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -983,7 +1075,7 @@ func (x *SlotLease) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SlotLease.ProtoReflect.Descriptor instead.
 func (*SlotLease) Descriptor() ([]byte, []int) {
-	return file_contentgrid_registry_v1_types_proto_rawDescGZIP(), []int{7}
+	return file_contentgrid_registry_v1_types_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *SlotLease) GetId() string {
@@ -1144,7 +1236,7 @@ const file_contentgrid_registry_v1_types_proto_rawDesc = "" +
 	"\x18expected_similar_domains\x18\n" +
 	" \x01(\x05R\x16expectedSimilarDomains\x12*\n" +
 	"\x11expected_set_hash\x18\v \x01(\tR\x0fexpectedSetHash\x12*\n" +
-	"\x11observed_set_hash\x18\f \x01(\tR\x0fobservedSetHash\"\xa0\x03\n" +
+	"\x11observed_set_hash\x18\f \x01(\tR\x0fobservedSetHash\"\xf3\x03\n" +
 	"\x15VerificationRoundMeta\x12(\n" +
 	"\x10round_start_unix\x18\x01 \x01(\x03R\x0eroundStartUnix\x12\x19\n" +
 	"\bseed_hex\x18\x02 \x01(\tR\aseedHex\x124\n" +
@@ -1154,7 +1246,17 @@ const file_contentgrid_registry_v1_types_proto_rawDesc = "" +
 	"\ranchor_height\x18\x06 \x01(\x03R\fanchorHeight\x12&\n" +
 	"\x0fanchor_hash_hex\x18\a \x01(\tR\ranchorHashHex\x12*\n" +
 	"\x11verifier_set_hash\x18\b \x01(\tR\x0fverifierSetHash\x12*\n" +
-	"\x11verifier_set_size\x18\t \x01(\x05R\x0fverifierSetSize\"\xc8\x01\n" +
+	"\x11verifier_set_size\x18\t \x01(\x05R\x0fverifierSetSize\x12\x1f\n" +
+	"\vdrand_round\x18\n" +
+	" \x01(\x04R\n" +
+	"drandRound\x120\n" +
+	"\x14drand_randomness_hex\x18\v \x01(\tR\x12drandRandomnessHex\"\xb9\x01\n" +
+	"\vDrandBeacon\x12\x14\n" +
+	"\x05round\x18\x01 \x01(\x04R\x05round\x12%\n" +
+	"\x0erandomness_hex\x18\x02 \x01(\tR\rrandomnessHex\x12#\n" +
+	"\rsignature_hex\x18\x03 \x01(\tR\fsignatureHex\x12*\n" +
+	"\x11submitted_at_unix\x18\x04 \x01(\x03R\x0fsubmittedAtUnix\x12\x1c\n" +
+	"\tsubmitter\x18\x05 \x01(\tR\tsubmitter\"\xc8\x01\n" +
 	"\x12VerifierAssignment\x12X\n" +
 	"\n" +
 	"assignment\x18\x01 \x01(\v28.contentgrid.registry.v1.PublisherVerificationAssignmentR\n" +
@@ -1243,7 +1345,7 @@ func file_contentgrid_registry_v1_types_proto_rawDescGZIP() []byte {
 }
 
 var file_contentgrid_registry_v1_types_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_contentgrid_registry_v1_types_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_contentgrid_registry_v1_types_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_contentgrid_registry_v1_types_proto_goTypes = []any{
 	(WebsiteStatus)(0),                      // 0: contentgrid.registry.v1.WebsiteStatus
 	(SlotStatus)(0),                         // 1: contentgrid.registry.v1.SlotStatus
@@ -1252,10 +1354,11 @@ var file_contentgrid_registry_v1_types_proto_goTypes = []any{
 	(*PublisherVerificationAssignment)(nil), // 4: contentgrid.registry.v1.PublisherVerificationAssignment
 	(*PublisherVerificationSubmission)(nil), // 5: contentgrid.registry.v1.PublisherVerificationSubmission
 	(*VerificationRoundMeta)(nil),           // 6: contentgrid.registry.v1.VerificationRoundMeta
-	(*VerifierAssignment)(nil),              // 7: contentgrid.registry.v1.VerifierAssignment
-	(*PublisherSimilarStats)(nil),           // 8: contentgrid.registry.v1.PublisherSimilarStats
-	(*Slot)(nil),                            // 9: contentgrid.registry.v1.Slot
-	(*SlotLease)(nil),                       // 10: contentgrid.registry.v1.SlotLease
+	(*DrandBeacon)(nil),                     // 7: contentgrid.registry.v1.DrandBeacon
+	(*VerifierAssignment)(nil),              // 8: contentgrid.registry.v1.VerifierAssignment
+	(*PublisherSimilarStats)(nil),           // 9: contentgrid.registry.v1.PublisherSimilarStats
+	(*Slot)(nil),                            // 10: contentgrid.registry.v1.Slot
+	(*SlotLease)(nil),                       // 11: contentgrid.registry.v1.SlotLease
 }
 var file_contentgrid_registry_v1_types_proto_depIdxs = []int32{
 	0, // 0: contentgrid.registry.v1.Website.status:type_name -> contentgrid.registry.v1.WebsiteStatus
@@ -1281,7 +1384,7 @@ func file_contentgrid_registry_v1_types_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_contentgrid_registry_v1_types_proto_rawDesc), len(file_contentgrid_registry_v1_types_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   8,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -17,6 +17,7 @@ service Msg {
   rpc CreateSlot(MsgCreateSlot) returns (MsgCreateSlotResponse);
   rpc UpdateSlotStatus(MsgUpdateSlotStatus) returns (MsgUpdateSlotStatusResponse);
   rpc LeaseSlot(MsgLeaseSlot) returns (MsgLeaseSlotResponse);
+  rpc SubmitDrandBeacon(MsgSubmitDrandBeacon) returns (MsgSubmitDrandBeaconResponse);
 }
 
 message MsgRegisterPublisher {
@@ -110,4 +111,17 @@ message MsgLeaseSlot {
 
 message MsgLeaseSlotResponse {
   SlotLease lease = 1;
+}
+
+message MsgSubmitDrandBeacon {
+  option (cosmos.msg.v1.signer) = "submitter";
+
+  string submitter = 1;
+  uint64 round = 2;
+  string randomness_hex = 3;
+  string signature_hex = 4;
+}
+
+message MsgSubmitDrandBeaconResponse {
+  DrandBeacon beacon = 1;
 }

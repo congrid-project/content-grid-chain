@@ -36,6 +36,7 @@ func (AppModuleBasic) RegisterInterfaces(registry types.InterfaceRegistry) {
 		&typespb.MsgCreateSlot{},
 		&typespb.MsgUpdateSlotStatus{},
 		&typespb.MsgLeaseSlot{},
+		&typespb.MsgSubmitDrandBeacon{},
 	)
 }
 

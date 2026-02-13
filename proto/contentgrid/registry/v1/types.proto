@@ -65,6 +65,16 @@ message VerificationRoundMeta {
   string anchor_hash_hex = 7;
   string verifier_set_hash = 8;
   int32 verifier_set_size = 9;
+  uint64 drand_round = 10;
+  string drand_randomness_hex = 11;
+}
+
+message DrandBeacon {
+  uint64 round = 1;
+  string randomness_hex = 2;
+  string signature_hex = 3;
+  int64 submitted_at_unix = 4;
+  string submitter = 5;
 }
 
 message VerifierAssignment {

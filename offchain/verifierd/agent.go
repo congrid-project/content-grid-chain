@@ -460,8 +460,16 @@ func (a *Agent) validateAssignmentDeterministic(ctx context.Context, assignment 
 			anchorHash, decErr := hex.DecodeString(anchorHashHex)
 			if decErr == nil {
 				expectedSeed := registrypb.ComputeRoundSeedWithAnchor(chainID, roundStart, meta.GetAnchorHeight(), anchorHash)
+				drandRandomnessHex := strings.TrimSpace(meta.GetDrandRandomnessHex())
+				if meta.GetDrandRound() > 0 && drandRandomnessHex != "" {
+					drandRandomness, drandErr := hex.DecodeString(drandRandomnessHex)
+					if drandErr != nil {
+						return fmt.Errorf("invalid drand_randomness_hex in round meta")
+					}
+					expectedSeed = registrypb.ComputeRoundSeedWithDrand(chainID, roundStart, meta.GetAnchorHeight(), anchorHash, meta.GetDrandRound(), drandRandomness)
+				}
 				if expectedSeed != roundSeed {
-					return fmt.Errorf("round seed mismatch against anchor material")
+					return fmt.Errorf("round seed mismatch against anchor/drand material")
 				}
 			}
 		}

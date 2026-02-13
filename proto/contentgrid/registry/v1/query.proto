@@ -26,6 +26,14 @@ service Query {
     option (google.api.http).get = "/content-grid/registry/v1/rounds/{round_start_unix}/meta";
   }
 
+  rpc DrandBeacon(QueryDrandBeaconRequest) returns (QueryDrandBeaconResponse) {
+    option (google.api.http).get = "/content-grid/registry/v1/drand/{round}";
+  }
+
+  rpc LatestDrandBeacon(QueryLatestDrandBeaconRequest) returns (QueryLatestDrandBeaconResponse) {
+    option (google.api.http).get = "/content-grid/registry/v1/drand/latest";
+  }
+
   // Latest similar-site verification settlement for a publisher.
   rpc PublisherSimilarStats(QueryPublisherSimilarStatsRequest) returns (QueryPublisherSimilarStatsResponse) {
     option (google.api.http).get = "/content-grid/registry/v1/publishers/{domain}/similar-stats";
@@ -74,6 +82,20 @@ message QueryRoundMetaRequest {
 
 message QueryRoundMetaResponse {
   VerificationRoundMeta meta = 1;
+}
+
+message QueryDrandBeaconRequest {
+  uint64 round = 1;
+}
+
+message QueryDrandBeaconResponse {
+  DrandBeacon beacon = 1;
+}
+
+message QueryLatestDrandBeaconRequest {}
+
+message QueryLatestDrandBeaconResponse {
+  DrandBeacon beacon = 1;
 }
 
 message QueryPublisherSimilarStatsRequest {

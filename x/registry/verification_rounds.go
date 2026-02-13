@@ -85,6 +85,43 @@ func (k Keeper) assignNewRound(ctx sdk.Context) error {
 	}
 	anchorHash := append([]byte(nil), ctx.BlockHeader().LastBlockId.Hash...)
 	roundSeed := registrypb.ComputeRoundSeedWithAnchor(ctx.ChainID(), roundStartUnix, anchorHeight, anchorHash)
+
+	var usedDrandRound uint64
+	var usedDrandRandomnessHex string
+	if params.EffectiveDrandEnabled() {
+		beacon, found := k.GetLatestDrandBeacon(ctx)
+		if !found {
+			if params.EffectiveDrandStrictMode() {
+				ctx.EventManager().EmitEvent(
+					sdk.NewEvent(
+						EventTypeDrandBeaconSkipped,
+						sdk.NewAttribute(AttributeKeyRoundStart, fmt.Sprintf("%d", roundStartUnix)),
+						sdk.NewAttribute(AttributeKeyStatus, "missing_latest_beacon"),
+					),
+				)
+				return nil
+			}
+		} else {
+			randomness, err := hex.DecodeString(strings.TrimSpace(beacon.RandomnessHex))
+			if err != nil {
+				if params.EffectiveDrandStrictMode() {
+					ctx.EventManager().EmitEvent(
+						sdk.NewEvent(
+							EventTypeDrandBeaconSkipped,
+							sdk.NewAttribute(AttributeKeyRoundStart, fmt.Sprintf("%d", roundStartUnix)),
+							sdk.NewAttribute(AttributeKeyStatus, "invalid_latest_beacon"),
+						),
+					)
+					return nil
+				}
+			} else {
+				roundSeed = registrypb.ComputeRoundSeedWithDrand(ctx.ChainID(), roundStartUnix, anchorHeight, anchorHash, beacon.Round, randomness)
+				usedDrandRound = beacon.Round
+				usedDrandRandomnessHex = strings.TrimSpace(beacon.RandomnessHex)
+			}
+		}
+	}
+
 	if _, found := k.GetRoundMeta(ctx, roundStartUnix); !found {
 		verifierSetHash := hashVerifierSet(eligible)
 		if err := k.SetRoundMeta(ctx, VerificationRoundMeta{
@@ -97,6 +134,8 @@ func (k Keeper) assignNewRound(ctx sdk.Context) error {
 			AnchorHashHex:             hex.EncodeToString(anchorHash),
 			VerifierSetHash:           fmt.Sprintf("%x", verifierSetHash[:]),
 			VerifierSetSize:           int32(len(eligible)),
+			DrandRound:                usedDrandRound,
+			DrandRandomnessHex:        usedDrandRandomnessHex,
 		}); err != nil {
 			return err
 		}

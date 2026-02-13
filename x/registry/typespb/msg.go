@@ -15,6 +15,7 @@ var (
 	_ sdk.Msg = (*MsgCreateSlot)(nil)
 	_ sdk.Msg = (*MsgUpdateSlotStatus)(nil)
 	_ sdk.Msg = (*MsgLeaseSlot)(nil)
+	_ sdk.Msg = (*MsgSubmitDrandBeacon)(nil)
 )
 
 // ValidateBasic performs stateless validation of MsgRegisterPublisher.
@@ -221,6 +222,42 @@ func (m *MsgLeaseSlot) ValidateBasic() error {
 // GetSigners returns the lessee as signer.
 func (m *MsgLeaseSlot) GetSigners() []sdk.AccAddress {
 	addr, err := sdk.AccAddressFromBech32(strings.TrimSpace(m.Lessee))
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{addr}
+}
+
+// ValidateBasic performs stateless validation of MsgSubmitDrandBeacon.
+func (m *MsgSubmitDrandBeacon) ValidateBasic() error {
+	if m == nil {
+		return fmt.Errorf("message cannot be nil")
+	}
+	if _, err := sdk.AccAddressFromBech32(strings.TrimSpace(m.Submitter)); err != nil {
+		return fmt.Errorf("invalid submitter address: %w", err)
+	}
+	if m.Round == 0 {
+		return fmt.Errorf("round must be positive")
+	}
+	r := strings.TrimSpace(strings.ToLower(m.RandomnessHex))
+	if len(r) != 64 {
+		return fmt.Errorf("randomness_hex must be 64 hex chars")
+	}
+	if _, err := hex.DecodeString(r); err != nil {
+		return fmt.Errorf("invalid randomness_hex: %w", err)
+	}
+	s := strings.TrimSpace(strings.ToLower(m.SignatureHex))
+	if s != "" {
+		if _, err := hex.DecodeString(s); err != nil {
+			return fmt.Errorf("invalid signature_hex: %w", err)
+		}
+	}
+	return nil
+}
+
+// GetSigners returns the submitter as signer.
+func (m *MsgSubmitDrandBeacon) GetSigners() []sdk.AccAddress {
+	addr, err := sdk.AccAddressFromBech32(strings.TrimSpace(m.Submitter))
 	if err != nil {
 		panic(err)
 	}

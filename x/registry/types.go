@@ -250,6 +250,8 @@ type PublisherParams struct {
 	PublisherRevokeFailureThreshold    int32                 `json:"publisher_revoke_failure_threshold"`
 	VerifierPenaltySuspendThreshold    int32                 `json:"verifier_penalty_suspend_threshold"`
 	VerifierPenaltySuspendRounds       int64                 `json:"verifier_penalty_suspend_rounds"`
+	DrandEnabled                       bool                  `json:"drand_enabled"`
+	DrandStrictMode                    bool                  `json:"drand_strict_mode"`
 }
 
 // DefaultPublisherParams returns reference values aligned with the economic blueprint.
@@ -288,6 +290,8 @@ func DefaultPublisherParams() PublisherParams {
 		PublisherRevokeFailureThreshold:    3,
 		VerifierPenaltySuspendThreshold:    3,
 		VerifierPenaltySuspendRounds:       3,
+		DrandEnabled:                       false,
+		DrandStrictMode:                    false,
 	}
 }
 
@@ -474,6 +478,20 @@ func (pp PublisherParams) EffectiveVerifierPenaltySuspendRounds() int64 {
 		return pp.VerifierPenaltySuspendRounds
 	}
 	return DefaultPublisherParams().VerifierPenaltySuspendRounds
+}
+
+func (pp PublisherParams) EffectiveDrandEnabled() bool {
+	if pp.DrandEnabled {
+		return true
+	}
+	return DefaultPublisherParams().DrandEnabled
+}
+
+func (pp PublisherParams) EffectiveDrandStrictMode() bool {
+	if pp.DrandStrictMode {
+		return true
+	}
+	return DefaultPublisherParams().DrandStrictMode
 }
 
 // PublisherRewardSplit controls how the publisher bucket is shared each epoch.

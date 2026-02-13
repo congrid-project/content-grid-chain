@@ -24,6 +24,15 @@ func ComputeRoundSeedWithAnchor(chainID string, roundStartUnix, anchorHeight int
 	return sha256.Sum256([]byte(payload))
 }
 
+// ComputeRoundSeedWithDrand returns a deterministic round seed derived from
+// chain anchor material plus drand beacon material.
+func ComputeRoundSeedWithDrand(chainID string, roundStartUnix, anchorHeight int64, anchorHash []byte, drandRound uint64, drandRandomness []byte) [32]byte {
+	anchorHex := hex.EncodeToString(anchorHash)
+	drandHex := hex.EncodeToString(drandRandomness)
+	payload := strings.TrimSpace(chainID) + "|" + strconv.FormatInt(roundStartUnix, 10) + "|" + strconv.FormatInt(anchorHeight, 10) + "|" + anchorHex + "|" + strconv.FormatUint(drandRound, 10) + "|" + drandHex
+	return sha256.Sum256([]byte(payload))
+}
+
 // ComputeAssignmentOffsetSeconds returns the deterministic offset within a round for a domain.
 //
 // For hourly-or-longer rounds, this follows minute scheduling (0..59 minutes) as:

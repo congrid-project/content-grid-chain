@@ -795,6 +795,118 @@ func (x *MsgLeaseSlotResponse) GetLease() *SlotLease {
 	return nil
 }
 
+type MsgSubmitDrandBeacon struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Submitter     string                 `protobuf:"bytes,1,opt,name=submitter,proto3" json:"submitter,omitempty"`
+	Round         uint64                 `protobuf:"varint,2,opt,name=round,proto3" json:"round,omitempty"`
+	RandomnessHex string                 `protobuf:"bytes,3,opt,name=randomness_hex,json=randomnessHex,proto3" json:"randomness_hex,omitempty"`
+	SignatureHex  string                 `protobuf:"bytes,4,opt,name=signature_hex,json=signatureHex,proto3" json:"signature_hex,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MsgSubmitDrandBeacon) Reset() {
+	*x = MsgSubmitDrandBeacon{}
+	mi := &file_contentgrid_registry_v1_tx_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MsgSubmitDrandBeacon) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgSubmitDrandBeacon) ProtoMessage() {}
+
+func (x *MsgSubmitDrandBeacon) ProtoReflect() protoreflect.Message {
+	mi := &file_contentgrid_registry_v1_tx_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MsgSubmitDrandBeacon.ProtoReflect.Descriptor instead.
+func (*MsgSubmitDrandBeacon) Descriptor() ([]byte, []int) {
+	return file_contentgrid_registry_v1_tx_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *MsgSubmitDrandBeacon) GetSubmitter() string {
+	if x != nil {
+		return x.Submitter
+	}
+	return ""
+}
+
+func (x *MsgSubmitDrandBeacon) GetRound() uint64 {
+	if x != nil {
+		return x.Round
+	}
+	return 0
+}
+
+func (x *MsgSubmitDrandBeacon) GetRandomnessHex() string {
+	if x != nil {
+		return x.RandomnessHex
+	}
+	return ""
+}
+
+func (x *MsgSubmitDrandBeacon) GetSignatureHex() string {
+	if x != nil {
+		return x.SignatureHex
+	}
+	return ""
+}
+
+type MsgSubmitDrandBeaconResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Beacon        *DrandBeacon           `protobuf:"bytes,1,opt,name=beacon,proto3" json:"beacon,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MsgSubmitDrandBeaconResponse) Reset() {
+	*x = MsgSubmitDrandBeaconResponse{}
+	mi := &file_contentgrid_registry_v1_tx_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MsgSubmitDrandBeaconResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgSubmitDrandBeaconResponse) ProtoMessage() {}
+
+func (x *MsgSubmitDrandBeaconResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_contentgrid_registry_v1_tx_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MsgSubmitDrandBeaconResponse.ProtoReflect.Descriptor instead.
+func (*MsgSubmitDrandBeaconResponse) Descriptor() ([]byte, []int) {
+	return file_contentgrid_registry_v1_tx_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *MsgSubmitDrandBeaconResponse) GetBeacon() *DrandBeacon {
+	if x != nil {
+		return x.Beacon
+	}
+	return nil
+}
+
 var File_contentgrid_registry_v1_tx_proto protoreflect.FileDescriptor
 
 const file_contentgrid_registry_v1_tx_proto_rawDesc = "" +
@@ -861,7 +973,14 @@ const file_contentgrid_registry_v1_tx_proto_rawDesc = "" +
 	"\x0estarts_at_unix\x18\x04 \x01(\x03R\fstartsAtUnix\x12)\n" +
 	"\x10duration_seconds\x18\x05 \x01(\x03R\x0fdurationSeconds:\v\x82\xe7\xb0*\x06lessee\"P\n" +
 	"\x14MsgLeaseSlotResponse\x128\n" +
-	"\x05lease\x18\x01 \x01(\v2\".contentgrid.registry.v1.SlotLeaseR\x05lease2\xd7\x05\n" +
+	"\x05lease\x18\x01 \x01(\v2\".contentgrid.registry.v1.SlotLeaseR\x05lease\"\xa6\x01\n" +
+	"\x14MsgSubmitDrandBeacon\x12\x1c\n" +
+	"\tsubmitter\x18\x01 \x01(\tR\tsubmitter\x12\x14\n" +
+	"\x05round\x18\x02 \x01(\x04R\x05round\x12%\n" +
+	"\x0erandomness_hex\x18\x03 \x01(\tR\rrandomnessHex\x12#\n" +
+	"\rsignature_hex\x18\x04 \x01(\tR\fsignatureHex:\x0e\x82\xe7\xb0*\tsubmitter\"\\\n" +
+	"\x1cMsgSubmitDrandBeaconResponse\x12<\n" +
+	"\x06beacon\x18\x01 \x01(\v2$.contentgrid.registry.v1.DrandBeaconR\x06beacon2\xd2\x06\n" +
 	"\x03Msg\x12y\n" +
 	"\x11RegisterPublisher\x12-.contentgrid.registry.v1.MsgRegisterPublisher\x1a5.contentgrid.registry.v1.MsgRegisterPublisherResponse\x12\x8e\x01\n" +
 	"\x18SubmitVerificationCommit\x124.contentgrid.registry.v1.MsgSubmitVerificationCommit\x1a<.contentgrid.registry.v1.MsgSubmitVerificationCommitResponse\x12|\n" +
@@ -869,7 +988,8 @@ const file_contentgrid_registry_v1_tx_proto_rawDesc = "" +
 	"\n" +
 	"CreateSlot\x12&.contentgrid.registry.v1.MsgCreateSlot\x1a..contentgrid.registry.v1.MsgCreateSlotResponse\x12v\n" +
 	"\x10UpdateSlotStatus\x12,.contentgrid.registry.v1.MsgUpdateSlotStatus\x1a4.contentgrid.registry.v1.MsgUpdateSlotStatusResponse\x12a\n" +
-	"\tLeaseSlot\x12%.contentgrid.registry.v1.MsgLeaseSlot\x1a-.contentgrid.registry.v1.MsgLeaseSlotResponse\x1a\x05\x80\xe7\xb0*\x01B'Z%content-grid-chain/x/registry/typespbb\x06proto3"
+	"\tLeaseSlot\x12%.contentgrid.registry.v1.MsgLeaseSlot\x1a-.contentgrid.registry.v1.MsgLeaseSlotResponse\x12y\n" +
+	"\x11SubmitDrandBeacon\x12-.contentgrid.registry.v1.MsgSubmitDrandBeacon\x1a5.contentgrid.registry.v1.MsgSubmitDrandBeaconResponse\x1a\x05\x80\xe7\xb0*\x01B'Z%content-grid-chain/x/registry/typespbb\x06proto3"
 
 var (
 	file_contentgrid_registry_v1_tx_proto_rawDescOnce sync.Once
@@ -883,7 +1003,7 @@ func file_contentgrid_registry_v1_tx_proto_rawDescGZIP() []byte {
 	return file_contentgrid_registry_v1_tx_proto_rawDescData
 }
 
-var file_contentgrid_registry_v1_tx_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_contentgrid_registry_v1_tx_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_contentgrid_registry_v1_tx_proto_goTypes = []any{
 	(*MsgRegisterPublisher)(nil),                // 0: contentgrid.registry.v1.MsgRegisterPublisher
 	(*MsgRegisterPublisherResponse)(nil),        // 1: contentgrid.registry.v1.MsgRegisterPublisherResponse
@@ -897,36 +1017,42 @@ var file_contentgrid_registry_v1_tx_proto_goTypes = []any{
 	(*MsgUpdateSlotStatusResponse)(nil),         // 9: contentgrid.registry.v1.MsgUpdateSlotStatusResponse
 	(*MsgLeaseSlot)(nil),                        // 10: contentgrid.registry.v1.MsgLeaseSlot
 	(*MsgLeaseSlotResponse)(nil),                // 11: contentgrid.registry.v1.MsgLeaseSlotResponse
-	(*Website)(nil),                             // 12: contentgrid.registry.v1.Website
-	(*PublisherVerificationSubmission)(nil),     // 13: contentgrid.registry.v1.PublisherVerificationSubmission
-	(*Slot)(nil),                                // 14: contentgrid.registry.v1.Slot
-	(SlotStatus)(0),                             // 15: contentgrid.registry.v1.SlotStatus
-	(*SlotLease)(nil),                           // 16: contentgrid.registry.v1.SlotLease
+	(*MsgSubmitDrandBeacon)(nil),                // 12: contentgrid.registry.v1.MsgSubmitDrandBeacon
+	(*MsgSubmitDrandBeaconResponse)(nil),        // 13: contentgrid.registry.v1.MsgSubmitDrandBeaconResponse
+	(*Website)(nil),                             // 14: contentgrid.registry.v1.Website
+	(*PublisherVerificationSubmission)(nil),     // 15: contentgrid.registry.v1.PublisherVerificationSubmission
+	(*Slot)(nil),                                // 16: contentgrid.registry.v1.Slot
+	(SlotStatus)(0),                             // 17: contentgrid.registry.v1.SlotStatus
+	(*SlotLease)(nil),                           // 18: contentgrid.registry.v1.SlotLease
+	(*DrandBeacon)(nil),                         // 19: contentgrid.registry.v1.DrandBeacon
 }
 var file_contentgrid_registry_v1_tx_proto_depIdxs = []int32{
-	12, // 0: contentgrid.registry.v1.MsgRegisterPublisherResponse.website:type_name -> contentgrid.registry.v1.Website
-	13, // 1: contentgrid.registry.v1.MsgRevealVerificationResponse.submission:type_name -> contentgrid.registry.v1.PublisherVerificationSubmission
-	14, // 2: contentgrid.registry.v1.MsgCreateSlotResponse.slot:type_name -> contentgrid.registry.v1.Slot
-	15, // 3: contentgrid.registry.v1.MsgUpdateSlotStatus.status:type_name -> contentgrid.registry.v1.SlotStatus
-	14, // 4: contentgrid.registry.v1.MsgUpdateSlotStatusResponse.slot:type_name -> contentgrid.registry.v1.Slot
-	16, // 5: contentgrid.registry.v1.MsgLeaseSlotResponse.lease:type_name -> contentgrid.registry.v1.SlotLease
-	0,  // 6: contentgrid.registry.v1.Msg.RegisterPublisher:input_type -> contentgrid.registry.v1.MsgRegisterPublisher
-	2,  // 7: contentgrid.registry.v1.Msg.SubmitVerificationCommit:input_type -> contentgrid.registry.v1.MsgSubmitVerificationCommit
-	4,  // 8: contentgrid.registry.v1.Msg.RevealVerification:input_type -> contentgrid.registry.v1.MsgRevealVerification
-	6,  // 9: contentgrid.registry.v1.Msg.CreateSlot:input_type -> contentgrid.registry.v1.MsgCreateSlot
-	8,  // 10: contentgrid.registry.v1.Msg.UpdateSlotStatus:input_type -> contentgrid.registry.v1.MsgUpdateSlotStatus
-	10, // 11: contentgrid.registry.v1.Msg.LeaseSlot:input_type -> contentgrid.registry.v1.MsgLeaseSlot
-	1,  // 12: contentgrid.registry.v1.Msg.RegisterPublisher:output_type -> contentgrid.registry.v1.MsgRegisterPublisherResponse
-	3,  // 13: contentgrid.registry.v1.Msg.SubmitVerificationCommit:output_type -> contentgrid.registry.v1.MsgSubmitVerificationCommitResponse
-	5,  // 14: contentgrid.registry.v1.Msg.RevealVerification:output_type -> contentgrid.registry.v1.MsgRevealVerificationResponse
-	7,  // 15: contentgrid.registry.v1.Msg.CreateSlot:output_type -> contentgrid.registry.v1.MsgCreateSlotResponse
-	9,  // 16: contentgrid.registry.v1.Msg.UpdateSlotStatus:output_type -> contentgrid.registry.v1.MsgUpdateSlotStatusResponse
-	11, // 17: contentgrid.registry.v1.Msg.LeaseSlot:output_type -> contentgrid.registry.v1.MsgLeaseSlotResponse
-	12, // [12:18] is the sub-list for method output_type
-	6,  // [6:12] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	14, // 0: contentgrid.registry.v1.MsgRegisterPublisherResponse.website:type_name -> contentgrid.registry.v1.Website
+	15, // 1: contentgrid.registry.v1.MsgRevealVerificationResponse.submission:type_name -> contentgrid.registry.v1.PublisherVerificationSubmission
+	16, // 2: contentgrid.registry.v1.MsgCreateSlotResponse.slot:type_name -> contentgrid.registry.v1.Slot
+	17, // 3: contentgrid.registry.v1.MsgUpdateSlotStatus.status:type_name -> contentgrid.registry.v1.SlotStatus
+	16, // 4: contentgrid.registry.v1.MsgUpdateSlotStatusResponse.slot:type_name -> contentgrid.registry.v1.Slot
+	18, // 5: contentgrid.registry.v1.MsgLeaseSlotResponse.lease:type_name -> contentgrid.registry.v1.SlotLease
+	19, // 6: contentgrid.registry.v1.MsgSubmitDrandBeaconResponse.beacon:type_name -> contentgrid.registry.v1.DrandBeacon
+	0,  // 7: contentgrid.registry.v1.Msg.RegisterPublisher:input_type -> contentgrid.registry.v1.MsgRegisterPublisher
+	2,  // 8: contentgrid.registry.v1.Msg.SubmitVerificationCommit:input_type -> contentgrid.registry.v1.MsgSubmitVerificationCommit
+	4,  // 9: contentgrid.registry.v1.Msg.RevealVerification:input_type -> contentgrid.registry.v1.MsgRevealVerification
+	6,  // 10: contentgrid.registry.v1.Msg.CreateSlot:input_type -> contentgrid.registry.v1.MsgCreateSlot
+	8,  // 11: contentgrid.registry.v1.Msg.UpdateSlotStatus:input_type -> contentgrid.registry.v1.MsgUpdateSlotStatus
+	10, // 12: contentgrid.registry.v1.Msg.LeaseSlot:input_type -> contentgrid.registry.v1.MsgLeaseSlot
+	12, // 13: contentgrid.registry.v1.Msg.SubmitDrandBeacon:input_type -> contentgrid.registry.v1.MsgSubmitDrandBeacon
+	1,  // 14: contentgrid.registry.v1.Msg.RegisterPublisher:output_type -> contentgrid.registry.v1.MsgRegisterPublisherResponse
+	3,  // 15: contentgrid.registry.v1.Msg.SubmitVerificationCommit:output_type -> contentgrid.registry.v1.MsgSubmitVerificationCommitResponse
+	5,  // 16: contentgrid.registry.v1.Msg.RevealVerification:output_type -> contentgrid.registry.v1.MsgRevealVerificationResponse
+	7,  // 17: contentgrid.registry.v1.Msg.CreateSlot:output_type -> contentgrid.registry.v1.MsgCreateSlotResponse
+	9,  // 18: contentgrid.registry.v1.Msg.UpdateSlotStatus:output_type -> contentgrid.registry.v1.MsgUpdateSlotStatusResponse
+	11, // 19: contentgrid.registry.v1.Msg.LeaseSlot:output_type -> contentgrid.registry.v1.MsgLeaseSlotResponse
+	13, // 20: contentgrid.registry.v1.Msg.SubmitDrandBeacon:output_type -> contentgrid.registry.v1.MsgSubmitDrandBeaconResponse
+	14, // [14:21] is the sub-list for method output_type
+	7,  // [7:14] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_contentgrid_registry_v1_tx_proto_init() }
@@ -941,7 +1067,7 @@ func file_contentgrid_registry_v1_tx_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_contentgrid_registry_v1_tx_proto_rawDesc), len(file_contentgrid_registry_v1_tx_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   12,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

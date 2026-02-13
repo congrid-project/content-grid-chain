@@ -21,4 +21,6 @@ var (
 	ErrLeaseInvalidDuration    = errorsmod.Register(ModuleName, 16, "lease duration invalid")
 	ErrLeasePaymentFailed      = errorsmod.Register(ModuleName, 17, "lease escrow payment failed")
 	ErrPublisherInCooldown     = errorsmod.Register(ModuleName, 18, "publisher in cooldown")
+	ErrDrandBeaconNotFound     = errorsmod.Register(ModuleName, 19, "drand beacon not found")
+	ErrInvalidDrandBeacon      = errorsmod.Register(ModuleName, 20, "invalid drand beacon")
 )

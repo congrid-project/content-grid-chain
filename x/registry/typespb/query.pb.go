@@ -392,6 +392,174 @@ func (x *QueryRoundMetaResponse) GetMeta() *VerificationRoundMeta {
 	return nil
 }
 
+type QueryDrandBeaconRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Round         uint64                 `protobuf:"varint,1,opt,name=round,proto3" json:"round,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *QueryDrandBeaconRequest) Reset() {
+	*x = QueryDrandBeaconRequest{}
+	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *QueryDrandBeaconRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QueryDrandBeaconRequest) ProtoMessage() {}
+
+func (x *QueryDrandBeaconRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QueryDrandBeaconRequest.ProtoReflect.Descriptor instead.
+func (*QueryDrandBeaconRequest) Descriptor() ([]byte, []int) {
+	return file_contentgrid_registry_v1_query_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *QueryDrandBeaconRequest) GetRound() uint64 {
+	if x != nil {
+		return x.Round
+	}
+	return 0
+}
+
+type QueryDrandBeaconResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Beacon        *DrandBeacon           `protobuf:"bytes,1,opt,name=beacon,proto3" json:"beacon,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *QueryDrandBeaconResponse) Reset() {
+	*x = QueryDrandBeaconResponse{}
+	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *QueryDrandBeaconResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QueryDrandBeaconResponse) ProtoMessage() {}
+
+func (x *QueryDrandBeaconResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QueryDrandBeaconResponse.ProtoReflect.Descriptor instead.
+func (*QueryDrandBeaconResponse) Descriptor() ([]byte, []int) {
+	return file_contentgrid_registry_v1_query_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *QueryDrandBeaconResponse) GetBeacon() *DrandBeacon {
+	if x != nil {
+		return x.Beacon
+	}
+	return nil
+}
+
+type QueryLatestDrandBeaconRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *QueryLatestDrandBeaconRequest) Reset() {
+	*x = QueryLatestDrandBeaconRequest{}
+	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *QueryLatestDrandBeaconRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QueryLatestDrandBeaconRequest) ProtoMessage() {}
+
+func (x *QueryLatestDrandBeaconRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QueryLatestDrandBeaconRequest.ProtoReflect.Descriptor instead.
+func (*QueryLatestDrandBeaconRequest) Descriptor() ([]byte, []int) {
+	return file_contentgrid_registry_v1_query_proto_rawDescGZIP(), []int{10}
+}
+
+type QueryLatestDrandBeaconResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Beacon        *DrandBeacon           `protobuf:"bytes,1,opt,name=beacon,proto3" json:"beacon,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *QueryLatestDrandBeaconResponse) Reset() {
+	*x = QueryLatestDrandBeaconResponse{}
+	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *QueryLatestDrandBeaconResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QueryLatestDrandBeaconResponse) ProtoMessage() {}
+
+func (x *QueryLatestDrandBeaconResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QueryLatestDrandBeaconResponse.ProtoReflect.Descriptor instead.
+func (*QueryLatestDrandBeaconResponse) Descriptor() ([]byte, []int) {
+	return file_contentgrid_registry_v1_query_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *QueryLatestDrandBeaconResponse) GetBeacon() *DrandBeacon {
+	if x != nil {
+		return x.Beacon
+	}
+	return nil
+}
+
 type QueryPublisherSimilarStatsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Domain        string                 `protobuf:"bytes,1,opt,name=domain,proto3" json:"domain,omitempty"`
@@ -401,7 +569,7 @@ type QueryPublisherSimilarStatsRequest struct {
 
 func (x *QueryPublisherSimilarStatsRequest) Reset() {
 	*x = QueryPublisherSimilarStatsRequest{}
-	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[8]
+	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -413,7 +581,7 @@ func (x *QueryPublisherSimilarStatsRequest) String() string {
 func (*QueryPublisherSimilarStatsRequest) ProtoMessage() {}
 
 func (x *QueryPublisherSimilarStatsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[8]
+	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -426,7 +594,7 @@ func (x *QueryPublisherSimilarStatsRequest) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use QueryPublisherSimilarStatsRequest.ProtoReflect.Descriptor instead.
 func (*QueryPublisherSimilarStatsRequest) Descriptor() ([]byte, []int) {
-	return file_contentgrid_registry_v1_query_proto_rawDescGZIP(), []int{8}
+	return file_contentgrid_registry_v1_query_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *QueryPublisherSimilarStatsRequest) GetDomain() string {
@@ -445,7 +613,7 @@ type QueryPublisherSimilarStatsResponse struct {
 
 func (x *QueryPublisherSimilarStatsResponse) Reset() {
 	*x = QueryPublisherSimilarStatsResponse{}
-	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[9]
+	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -457,7 +625,7 @@ func (x *QueryPublisherSimilarStatsResponse) String() string {
 func (*QueryPublisherSimilarStatsResponse) ProtoMessage() {}
 
 func (x *QueryPublisherSimilarStatsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[9]
+	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -470,7 +638,7 @@ func (x *QueryPublisherSimilarStatsResponse) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use QueryPublisherSimilarStatsResponse.ProtoReflect.Descriptor instead.
 func (*QueryPublisherSimilarStatsResponse) Descriptor() ([]byte, []int) {
-	return file_contentgrid_registry_v1_query_proto_rawDescGZIP(), []int{9}
+	return file_contentgrid_registry_v1_query_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *QueryPublisherSimilarStatsResponse) GetStats() *PublisherSimilarStats {
@@ -491,7 +659,7 @@ type QuerySlotsRequest struct {
 
 func (x *QuerySlotsRequest) Reset() {
 	*x = QuerySlotsRequest{}
-	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[10]
+	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -503,7 +671,7 @@ func (x *QuerySlotsRequest) String() string {
 func (*QuerySlotsRequest) ProtoMessage() {}
 
 func (x *QuerySlotsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[10]
+	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -516,7 +684,7 @@ func (x *QuerySlotsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuerySlotsRequest.ProtoReflect.Descriptor instead.
 func (*QuerySlotsRequest) Descriptor() ([]byte, []int) {
-	return file_contentgrid_registry_v1_query_proto_rawDescGZIP(), []int{10}
+	return file_contentgrid_registry_v1_query_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *QuerySlotsRequest) GetPublisher() string {
@@ -550,7 +718,7 @@ type QuerySlotsResponse struct {
 
 func (x *QuerySlotsResponse) Reset() {
 	*x = QuerySlotsResponse{}
-	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[11]
+	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -562,7 +730,7 @@ func (x *QuerySlotsResponse) String() string {
 func (*QuerySlotsResponse) ProtoMessage() {}
 
 func (x *QuerySlotsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[11]
+	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -575,7 +743,7 @@ func (x *QuerySlotsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuerySlotsResponse.ProtoReflect.Descriptor instead.
 func (*QuerySlotsResponse) Descriptor() ([]byte, []int) {
-	return file_contentgrid_registry_v1_query_proto_rawDescGZIP(), []int{11}
+	return file_contentgrid_registry_v1_query_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *QuerySlotsResponse) GetSlots() []*Slot {
@@ -605,7 +773,7 @@ type QueryLeasesRequest struct {
 
 func (x *QueryLeasesRequest) Reset() {
 	*x = QueryLeasesRequest{}
-	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[12]
+	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -617,7 +785,7 @@ func (x *QueryLeasesRequest) String() string {
 func (*QueryLeasesRequest) ProtoMessage() {}
 
 func (x *QueryLeasesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[12]
+	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -630,7 +798,7 @@ func (x *QueryLeasesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryLeasesRequest.ProtoReflect.Descriptor instead.
 func (*QueryLeasesRequest) Descriptor() ([]byte, []int) {
-	return file_contentgrid_registry_v1_query_proto_rawDescGZIP(), []int{12}
+	return file_contentgrid_registry_v1_query_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *QueryLeasesRequest) GetPublisher() string {
@@ -678,7 +846,7 @@ type QueryLeasesResponse struct {
 
 func (x *QueryLeasesResponse) Reset() {
 	*x = QueryLeasesResponse{}
-	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[13]
+	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -690,7 +858,7 @@ func (x *QueryLeasesResponse) String() string {
 func (*QueryLeasesResponse) ProtoMessage() {}
 
 func (x *QueryLeasesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[13]
+	mi := &file_contentgrid_registry_v1_query_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -703,7 +871,7 @@ func (x *QueryLeasesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryLeasesResponse.ProtoReflect.Descriptor instead.
 func (*QueryLeasesResponse) Descriptor() ([]byte, []int) {
-	return file_contentgrid_registry_v1_query_proto_rawDescGZIP(), []int{13}
+	return file_contentgrid_registry_v1_query_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *QueryLeasesResponse) GetLeases() []*SlotLease {
@@ -746,7 +914,14 @@ const file_contentgrid_registry_v1_query_proto_rawDesc = "" +
 	"\x15QueryRoundMetaRequest\x12(\n" +
 	"\x10round_start_unix\x18\x01 \x01(\x03R\x0eroundStartUnix\"\\\n" +
 	"\x16QueryRoundMetaResponse\x12B\n" +
-	"\x04meta\x18\x01 \x01(\v2..contentgrid.registry.v1.VerificationRoundMetaR\x04meta\";\n" +
+	"\x04meta\x18\x01 \x01(\v2..contentgrid.registry.v1.VerificationRoundMetaR\x04meta\"/\n" +
+	"\x17QueryDrandBeaconRequest\x12\x14\n" +
+	"\x05round\x18\x01 \x01(\x04R\x05round\"X\n" +
+	"\x18QueryDrandBeaconResponse\x12<\n" +
+	"\x06beacon\x18\x01 \x01(\v2$.contentgrid.registry.v1.DrandBeaconR\x06beacon\"\x1f\n" +
+	"\x1dQueryLatestDrandBeaconRequest\"^\n" +
+	"\x1eQueryLatestDrandBeaconResponse\x12<\n" +
+	"\x06beacon\x18\x01 \x01(\v2$.contentgrid.registry.v1.DrandBeaconR\x06beacon\";\n" +
 	"!QueryPublisherSimilarStatsRequest\x12\x16\n" +
 	"\x06domain\x18\x01 \x01(\tR\x06domain\"j\n" +
 	"\"QueryPublisherSimilarStatsResponse\x12D\n" +
@@ -775,13 +950,15 @@ const file_contentgrid_registry_v1_query_proto_rawDesc = "" +
 	"\x06leases\x18\x01 \x03(\v2\".contentgrid.registry.v1.SlotLeaseR\x06leases\x12G\n" +
 	"\n" +
 	"pagination\x18\x02 \x01(\v2'.cosmos.base.query.v1beta1.PageResponseR\n" +
-	"pagination2\xc3\t\n" +
+	"pagination2\xa0\f\n" +
 	"\x05Query\x12\xa3\x01\n" +
 	"\tPublisher\x12..contentgrid.registry.v1.QueryPublisherRequest\x1a/.contentgrid.registry.v1.QueryPublisherResponse\"5\x82\xd3\xe4\x93\x02/\x12-/content-grid/registry/v1/publishers/{domain}\x12\x9d\x01\n" +
 	"\n" +
 	"Publishers\x12/.contentgrid.registry.v1.QueryPublishersRequest\x1a0.contentgrid.registry.v1.QueryPublishersResponse\",\x82\xd3\xe4\x93\x02&\x12$/content-grid/registry/v1/publishers\x12\xce\x01\n" +
 	"\x13VerifierAssignments\x128.contentgrid.registry.v1.QueryVerifierAssignmentsRequest\x1a9.contentgrid.registry.v1.QueryVerifierAssignmentsResponse\"B\x82\xd3\xe4\x93\x02<\x12:/content-grid/registry/v1/verifiers/{verifier}/assignments\x12\xae\x01\n" +
-	"\tRoundMeta\x12..contentgrid.registry.v1.QueryRoundMetaRequest\x1a/.contentgrid.registry.v1.QueryRoundMetaResponse\"@\x82\xd3\xe4\x93\x02:\x128/content-grid/registry/v1/rounds/{round_start_unix}/meta\x12\xd5\x01\n" +
+	"\tRoundMeta\x12..contentgrid.registry.v1.QueryRoundMetaRequest\x1a/.contentgrid.registry.v1.QueryRoundMetaResponse\"@\x82\xd3\xe4\x93\x02:\x128/content-grid/registry/v1/rounds/{round_start_unix}/meta\x12\xa3\x01\n" +
+	"\vDrandBeacon\x120.contentgrid.registry.v1.QueryDrandBeaconRequest\x1a1.contentgrid.registry.v1.QueryDrandBeaconResponse\"/\x82\xd3\xe4\x93\x02)\x12'/content-grid/registry/v1/drand/{round}\x12\xb4\x01\n" +
+	"\x11LatestDrandBeacon\x126.contentgrid.registry.v1.QueryLatestDrandBeaconRequest\x1a7.contentgrid.registry.v1.QueryLatestDrandBeaconResponse\".\x82\xd3\xe4\x93\x02(\x12&/content-grid/registry/v1/drand/latest\x12\xd5\x01\n" +
 	"\x15PublisherSimilarStats\x12:.contentgrid.registry.v1.QueryPublisherSimilarStatsRequest\x1a;.contentgrid.registry.v1.QueryPublisherSimilarStatsResponse\"C\x82\xd3\xe4\x93\x02=\x12;/content-grid/registry/v1/publishers/{domain}/similar-stats\x12\x89\x01\n" +
 	"\x05Slots\x12*.contentgrid.registry.v1.QuerySlotsRequest\x1a+.contentgrid.registry.v1.QuerySlotsResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/content-grid/registry/v1/slots\x12\x8d\x01\n" +
 	"\x06Leases\x12+.contentgrid.registry.v1.QueryLeasesRequest\x1a,.contentgrid.registry.v1.QueryLeasesResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /content-grid/registry/v1/leasesB'Z%content-grid-chain/x/registry/typespbb\x06proto3"
@@ -798,7 +975,7 @@ func file_contentgrid_registry_v1_query_proto_rawDescGZIP() []byte {
 	return file_contentgrid_registry_v1_query_proto_rawDescData
 }
 
-var file_contentgrid_registry_v1_query_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_contentgrid_registry_v1_query_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_contentgrid_registry_v1_query_proto_goTypes = []any{
 	(*QueryPublisherRequest)(nil),              // 0: contentgrid.registry.v1.QueryPublisherRequest
 	(*QueryPublisherResponse)(nil),             // 1: contentgrid.registry.v1.QueryPublisherResponse
@@ -808,56 +985,67 @@ var file_contentgrid_registry_v1_query_proto_goTypes = []any{
 	(*QueryVerifierAssignmentsResponse)(nil),   // 5: contentgrid.registry.v1.QueryVerifierAssignmentsResponse
 	(*QueryRoundMetaRequest)(nil),              // 6: contentgrid.registry.v1.QueryRoundMetaRequest
 	(*QueryRoundMetaResponse)(nil),             // 7: contentgrid.registry.v1.QueryRoundMetaResponse
-	(*QueryPublisherSimilarStatsRequest)(nil),  // 8: contentgrid.registry.v1.QueryPublisherSimilarStatsRequest
-	(*QueryPublisherSimilarStatsResponse)(nil), // 9: contentgrid.registry.v1.QueryPublisherSimilarStatsResponse
-	(*QuerySlotsRequest)(nil),                  // 10: contentgrid.registry.v1.QuerySlotsRequest
-	(*QuerySlotsResponse)(nil),                 // 11: contentgrid.registry.v1.QuerySlotsResponse
-	(*QueryLeasesRequest)(nil),                 // 12: contentgrid.registry.v1.QueryLeasesRequest
-	(*QueryLeasesResponse)(nil),                // 13: contentgrid.registry.v1.QueryLeasesResponse
-	(*Website)(nil),                            // 14: contentgrid.registry.v1.Website
-	(*query.PageRequest)(nil),                  // 15: cosmos.base.query.v1beta1.PageRequest
-	(*query.PageResponse)(nil),                 // 16: cosmos.base.query.v1beta1.PageResponse
-	(*VerifierAssignment)(nil),                 // 17: contentgrid.registry.v1.VerifierAssignment
-	(*VerificationRoundMeta)(nil),              // 18: contentgrid.registry.v1.VerificationRoundMeta
-	(*PublisherSimilarStats)(nil),              // 19: contentgrid.registry.v1.PublisherSimilarStats
-	(SlotStatus)(0),                            // 20: contentgrid.registry.v1.SlotStatus
-	(*Slot)(nil),                               // 21: contentgrid.registry.v1.Slot
-	(*SlotLease)(nil),                          // 22: contentgrid.registry.v1.SlotLease
+	(*QueryDrandBeaconRequest)(nil),            // 8: contentgrid.registry.v1.QueryDrandBeaconRequest
+	(*QueryDrandBeaconResponse)(nil),           // 9: contentgrid.registry.v1.QueryDrandBeaconResponse
+	(*QueryLatestDrandBeaconRequest)(nil),      // 10: contentgrid.registry.v1.QueryLatestDrandBeaconRequest
+	(*QueryLatestDrandBeaconResponse)(nil),     // 11: contentgrid.registry.v1.QueryLatestDrandBeaconResponse
+	(*QueryPublisherSimilarStatsRequest)(nil),  // 12: contentgrid.registry.v1.QueryPublisherSimilarStatsRequest
+	(*QueryPublisherSimilarStatsResponse)(nil), // 13: contentgrid.registry.v1.QueryPublisherSimilarStatsResponse
+	(*QuerySlotsRequest)(nil),                  // 14: contentgrid.registry.v1.QuerySlotsRequest
+	(*QuerySlotsResponse)(nil),                 // 15: contentgrid.registry.v1.QuerySlotsResponse
+	(*QueryLeasesRequest)(nil),                 // 16: contentgrid.registry.v1.QueryLeasesRequest
+	(*QueryLeasesResponse)(nil),                // 17: contentgrid.registry.v1.QueryLeasesResponse
+	(*Website)(nil),                            // 18: contentgrid.registry.v1.Website
+	(*query.PageRequest)(nil),                  // 19: cosmos.base.query.v1beta1.PageRequest
+	(*query.PageResponse)(nil),                 // 20: cosmos.base.query.v1beta1.PageResponse
+	(*VerifierAssignment)(nil),                 // 21: contentgrid.registry.v1.VerifierAssignment
+	(*VerificationRoundMeta)(nil),              // 22: contentgrid.registry.v1.VerificationRoundMeta
+	(*DrandBeacon)(nil),                        // 23: contentgrid.registry.v1.DrandBeacon
+	(*PublisherSimilarStats)(nil),              // 24: contentgrid.registry.v1.PublisherSimilarStats
+	(SlotStatus)(0),                            // 25: contentgrid.registry.v1.SlotStatus
+	(*Slot)(nil),                               // 26: contentgrid.registry.v1.Slot
+	(*SlotLease)(nil),                          // 27: contentgrid.registry.v1.SlotLease
 }
 var file_contentgrid_registry_v1_query_proto_depIdxs = []int32{
-	14, // 0: contentgrid.registry.v1.QueryPublisherResponse.website:type_name -> contentgrid.registry.v1.Website
-	15, // 1: contentgrid.registry.v1.QueryPublishersRequest.pagination:type_name -> cosmos.base.query.v1beta1.PageRequest
-	14, // 2: contentgrid.registry.v1.QueryPublishersResponse.websites:type_name -> contentgrid.registry.v1.Website
-	16, // 3: contentgrid.registry.v1.QueryPublishersResponse.pagination:type_name -> cosmos.base.query.v1beta1.PageResponse
-	17, // 4: contentgrid.registry.v1.QueryVerifierAssignmentsResponse.assignments:type_name -> contentgrid.registry.v1.VerifierAssignment
-	18, // 5: contentgrid.registry.v1.QueryRoundMetaResponse.meta:type_name -> contentgrid.registry.v1.VerificationRoundMeta
-	19, // 6: contentgrid.registry.v1.QueryPublisherSimilarStatsResponse.stats:type_name -> contentgrid.registry.v1.PublisherSimilarStats
-	20, // 7: contentgrid.registry.v1.QuerySlotsRequest.status:type_name -> contentgrid.registry.v1.SlotStatus
-	15, // 8: contentgrid.registry.v1.QuerySlotsRequest.pagination:type_name -> cosmos.base.query.v1beta1.PageRequest
-	21, // 9: contentgrid.registry.v1.QuerySlotsResponse.slots:type_name -> contentgrid.registry.v1.Slot
-	16, // 10: contentgrid.registry.v1.QuerySlotsResponse.pagination:type_name -> cosmos.base.query.v1beta1.PageResponse
-	15, // 11: contentgrid.registry.v1.QueryLeasesRequest.pagination:type_name -> cosmos.base.query.v1beta1.PageRequest
-	22, // 12: contentgrid.registry.v1.QueryLeasesResponse.leases:type_name -> contentgrid.registry.v1.SlotLease
-	16, // 13: contentgrid.registry.v1.QueryLeasesResponse.pagination:type_name -> cosmos.base.query.v1beta1.PageResponse
-	0,  // 14: contentgrid.registry.v1.Query.Publisher:input_type -> contentgrid.registry.v1.QueryPublisherRequest
-	2,  // 15: contentgrid.registry.v1.Query.Publishers:input_type -> contentgrid.registry.v1.QueryPublishersRequest
-	4,  // 16: contentgrid.registry.v1.Query.VerifierAssignments:input_type -> contentgrid.registry.v1.QueryVerifierAssignmentsRequest
-	6,  // 17: contentgrid.registry.v1.Query.RoundMeta:input_type -> contentgrid.registry.v1.QueryRoundMetaRequest
-	8,  // 18: contentgrid.registry.v1.Query.PublisherSimilarStats:input_type -> contentgrid.registry.v1.QueryPublisherSimilarStatsRequest
-	10, // 19: contentgrid.registry.v1.Query.Slots:input_type -> contentgrid.registry.v1.QuerySlotsRequest
-	12, // 20: contentgrid.registry.v1.Query.Leases:input_type -> contentgrid.registry.v1.QueryLeasesRequest
-	1,  // 21: contentgrid.registry.v1.Query.Publisher:output_type -> contentgrid.registry.v1.QueryPublisherResponse
-	3,  // 22: contentgrid.registry.v1.Query.Publishers:output_type -> contentgrid.registry.v1.QueryPublishersResponse
-	5,  // 23: contentgrid.registry.v1.Query.VerifierAssignments:output_type -> contentgrid.registry.v1.QueryVerifierAssignmentsResponse
-	7,  // 24: contentgrid.registry.v1.Query.RoundMeta:output_type -> contentgrid.registry.v1.QueryRoundMetaResponse
-	9,  // 25: contentgrid.registry.v1.Query.PublisherSimilarStats:output_type -> contentgrid.registry.v1.QueryPublisherSimilarStatsResponse
-	11, // 26: contentgrid.registry.v1.Query.Slots:output_type -> contentgrid.registry.v1.QuerySlotsResponse
-	13, // 27: contentgrid.registry.v1.Query.Leases:output_type -> contentgrid.registry.v1.QueryLeasesResponse
-	21, // [21:28] is the sub-list for method output_type
-	14, // [14:21] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	18, // 0: contentgrid.registry.v1.QueryPublisherResponse.website:type_name -> contentgrid.registry.v1.Website
+	19, // 1: contentgrid.registry.v1.QueryPublishersRequest.pagination:type_name -> cosmos.base.query.v1beta1.PageRequest
+	18, // 2: contentgrid.registry.v1.QueryPublishersResponse.websites:type_name -> contentgrid.registry.v1.Website
+	20, // 3: contentgrid.registry.v1.QueryPublishersResponse.pagination:type_name -> cosmos.base.query.v1beta1.PageResponse
+	21, // 4: contentgrid.registry.v1.QueryVerifierAssignmentsResponse.assignments:type_name -> contentgrid.registry.v1.VerifierAssignment
+	22, // 5: contentgrid.registry.v1.QueryRoundMetaResponse.meta:type_name -> contentgrid.registry.v1.VerificationRoundMeta
+	23, // 6: contentgrid.registry.v1.QueryDrandBeaconResponse.beacon:type_name -> contentgrid.registry.v1.DrandBeacon
+	23, // 7: contentgrid.registry.v1.QueryLatestDrandBeaconResponse.beacon:type_name -> contentgrid.registry.v1.DrandBeacon
+	24, // 8: contentgrid.registry.v1.QueryPublisherSimilarStatsResponse.stats:type_name -> contentgrid.registry.v1.PublisherSimilarStats
+	25, // 9: contentgrid.registry.v1.QuerySlotsRequest.status:type_name -> contentgrid.registry.v1.SlotStatus
+	19, // 10: contentgrid.registry.v1.QuerySlotsRequest.pagination:type_name -> cosmos.base.query.v1beta1.PageRequest
+	26, // 11: contentgrid.registry.v1.QuerySlotsResponse.slots:type_name -> contentgrid.registry.v1.Slot
+	20, // 12: contentgrid.registry.v1.QuerySlotsResponse.pagination:type_name -> cosmos.base.query.v1beta1.PageResponse
+	19, // 13: contentgrid.registry.v1.QueryLeasesRequest.pagination:type_name -> cosmos.base.query.v1beta1.PageRequest
+	27, // 14: contentgrid.registry.v1.QueryLeasesResponse.leases:type_name -> contentgrid.registry.v1.SlotLease
+	20, // 15: contentgrid.registry.v1.QueryLeasesResponse.pagination:type_name -> cosmos.base.query.v1beta1.PageResponse
+	0,  // 16: contentgrid.registry.v1.Query.Publisher:input_type -> contentgrid.registry.v1.QueryPublisherRequest
+	2,  // 17: contentgrid.registry.v1.Query.Publishers:input_type -> contentgrid.registry.v1.QueryPublishersRequest
+	4,  // 18: contentgrid.registry.v1.Query.VerifierAssignments:input_type -> contentgrid.registry.v1.QueryVerifierAssignmentsRequest
+	6,  // 19: contentgrid.registry.v1.Query.RoundMeta:input_type -> contentgrid.registry.v1.QueryRoundMetaRequest
+	8,  // 20: contentgrid.registry.v1.Query.DrandBeacon:input_type -> contentgrid.registry.v1.QueryDrandBeaconRequest
+	10, // 21: contentgrid.registry.v1.Query.LatestDrandBeacon:input_type -> contentgrid.registry.v1.QueryLatestDrandBeaconRequest
+	12, // 22: contentgrid.registry.v1.Query.PublisherSimilarStats:input_type -> contentgrid.registry.v1.QueryPublisherSimilarStatsRequest
+	14, // 23: contentgrid.registry.v1.Query.Slots:input_type -> contentgrid.registry.v1.QuerySlotsRequest
+	16, // 24: contentgrid.registry.v1.Query.Leases:input_type -> contentgrid.registry.v1.QueryLeasesRequest
+	1,  // 25: contentgrid.registry.v1.Query.Publisher:output_type -> contentgrid.registry.v1.QueryPublisherResponse
+	3,  // 26: contentgrid.registry.v1.Query.Publishers:output_type -> contentgrid.registry.v1.QueryPublishersResponse
+	5,  // 27: contentgrid.registry.v1.Query.VerifierAssignments:output_type -> contentgrid.registry.v1.QueryVerifierAssignmentsResponse
+	7,  // 28: contentgrid.registry.v1.Query.RoundMeta:output_type -> contentgrid.registry.v1.QueryRoundMetaResponse
+	9,  // 29: contentgrid.registry.v1.Query.DrandBeacon:output_type -> contentgrid.registry.v1.QueryDrandBeaconResponse
+	11, // 30: contentgrid.registry.v1.Query.LatestDrandBeacon:output_type -> contentgrid.registry.v1.QueryLatestDrandBeaconResponse
+	13, // 31: contentgrid.registry.v1.Query.PublisherSimilarStats:output_type -> contentgrid.registry.v1.QueryPublisherSimilarStatsResponse
+	15, // 32: contentgrid.registry.v1.Query.Slots:output_type -> contentgrid.registry.v1.QuerySlotsResponse
+	17, // 33: contentgrid.registry.v1.Query.Leases:output_type -> contentgrid.registry.v1.QueryLeasesResponse
+	25, // [25:34] is the sub-list for method output_type
+	16, // [16:25] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_contentgrid_registry_v1_query_proto_init() }
@@ -872,7 +1060,7 @@ func file_contentgrid_registry_v1_query_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_contentgrid_registry_v1_query_proto_rawDesc), len(file_contentgrid_registry_v1_query_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

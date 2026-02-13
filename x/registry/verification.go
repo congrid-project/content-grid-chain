@@ -84,6 +84,8 @@ type VerificationRoundMeta struct {
 	AnchorHashHex             string `json:"anchor_hash_hex"`
 	VerifierSetHash           string `json:"verifier_set_hash"`
 	VerifierSetSize           int32  `json:"verifier_set_size"`
+	DrandRound                uint64 `json:"drand_round"`
+	DrandRandomnessHex        string `json:"drand_randomness_hex"`
 }
 
 func (m VerificationRoundMeta) ValidateBasic() error {
@@ -124,6 +126,15 @@ func (m VerificationRoundMeta) ValidateBasic() error {
 	if m.VerifierSetSize < 0 {
 		return fmt.Errorf("verifier_set_size must be >= 0")
 	}
+	if strings.TrimSpace(m.DrandRandomnessHex) != "" {
+		r := strings.TrimSpace(m.DrandRandomnessHex)
+		if len(r) != 64 {
+			return fmt.Errorf("drand_randomness_hex must be 64 hex chars")
+		}
+		if _, err := hex.DecodeString(r); err != nil {
+			return fmt.Errorf("invalid drand_randomness_hex: %w", err)
+		}
+	}
 	return nil
 }
 
@@ -138,6 +149,8 @@ func (m VerificationRoundMeta) ToProto() *typespb.VerificationRoundMeta {
 		AnchorHashHex:             m.AnchorHashHex,
 		VerifierSetHash:           m.VerifierSetHash,
 		VerifierSetSize:           m.VerifierSetSize,
+		DrandRound:                m.DrandRound,
+		DrandRandomnessHex:        m.DrandRandomnessHex,
 	}
 }
 
@@ -155,6 +168,73 @@ func VerificationRoundMetaFromProto(pb *typespb.VerificationRoundMeta) (Verifica
 		AnchorHashHex:             strings.TrimSpace(pb.GetAnchorHashHex()),
 		VerifierSetHash:           strings.TrimSpace(pb.GetVerifierSetHash()),
 		VerifierSetSize:           pb.GetVerifierSetSize(),
+		DrandRound:                pb.GetDrandRound(),
+		DrandRandomnessHex:        strings.TrimSpace(pb.GetDrandRandomnessHex()),
+	}
+	return out, out.ValidateBasic()
+}
+
+// DrandBeacon stores a submitted drand beacon used for assignment randomness.
+type DrandBeacon struct {
+	Round           uint64 `json:"round"`
+	RandomnessHex   string `json:"randomness_hex"`
+	SignatureHex    string `json:"signature_hex"`
+	SubmittedAtUnix int64  `json:"submitted_at_unix"`
+	Submitter       string `json:"submitter"`
+}
+
+func (b DrandBeacon) ValidateBasic() error {
+	if b.Round == 0 {
+		return fmt.Errorf("round must be positive")
+	}
+	r := strings.TrimSpace(strings.ToLower(b.RandomnessHex))
+	if r == "" {
+		return fmt.Errorf("randomness_hex required")
+	}
+	if len(r) != 64 {
+		return fmt.Errorf("randomness_hex must be 64 hex chars")
+	}
+	if _, err := hex.DecodeString(r); err != nil {
+		return fmt.Errorf("invalid randomness_hex: %w", err)
+	}
+	s := strings.TrimSpace(strings.ToLower(b.SignatureHex))
+	if s != "" {
+		if _, err := hex.DecodeString(s); err != nil {
+			return fmt.Errorf("invalid signature_hex: %w", err)
+		}
+	}
+	if b.SubmittedAtUnix <= 0 {
+		return fmt.Errorf("submitted_at_unix must be positive")
+	}
+	if strings.TrimSpace(b.Submitter) == "" {
+		return fmt.Errorf("submitter required")
+	}
+	if _, err := sdk.AccAddressFromBech32(strings.TrimSpace(b.Submitter)); err != nil {
+		return fmt.Errorf("invalid submitter: %w", err)
+	}
+	return nil
+}
+
+func (b DrandBeacon) ToProto() *typespb.DrandBeacon {
+	return &typespb.DrandBeacon{
+		Round:           b.Round,
+		RandomnessHex:   b.RandomnessHex,
+		SignatureHex:    b.SignatureHex,
+		SubmittedAtUnix: b.SubmittedAtUnix,
+		Submitter:       b.Submitter,
+	}
+}
+
+func DrandBeaconFromProto(pb *typespb.DrandBeacon) (DrandBeacon, error) {
+	if pb == nil {
+		return DrandBeacon{}, fmt.Errorf("nil drand beacon")
+	}
+	out := DrandBeacon{
+		Round:           pb.GetRound(),
+		RandomnessHex:   strings.TrimSpace(pb.GetRandomnessHex()),
+		SignatureHex:    strings.TrimSpace(pb.GetSignatureHex()),
+		SubmittedAtUnix: pb.GetSubmittedAtUnix(),
+		Submitter:       strings.TrimSpace(pb.GetSubmitter()),
 	}
 	return out, out.ValidateBasic()
 }

@@ -2,6 +2,8 @@ package registry
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"net/url"
 	"strings"
@@ -414,6 +416,60 @@ func (m msgServer) LeaseSlot(ctx context.Context, msg *typespb.MsgLeaseSlot) (*t
 	)
 
 	return &typespb.MsgLeaseSlotResponse{Lease: lease.ToProto()}, nil
+}
+
+// SubmitDrandBeacon stores a drand beacon used for assignment seed generation.
+func (m msgServer) SubmitDrandBeacon(ctx context.Context, msg *typespb.MsgSubmitDrandBeacon) (*typespb.MsgSubmitDrandBeaconResponse, error) {
+	if msg == nil {
+		return nil, fmt.Errorf("message cannot be nil")
+	}
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+
+	randomnessHex := strings.ToLower(strings.TrimSpace(msg.GetRandomnessHex()))
+	signatureHex := strings.ToLower(strings.TrimSpace(msg.GetSignatureHex()))
+	if len(randomnessHex) != 64 {
+		return nil, errorsmod.Wrap(ErrInvalidDrandBeacon, "randomness_hex must be 64 hex chars")
+	}
+	randomness, err := hex.DecodeString(randomnessHex)
+	if err != nil {
+		return nil, errorsmod.Wrapf(ErrInvalidDrandBeacon, "invalid randomness_hex: %v", err)
+	}
+	if signatureHex != "" {
+		sig, err := hex.DecodeString(signatureHex)
+		if err != nil {
+			return nil, errorsmod.Wrapf(ErrInvalidDrandBeacon, "invalid signature_hex: %v", err)
+		}
+		computed := sha256.Sum256(sig)
+		if hex.EncodeToString(computed[:]) != randomnessHex {
+			return nil, errorsmod.Wrap(ErrInvalidDrandBeacon, "randomness must equal sha256(signature)")
+		}
+	}
+	_ = randomness
+
+	beacon := DrandBeacon{
+		Round:           msg.GetRound(),
+		RandomnessHex:   randomnessHex,
+		SignatureHex:    signatureHex,
+		SubmittedAtUnix: sdkCtx.BlockTime().UTC().Unix(),
+		Submitter:       strings.TrimSpace(msg.GetSubmitter()),
+	}
+	if err := beacon.ValidateBasic(); err != nil {
+		return nil, errorsmod.Wrap(ErrInvalidDrandBeacon, err.Error())
+	}
+	if err := m.keeper.SetDrandBeacon(sdkCtx, beacon); err != nil {
+		return nil, err
+	}
+
+	sdkCtx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			EventTypeDrandBeaconSubmitted,
+			sdk.NewAttribute(AttributeKeyDrandRound, fmt.Sprintf("%d", beacon.Round)),
+			sdk.NewAttribute(AttributeKeyDrandRandomness, beacon.RandomnessHex),
+			sdk.NewAttribute(AttributeKeyOwner, beacon.Submitter),
+		),
+	)
+
+	return &typespb.MsgSubmitDrandBeaconResponse{Beacon: beacon.ToProto()}, nil
 }
 
 func sanitizeTags(tags []string) []string {
