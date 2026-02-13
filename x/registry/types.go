@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -25,6 +26,8 @@ const (
 	StatusVerified    WebsiteStatus = 2
 	StatusRevoked     WebsiteStatus = 3
 )
+
+const DefaultDrandSchemeID = "bls-unchained-g1-rfc9380"
 
 func (s WebsiteStatus) String() string {
 	switch s {
@@ -252,6 +255,8 @@ type PublisherParams struct {
 	VerifierPenaltySuspendRounds       int64                 `json:"verifier_penalty_suspend_rounds"`
 	DrandEnabled                       bool                  `json:"drand_enabled"`
 	DrandStrictMode                    bool                  `json:"drand_strict_mode"`
+	DrandSchemeID                      string                `json:"drand_scheme_id"`
+	DrandPublicKeyHex                  string                `json:"drand_public_key_hex"`
 }
 
 // DefaultPublisherParams returns reference values aligned with the economic blueprint.
@@ -292,6 +297,8 @@ func DefaultPublisherParams() PublisherParams {
 		VerifierPenaltySuspendRounds:       3,
 		DrandEnabled:                       false,
 		DrandStrictMode:                    false,
+		DrandSchemeID:                      DefaultDrandSchemeID,
+		DrandPublicKeyHex:                  "",
 	}
 }
 
@@ -383,6 +390,23 @@ func (pp PublisherParams) Validate() error {
 	}
 	if pp.VerifierPenaltySuspendRounds < 0 {
 		return fmt.Errorf("verifier penalty suspend rounds must be >= 0")
+	}
+
+	schemeID := strings.TrimSpace(pp.DrandSchemeID)
+	if schemeID != "" && !isSupportedDrandSchemeID(schemeID) {
+		return fmt.Errorf("unsupported drand scheme id: %s", schemeID)
+	}
+	pubKeyHex := strings.TrimSpace(pp.DrandPublicKeyHex)
+	if pubKeyHex != "" {
+		if _, err := hex.DecodeString(pubKeyHex); err != nil {
+			return fmt.Errorf("invalid drand public key hex: %w", err)
+		}
+	}
+	if pp.DrandStrictMode && !pp.DrandEnabled {
+		return fmt.Errorf("drand_strict_mode requires drand_enabled")
+	}
+	if pp.DrandStrictMode && pubKeyHex == "" {
+		return fmt.Errorf("drand_strict_mode requires drand_public_key_hex")
 	}
 	return nil
 }
@@ -492,6 +516,17 @@ func (pp PublisherParams) EffectiveDrandStrictMode() bool {
 		return true
 	}
 	return DefaultPublisherParams().DrandStrictMode
+}
+
+func (pp PublisherParams) EffectiveDrandSchemeID() string {
+	if strings.TrimSpace(pp.DrandSchemeID) != "" {
+		return strings.TrimSpace(pp.DrandSchemeID)
+	}
+	return DefaultPublisherParams().DrandSchemeID
+}
+
+func (pp PublisherParams) EffectiveDrandPublicKeyHex() string {
+	return strings.TrimSpace(pp.DrandPublicKeyHex)
 }
 
 // PublisherRewardSplit controls how the publisher bucket is shared each epoch.

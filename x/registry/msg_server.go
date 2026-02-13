@@ -430,21 +430,36 @@ func (m msgServer) SubmitDrandBeacon(ctx context.Context, msg *typespb.MsgSubmit
 	if len(randomnessHex) != 64 {
 		return nil, errorsmod.Wrap(ErrInvalidDrandBeacon, "randomness_hex must be 64 hex chars")
 	}
-	randomness, err := hex.DecodeString(randomnessHex)
-	if err != nil {
+	if _, err := hex.DecodeString(randomnessHex); err != nil {
 		return nil, errorsmod.Wrapf(ErrInvalidDrandBeacon, "invalid randomness_hex: %v", err)
 	}
 	if signatureHex != "" {
-		sig, err := hex.DecodeString(signatureHex)
-		if err != nil {
+		if _, err := hex.DecodeString(signatureHex); err != nil {
 			return nil, errorsmod.Wrapf(ErrInvalidDrandBeacon, "invalid signature_hex: %v", err)
 		}
+	}
+
+	params := m.keeper.GetParams(sdkCtx)
+	if params.EffectiveDrandEnabled() || params.EffectiveDrandStrictMode() {
+		if signatureHex == "" {
+			return nil, errorsmod.Wrap(ErrInvalidDrandBeacon, "signature_hex required when drand is enabled")
+		}
+		pubKeyHex := params.EffectiveDrandPublicKeyHex()
+		if pubKeyHex == "" {
+			return nil, errorsmod.Wrap(ErrInvalidDrandBeacon, "drand_public_key_hex not configured")
+		}
+		schemeID := params.EffectiveDrandSchemeID()
+		if err := verifyDrandBeaconSignature(msg.GetRound(), signatureHex, randomnessHex, pubKeyHex, schemeID); err != nil {
+			return nil, errorsmod.Wrapf(ErrInvalidDrandBeacon, "%v", err)
+		}
+	} else if signatureHex != "" {
+		// For non-enforced mode, at least keep randomness-signature consistency.
+		sig, _ := hex.DecodeString(signatureHex)
 		computed := sha256.Sum256(sig)
 		if hex.EncodeToString(computed[:]) != randomnessHex {
 			return nil, errorsmod.Wrap(ErrInvalidDrandBeacon, "randomness must equal sha256(signature)")
 		}
 	}
-	_ = randomness
 
 	beacon := DrandBeacon{
 		Round:           msg.GetRound(),
