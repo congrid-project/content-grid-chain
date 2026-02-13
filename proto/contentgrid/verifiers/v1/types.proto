@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package contentgrid.verifiers.v1;
+
+import "gogoproto/gogo.proto";
+
+option go_package = "content-grid-chain/x/verifiers/typespb";
+
+enum VerifierStatus {
+  VERIFIER_STATUS_UNSPECIFIED = 0;
+  VERIFIER_STATUS_ACTIVE = 1;
+}
+
+message Verifier {
+  string address = 1;
+  string bond_denom = 2;
+  string bond_amount = 3;
+  VerifierStatus status = 4;
+}

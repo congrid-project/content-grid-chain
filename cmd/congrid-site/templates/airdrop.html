@@ -1,0 +1,53 @@
+{{define "airdrop.html"}}{{template "layout" .}}{{end}}
+
+{{define "main"}}
+<section class="section">
+  <div class="container">
+    <h1>Claim Publisher Registration Airdrop</h1>
+    <p class="lead">
+      This airdrop sends a small amount of tokens to cover <em>one</em> publisher registration transaction fee.
+      Each <strong>primary domain</strong> can claim once.
+    </p>
+
+    {{if .Flash}}
+      <div class="callout">{{.Flash}}</div>
+    {{end}}
+
+    <div class="grid two">
+      <div class="card">
+        <h2>Requirements</h2>
+        <ul>
+          <li>Your homepage (<code>/</code>) must include the official Congrid link <code>{{.BaseURL}}</code>.</li>
+          <li>The link must wrap an <code>&lt;img&gt;</code> whose <code>src</code> includes <code>publisher=</code> and <code>wallet=</code>.</li>
+          <li>The <code>wallet</code> parameter must match the address you enter below.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>Claim</h2>
+        <form method="POST" action="/airdrop">
+          <label class="label">Website domain</label>
+          <input class="input" name="domain" placeholder="example.com" required />
+
+          <label class="label">Wallet address</label>
+          <input class="input" name="wallet" placeholder="grid1..." required />
+
+          <button class="btn" type="submit">Verify &amp; Airdrop</button>
+        </form>
+        <p class="muted" style="margin-top:10px;">
+          We do not create wallets on this website. Please use the official binaries/CLI to generate your keys locally.
+        </p>
+      </div>
+    </div>
+
+    <h2>Badge snippet (example)</h2>
+    <div class="code">
+<pre><code>&lt;a href="{{.BaseURL}}"&gt;
+  &lt;img
+    alt="Verified by Congrid"
+    src="{{.BaseURL}}/badge.png?publisher=example.com&amp;wallet=grid1..."
+  /&gt;
+&lt;/a&gt;</code></pre>
+    </div>
+  </div>
+</section>
+{{end}}

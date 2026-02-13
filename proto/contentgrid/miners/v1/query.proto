@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package contentgrid.miners.v1;
+
+import "contentgrid/miners/v1/types.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+
+option go_package = "content-grid-chain/x/miners/typespb";
+
+service Query {
+  rpc Miner(QueryMinerRequest) returns (QueryMinerResponse) {
+    option (google.api.http).get = "/content-grid/miners/v1/miners/{operator}";
+  }
+
+  rpc Miners(QueryMinersRequest) returns (QueryMinersResponse) {
+    option (google.api.http).get = "/content-grid/miners/v1/miners";
+  }
+
+  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+    option (google.api.http).get = "/content-grid/miners/v1/params";
+  }
+}
+
+message QueryMinerRequest {
+  string operator = 1;
+}
+
+message QueryMinerResponse {
+  Miner miner = 1;
+}
+
+message QueryMinersRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+message QueryMinersResponse {
+  repeated Miner miners = 1;
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+message QueryParamsRequest {}
+
+message QueryParamsResponse {
+  Params params = 1;
+}

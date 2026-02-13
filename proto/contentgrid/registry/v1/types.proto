@@ -1,0 +1,137 @@
+syntax = "proto3";
+
+package contentgrid.registry.v1;
+
+import "gogoproto/gogo.proto";
+
+option go_package = "content-grid-chain/x/registry/typespb";
+
+enum WebsiteStatus {
+  WEBSITE_STATUS_UNSPECIFIED = 0;
+  WEBSITE_STATUS_PENDING = 1;
+  WEBSITE_STATUS_VERIFIED = 2;
+  WEBSITE_STATUS_REVOKED = 3;
+}
+
+message Website {
+  string domain = 1;
+  string owner = 2;
+  WebsiteStatus status = 3;
+  string metadata_uri = 4;
+  string proof = 5;
+  int64 registered_at_height = 6;
+  string verifier = 7;
+  // Optional referrer address associated with the initial registration.
+  string referrer = 8;
+  // Cooldown enforcement after failed verification.
+  int64 cooldown_until_unix = 9;
+  int32 cooldown_count = 10;
+}
+
+message PublisherVerificationAssignment {
+  int64 round_start_unix = 1;
+  string domain = 2;
+  int64 start_at_unix = 3;
+  int64 deadline_unix = 4;
+  repeated string verifiers = 5;
+  bool finalized = 6;
+  int64 finalized_at_unix = 7;
+}
+
+message PublisherVerificationSubmission {
+  int64 round_start_unix = 1;
+  string domain = 2;
+  string verifier = 3;
+  bool passed = 4;
+  int64 observed_at_unix = 5;
+  int64 latency_ms = 6;
+  int64 submitted_at_unix = 7;
+
+  // Similar-site verification metrics (domain-only, no paths).
+  int32 observed_similar_domains = 8;
+  int32 matched_similar_domains = 9;
+  int32 expected_similar_domains = 10;
+  string expected_set_hash = 11;
+  string observed_set_hash = 12;
+}
+
+message VerificationRoundMeta {
+  int64 round_start_unix = 1;
+  string seed_hex = 2;
+  int64 round_interval_seconds = 3;
+  int64 assignment_delay_max_seconds = 4;
+  int64 created_at_unix = 5;
+  int64 anchor_height = 6;
+  string anchor_hash_hex = 7;
+  string verifier_set_hash = 8;
+  int32 verifier_set_size = 9;
+}
+
+message VerifierAssignment {
+  PublisherVerificationAssignment assignment = 1;
+  PublisherVerificationSubmission submission = 2;
+}
+
+// Latest similar-site settlement for a publisher (domain-only, no paths).
+message PublisherSimilarStats {
+  string domain = 1;
+  int64 round_start_unix = 2;
+  int32 verified_similar_domains = 3;
+  string expected_set_hash = 4;
+  int64 verified_at_unix = 5;
+}
+
+enum SlotStatus {
+  SLOT_STATUS_UNSPECIFIED = 0;
+  SLOT_STATUS_LISTED = 1;
+  SLOT_STATUS_PAUSED = 2;
+  SLOT_STATUS_UNLISTED = 3;
+}
+
+enum LeaseStatus {
+  LEASE_STATUS_UNSPECIFIED = 0;
+  LEASE_STATUS_ACTIVE = 1;
+  LEASE_STATUS_COMPLETED = 2;
+  LEASE_STATUS_VIOLATED = 3;
+  LEASE_STATUS_REFUNDED = 4;
+}
+
+message Slot {
+  string id = 1;
+  string publisher = 2;
+  string domain = 3;
+  string label = 4;
+  string summary = 5;
+  string category = 6;
+  string placement = 7;
+  string size = 8;
+  string rate_denom = 9;
+  string rate_amount = 10;
+  int64 unit_seconds = 11;
+  int64 min_duration_seconds = 12;
+  int64 max_duration_seconds = 13;
+  SlotStatus status = 14;
+  int64 created_at_unix = 15;
+  int64 updated_at_unix = 16;
+  repeated string tags = 17;
+}
+
+message SlotLease {
+  string id = 1;
+  string slot_id = 2;
+  string publisher = 3;
+  string lessee = 4;
+  string target_url = 5;
+  int64 starts_at_unix = 6;
+  int64 ends_at_unix = 7;
+  string rate_denom = 8;
+  string rate_amount = 9;
+  int64 unit_seconds = 10;
+  string escrow_total = 11;
+  string escrow_remaining = 12;
+  string paid_out = 13;
+  LeaseStatus status = 14;
+  int64 created_at_unix = 15;
+  int64 updated_at_unix = 16;
+  int64 paid_through_unix = 17;
+}

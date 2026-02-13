@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="86.5 86.5 339 339" fill="none" role="img" aria-label="Content Grid logo">
+  <title>Content Grid</title>
+  <defs>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#0B1020" flood-opacity="0.18"/>
+    </filter>
+
+    <!-- Mask that prevents strokes from entering the hollow interior of the outer nodes -->
+    <mask id="nodeHoles" maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse" x="0" y="0" width="512" height="512">
+      <rect x="0" y="0" width="512" height="512" fill="white"/>
+      <g fill="black">
+        <!-- inner cutout radius (slightly larger than the hollow radius) to avoid any bleed-through -->
+        <circle cx="176" cy="176" r="8.2"/>
+        <circle cx="256" cy="142.9" r="8.2"/>
+        <circle cx="336" cy="176" r="8.2"/>
+        <circle cx="369.1" cy="256" r="8.2"/>
+        <circle cx="336" cy="336" r="8.2"/>
+        <circle cx="256" cy="369.1" r="8.2"/>
+        <circle cx="176" cy="336" r="8.2"/>
+        <circle cx="142.9" cy="256" r="8.2"/>
+      </g>
+    </mask>
+  </defs>
+
+  <g transform="rotate(-90 256 256)">
+
+  <!-- Outer ring (45° gap between bottom and bottom-right) -->
+  <g filter="url(#soft)">
+    <!-- Draw the long arc (315°) from bottom -> bottom-right, leaving a 45° gap. -->
+    <path d="M256 369.1 A113.1 113.1 0 1 1 336 336"
+          fill="none"
+          stroke="#2F80ED" stroke-opacity="0.25" stroke-width="10" stroke-linecap="round"
+          mask="url(#nodeHoles)"/>
+  </g>
+
+  <!-- Connection lines from the center to the outer nodes -->
+  <g stroke="#2F80ED" stroke-opacity="0.38" stroke-width="10" stroke-linecap="round" mask="url(#nodeHoles)">
+    <path d="M256 256 L176 176"/>
+    <path d="M256 256 L256 142.9"/>
+    <path d="M256 256 L336 176"/>
+
+    <path d="M256 256 L142.9 256"/>
+    <path d="M256 256 L369.1 256"/>
+
+    <path d="M256 256 L176 336"/>
+    <path d="M256 256 L256 369.1"/>
+    <path d="M256 256 L336 336"/>
+  </g>
+
+  <!-- Outer ring nodes are rendered at the end for stable color/overlap -->
+
+  <!-- Center node -->
+  <g>
+    <circle cx="256" cy="256" r="20" fill="#2F80ED"/>
+    <circle cx="256" cy="256" r="10" fill="#FFFFFF" fill-opacity="0.92"/>
+  </g>
+
+  <!-- Subtle “search” ring around the center -->
+  <path d="M256 210
+           A46 46 0 1 1 223 223"
+        stroke="#9B51E0" stroke-opacity="0.55" stroke-width="10" stroke-linecap="round"/>
+
+  <!-- Outer ring nodes (hollow). Drawn last so their stroke color never changes. -->
+  <g fill="none" stroke="#2F80ED" stroke-opacity="1" stroke-width="6">
+    <circle cx="176" cy="176" r="10"/>
+    <circle cx="256" cy="142.9" r="10"/>
+    <circle cx="336" cy="176" r="10"/>
+    <circle cx="369.1" cy="256" r="10"/>
+    <circle cx="336" cy="336" r="10"/>
+    <circle cx="256" cy="369.1" r="10"/>
+    <circle cx="176" cy="336" r="10"/>
+    <circle cx="142.9" cy="256" r="10"/>
+  </g>
+
+  </g>
+
+</svg>

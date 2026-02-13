@@ -1,0 +1,43 @@
+{{define "docs.html"}}{{template "layout" .}}{{end}}
+
+{{define "main"}}
+<section class="section">
+  <div class="container">
+    <h1>Docs</h1>
+    <p class="lead">Start here if you want the protocol design, economics, or to contribute code.</p>
+
+    <div class="grid two">
+      <div class="card">
+        <h2>Protocol</h2>
+        <ul>
+          <li><strong>Whitepaper:</strong> <code>whitepaper.md</code> (in the repository)</li>
+          <li><strong>Tokenomics:</strong> <code>docs/tokenomics.md</code></li>
+          <li><strong>Governance:</strong> <code>docs/governance.md</code></li>
+        </ul>
+        <p class="muted">The canonical docs live in the repo.</p>
+      </div>
+
+      <div class="card">
+        <h2>Repository</h2>
+        <ul>
+          <li><code>README.md</code> — build/run notes</li>
+          <li><code>docs/tokenomics.md</code> — economic blueprint</li>
+          <li><code>docs/verifiers.md</code> — verifier participation</li>
+          <li><code>docs/marketplace.md</code> — slots + leases marketplace</li>
+          <li><code>docs/indexerd.md</code> — off-chain indexing cache</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>Contribution</h2>
+    <p>
+      Contributions are welcome: protocol, off-chain services, docs, or design.
+      If you’re a publisher or verifier operator, the fastest way to help is to run software on devnet and report issues.
+    </p>
+
+    <div class="callout">
+      <strong>Tip:</strong> publishers can start today — you don’t need to stake or lock tokens just to register.
+    </div>
+  </div>
+</section>
+{{end}}

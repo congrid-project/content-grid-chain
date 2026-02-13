@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package contentgrid.verifiers.v1;
+
+import "contentgrid/verifiers/v1/types.proto";
+import "cosmos/msg/v1/msg.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "content-grid-chain/x/verifiers/typespb";
+
+service Msg {
+  option (cosmos.msg.v1.service) = true;
+
+  rpc Bond(MsgBond) returns (MsgBondResponse);
+  rpc Unbond(MsgUnbond) returns (MsgUnbondResponse);
+}
+
+message MsgBond {
+  option (cosmos.msg.v1.signer) = "verifier";
+
+  string verifier = 1;
+  string denom = 2;
+  string amount = 3;
+}
+
+message MsgBondResponse {
+  Verifier verifier = 1;
+}
+
+message MsgUnbond {
+  option (cosmos.msg.v1.signer) = "verifier";
+
+  string verifier = 1;
+  string denom = 2;
+  string amount = 3;
+}
+
+message MsgUnbondResponse {
+  Verifier verifier = 1;
+}

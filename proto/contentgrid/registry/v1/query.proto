@@ -1,0 +1,109 @@
+syntax = "proto3";
+
+package contentgrid.registry.v1;
+
+import "contentgrid/registry/v1/types.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+
+option go_package = "content-grid-chain/x/registry/typespb";
+
+service Query {
+  rpc Publisher(QueryPublisherRequest) returns (QueryPublisherResponse) {
+    option (google.api.http).get = "/content-grid/registry/v1/publishers/{domain}";
+  }
+
+  rpc Publishers(QueryPublishersRequest) returns (QueryPublishersResponse) {
+    option (google.api.http).get = "/content-grid/registry/v1/publishers";
+  }
+
+  rpc VerifierAssignments(QueryVerifierAssignmentsRequest) returns (QueryVerifierAssignmentsResponse) {
+    option (google.api.http).get = "/content-grid/registry/v1/verifiers/{verifier}/assignments";
+  }
+
+  rpc RoundMeta(QueryRoundMetaRequest) returns (QueryRoundMetaResponse) {
+    option (google.api.http).get = "/content-grid/registry/v1/rounds/{round_start_unix}/meta";
+  }
+
+  // Latest similar-site verification settlement for a publisher.
+  rpc PublisherSimilarStats(QueryPublisherSimilarStatsRequest) returns (QueryPublisherSimilarStatsResponse) {
+    option (google.api.http).get = "/content-grid/registry/v1/publishers/{domain}/similar-stats";
+  }
+
+
+  rpc Slots(QuerySlotsRequest) returns (QuerySlotsResponse) {
+    option (google.api.http).get = "/content-grid/registry/v1/slots";
+  }
+
+  rpc Leases(QueryLeasesRequest) returns (QueryLeasesResponse) {
+    option (google.api.http).get = "/content-grid/registry/v1/leases";
+  }
+
+}
+
+message QueryPublisherRequest {
+  string domain = 1;
+}
+
+message QueryPublisherResponse {
+  Website website = 1;
+}
+
+message QueryPublishersRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+message QueryPublishersResponse {
+  repeated Website websites = 1;
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+message QueryVerifierAssignmentsRequest {
+  string verifier = 1;
+  bool include_finalized = 2;
+}
+
+message QueryVerifierAssignmentsResponse {
+  repeated VerifierAssignment assignments = 1;
+}
+
+message QueryRoundMetaRequest {
+  int64 round_start_unix = 1;
+}
+
+message QueryRoundMetaResponse {
+  VerificationRoundMeta meta = 1;
+}
+
+message QueryPublisherSimilarStatsRequest {
+  string domain = 1;
+}
+
+message QueryPublisherSimilarStatsResponse {
+  PublisherSimilarStats stats = 1;
+}
+
+message QuerySlotsRequest {
+  string publisher = 1;
+  SlotStatus status = 2;
+  cosmos.base.query.v1beta1.PageRequest pagination = 3;
+}
+
+message QuerySlotsResponse {
+  repeated Slot slots = 1;
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+message QueryLeasesRequest {
+  string publisher = 1;
+  string slot_id = 2;
+  bool active_only = 3;
+  int64 at_unix = 4;
+  cosmos.base.query.v1beta1.PageRequest pagination = 5;
+}
+
+message QueryLeasesResponse {
+  repeated SlotLease leases = 1;
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}

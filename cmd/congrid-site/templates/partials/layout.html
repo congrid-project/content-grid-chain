@@ -1,0 +1,15 @@
+{{define "layout"}}
+<!doctype html>
+<html lang="en">
+  <head>
+    {{template "head" .}}
+  </head>
+  <body>
+    {{template "nav" .}}
+    <main>
+      {{block "main" .}}{{end}}
+    </main>
+    {{template "footer" .}}
+  </body>
+</html>
+{{end}}

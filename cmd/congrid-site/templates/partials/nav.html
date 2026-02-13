@@ -1,0 +1,22 @@
+{{define "nav"}}
+<header class="nav">
+  <div class="container nav-inner">
+    <a class="brand" href="/">
+      <img src="/static/assets/congrid-logo.svg" alt="Congrid" width="28" height="28" />
+      <span>Congrid</span>
+    </a>
+    <nav class="links" aria-label="Primary">
+      <a href="/marketplace" {{if eq .Path "/marketplace"}}aria-current="page"{{end}}>Marketplace</a>
+      <a href="/publishers" {{if eq .Path "/publishers"}}aria-current="page"{{end}}>Publishers</a>
+      <a href="/verifiers" {{if eq .Path "/verifiers"}}aria-current="page"{{end}}>Verifiers</a>
+      <a href="/publisher/dashboard" {{if eq .Path "/publisher/dashboard"}}aria-current="page"{{end}}>Dashboard</a>
+      <a href="/docs" {{if eq .Path "/docs"}}aria-current="page"{{end}}>Docs</a>
+      <a href="/airdrop" {{if eq .Path "/airdrop"}}aria-current="page"{{end}}>Airdrop</a>
+    </nav>
+    <div class="cta">
+      <a class="btn" href="/publishers">Join as Publisher</a>
+      <a class="btn btn-outline" href="/verifiers">Run a Verifier</a>
+    </div>
+  </div>
+</header>
+{{end}}

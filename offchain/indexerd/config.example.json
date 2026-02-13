@@ -1,0 +1,19 @@
+{
+  "chain_grpc_addr": "127.0.0.1:9090",
+  "chain_timeout_seconds": 10,
+  "chain_page_limit": 200,
+
+  "listen_addr": "127.0.0.1:9100",
+
+  "embedder_base_url": "http://127.0.0.1:9000",
+  "normalize_embeddings": true,
+
+  "chroma_base_url": "http://127.0.0.1:8000",
+  "chroma_collection": "publishers",
+
+  "signature_bits": 128,
+
+  "fetch_timeout_seconds": 10,
+  "index_interval_minutes": 60,
+  "max_body_bytes": 1048576
+}

@@ -1,0 +1,177 @@
+{{define "publisher-dashboard.html"}}{{template "layout" .}}{{end}}
+
+{{define "main"}}
+<section class="section">
+  <div class="container">
+    <h1>Publisher Dashboard</h1>
+    <p class="lead">
+      Manage your link slots, pricing, and availability. Create listings and pause or unlist them when needed.
+    </p>
+
+    {{if .Flash}}
+      <div class="callout">{{.Flash}}</div>
+    {{end}}
+
+    <div class="grid two">
+      <div class="card">
+        <h2>Your publisher identity</h2>
+        <form method="get" action="/publisher/dashboard">
+          <label class="label" for="publisher-domain">Primary domain</label>
+          <input class="input" id="publisher-domain" name="publisher" placeholder="example.com" value="{{.Publisher}}" />
+          <button class="btn" type="submit">Load slots</button>
+        </form>
+        <p class="muted" style="margin-top:10px;">
+          Choose a domain to preview listings.
+        </p>
+      </div>
+      <div class="card">
+        <h2>Create a new slot</h2>
+        <form method="post" action="/publisher/dashboard">
+          <input type="hidden" name="action" value="create" />
+          <input type="hidden" name="publisher" value="{{.Publisher}}" />
+
+          <label class="label" for="slot-label">Slot label</label>
+          <input class="input" id="slot-label" name="label" placeholder="Homepage hero" required />
+
+          <label class="label" for="slot-summary">Summary</label>
+          <input class="input" id="slot-summary" name="summary" placeholder="Short description" />
+
+          <div class="grid two form-grid">
+            <div>
+              <label class="label" for="slot-category">Category</label>
+              <input class="input" id="slot-category" name="category" placeholder="News" />
+            </div>
+            <div>
+              <label class="label" for="slot-placement">Placement</label>
+              <input class="input" id="slot-placement" name="placement" placeholder="Article header" />
+            </div>
+            <div>
+              <label class="label" for="slot-size">Size</label>
+              <input class="input" id="slot-size" name="size" placeholder="728x90" />
+            </div>
+            <div>
+              <label class="label" for="slot-rate">Rate (ucongrid / week)</label>
+              <input class="input" id="slot-rate" name="rate" type="number" min="0" step="1" placeholder="150" />
+            </div>
+            <div>
+              <label class="label" for="slot-traffic">Traffic (monthly visits)</label>
+              <input class="input" id="slot-traffic" name="traffic" type="number" min="0" step="1000" placeholder="80000" />
+            </div>
+          </div>
+
+          <button class="btn" type="submit">Create slot</button>
+        </form>
+        <p class="muted" style="margin-top:10px;">New slots are created in paused state.</p>
+      </div>
+    </div>
+
+    <h2>Your slots</h2>
+    {{if .Slots}}
+      <div class="grid market-grid">
+        {{range .Slots}}
+          <div class="card slot-card">
+            <div class="slot-header">
+              <div>
+                <h3>{{.Label}}</h3>
+                <div class="muted">{{.Placement}} • {{.Category}}</div>
+              </div>
+              <span class="badge {{slotStatusClass .Status}}">{{slotStatusLabel .Status}}</span>
+            </div>
+            <p class="muted">{{.Summary}}</p>
+            <div class="slot-meta">
+              <div>
+                <span class="slot-meta-label">Rate</span>
+                <strong>{{formatRate .Rate}}</strong>
+              </div>
+              <div>
+                <span class="slot-meta-label">Traffic</span>
+                <strong>{{formatTraffic .Traffic}}</strong>
+              </div>
+              <div>
+                <span class="slot-meta-label">Size</span>
+                <strong>{{.Size}}</strong>
+              </div>
+            </div>
+            <div class="slot-meta">
+              <div>
+                <span class="slot-meta-label">Updated</span>
+                <strong>{{formatDate .UpdatedAt}}</strong>
+              </div>
+              <div>
+                <span class="slot-meta-label">Lease</span>
+                <strong>{{slotAvailabilityLabel .}}</strong>
+              </div>
+              <div>
+                <span class="slot-meta-label">ID</span>
+                <strong>{{.ID}}</strong>
+              </div>
+            </div>
+            <div class="slot-actions">
+              <form method="post" action="/publisher/dashboard">
+                <input type="hidden" name="publisher" value="{{$.Publisher}}" />
+                <input type="hidden" name="slot_id" value="{{.ID}}" />
+                {{if eq .Status "listed"}}
+                  <button class="btn btn-ghost" type="submit" name="action" value="pause">Pause</button>
+                  <button class="btn btn-outline" type="submit" name="action" value="unlist">Unlist</button>
+                {{else if eq .Status "paused"}}
+                  <button class="btn" type="submit" name="action" value="activate">Activate</button>
+                  <button class="btn btn-outline" type="submit" name="action" value="unlist">Unlist</button>
+                {{else}}
+                  <button class="btn" type="submit" name="action" value="activate">List slot</button>
+                {{end}}
+              </form>
+              <a class="btn btn-ghost" href="/marketplace?q={{.Publisher}}">Preview listing</a>
+            </div>
+          </div>
+        {{end}}
+      </div>
+    {{else}}
+      <div class="card">
+        <h3>No slots yet</h3>
+        <p class="muted">Create your first slot to appear in the marketplace.</p>
+      </div>
+    {{end}}
+
+    <h2>Leases</h2>
+    {{if .Leases}}
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Slot</th>
+              <th>Lessee</th>
+              <th>Term</th>
+              <th>Rate</th>
+              <th>Status</th>
+              <th>Embed</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{range .Leases}}
+              <tr>
+                <td>{{.SlotLabel}}</td>
+                <td>{{.Lessee}}</td>
+                <td>{{formatLeaseTerm .}}</td>
+                <td>{{formatRate .Rate}}</td>
+                <td><span class="badge {{leaseStatusClass .}}">{{leaseStatusLabel .}}</span></td>
+                <td>
+                  {{if .LeaseID}}
+                    <code class="snippet">&lt;a href="{{.TargetURL}}" data-congrid-slot="{{.SlotID}}" data-congrid-lease="{{.LeaseID}}"&gt;Link&lt;/a&gt;</code>
+                  {{else}}
+                    <span class="muted">—</span>
+                  {{end}}
+                </td>
+              </tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+    {{else}}
+      <div class="card">
+        <h3>No leases yet</h3>
+        <p class="muted">Leases will appear here once advertisers book your slots.</p>
+      </div>
+    {{end}}
+  </div>
+</section>
+{{end}}

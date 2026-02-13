@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package contentgrid.verifiers.v1;
+
+import "contentgrid/verifiers/v1/types.proto";
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+
+option go_package = "content-grid-chain/x/verifiers/typespb";
+
+service Query {
+  rpc Verifier(QueryVerifierRequest) returns (QueryVerifierResponse) {
+    option (google.api.http).get = "/content-grid/verifiers/v1/verifiers/{address}";
+  }
+
+  rpc Verifiers(QueryVerifiersRequest) returns (QueryVerifiersResponse) {
+    option (google.api.http).get = "/content-grid/verifiers/v1/verifiers";
+  }
+}
+
+message QueryVerifierRequest {
+  string address = 1;
+}
+
+message QueryVerifierResponse {
+  Verifier verifier = 1;
+}
+
+message QueryVerifiersRequest {}
+
+message QueryVerifiersResponse {
+  repeated Verifier verifiers = 1;
+}

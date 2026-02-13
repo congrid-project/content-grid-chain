@@ -1,0 +1,54 @@
+# Go binaries and shared objects
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+
+# Build outputs
+/content-grid-d
+/bin/
+/build/
+/dist/
+/out/
+/tmp/
+*.log
+
+# Coverage and profiling
+*.out
+coverage.*
+coverprofile.out
+profile.*
+cpu.prof
+mem.prof
+block.prof
+trace.out
+
+# Go workspace files
+go.work
+go.work.sum
+
+# Dependency vendor directory
+# Uncomment the next line if you do NOT commit vendored deps
+# vendor/
+
+# Editors and OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.code-workspace
+
+# Misc caches
+.cache/
+.gocache/
+/devnet-home/
+/app/data/
+
+# Local development artifacts
+/backups/
+/localnet/
+/logs/
+/test-results/
+/website/index.html

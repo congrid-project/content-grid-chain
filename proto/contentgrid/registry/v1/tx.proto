@@ -1,0 +1,113 @@
+syntax = "proto3";
+
+package contentgrid.registry.v1;
+
+import "contentgrid/registry/v1/types.proto";
+import "cosmos/msg/v1/msg.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "content-grid-chain/x/registry/typespb";
+
+service Msg {
+  option (cosmos.msg.v1.service) = true;
+
+  rpc RegisterPublisher(MsgRegisterPublisher) returns (MsgRegisterPublisherResponse);
+  rpc SubmitVerificationCommit(MsgSubmitVerificationCommit) returns (MsgSubmitVerificationCommitResponse);
+  rpc RevealVerification(MsgRevealVerification) returns (MsgRevealVerificationResponse);
+  rpc CreateSlot(MsgCreateSlot) returns (MsgCreateSlotResponse);
+  rpc UpdateSlotStatus(MsgUpdateSlotStatus) returns (MsgUpdateSlotStatusResponse);
+  rpc LeaseSlot(MsgLeaseSlot) returns (MsgLeaseSlotResponse);
+}
+
+message MsgRegisterPublisher {
+  option (cosmos.msg.v1.signer) = "owner";
+
+  string owner = 1;
+  string domain = 2;
+  string metadata_uri = 3;
+  string proof = 4;
+  string verifier = 5;
+  // Optional referrer address (intended for verifier referral incentives).
+  string referrer = 6;
+}
+
+message MsgRegisterPublisherResponse {
+  Website website = 1;
+}
+
+message MsgSubmitVerificationCommit {
+  option (cosmos.msg.v1.signer) = "verifier";
+
+  string verifier = 1;
+  string domain = 2;
+  int64 round_start_unix = 3;
+  string commit_hash = 4;
+}
+
+message MsgSubmitVerificationCommitResponse {}
+
+message MsgRevealVerification {
+  option (cosmos.msg.v1.signer) = "verifier";
+
+  string verifier = 1;
+  string domain = 2;
+  int64 round_start_unix = 3;
+  // Verification result: true = pass, false = fail.
+  bool passed = 4;
+  // Optional evidence hash (must match commit if provided).
+  string evidence_hash = 5;
+  // Nonce used to bind the commit hash.
+  string nonce = 6;
+}
+
+message MsgRevealVerificationResponse {
+  PublisherVerificationSubmission submission = 1;
+}
+
+message MsgCreateSlot {
+  option (cosmos.msg.v1.signer) = "publisher";
+
+  string publisher = 1;
+  string domain = 2;
+  string label = 3;
+  string summary = 4;
+  string category = 5;
+  string placement = 6;
+  string size = 7;
+  string rate_denom = 8;
+  string rate_amount = 9;
+  int64 unit_seconds = 10;
+  int64 min_duration_seconds = 11;
+  int64 max_duration_seconds = 12;
+  repeated string tags = 13;
+}
+
+message MsgCreateSlotResponse {
+  Slot slot = 1;
+}
+
+message MsgUpdateSlotStatus {
+  option (cosmos.msg.v1.signer) = "publisher";
+
+  string publisher = 1;
+  string slot_id = 2;
+  SlotStatus status = 3;
+}
+
+message MsgUpdateSlotStatusResponse {
+  Slot slot = 1;
+}
+
+message MsgLeaseSlot {
+  option (cosmos.msg.v1.signer) = "lessee";
+
+  string lessee = 1;
+  string slot_id = 2;
+  string target_url = 3;
+  int64 starts_at_unix = 4;
+  int64 duration_seconds = 5;
+}
+
+message MsgLeaseSlotResponse {
+  SlotLease lease = 1;
+}

@@ -1,0 +1,148 @@
+{{define "marketplace.html"}}{{template "layout" .}}{{end}}
+
+{{define "main"}}
+<section class="section">
+  <div class="container">
+    <h1>Marketplace</h1>
+    <p class="lead">
+      Browse publisher link slots across the network. Search, compare, and request leases for high-intent placements.
+    </p>
+
+    <div class="card">
+      <form class="filters" method="get" action="/marketplace">
+        <div class="grid two">
+          <div>
+            <label class="label" for="marketplace-search">Search slots</label>
+            <input class="input" id="marketplace-search" name="q" type="search" placeholder="domain, category, placement" value="{{.Query}}" />
+          </div>
+          <div>
+            <label class="label" for="marketplace-sort">Sort by</label>
+            <select class="input" id="marketplace-sort" name="sort">
+              <option value="latest" {{if eq .Sort "latest"}}selected{{end}}>Latest updates</option>
+              <option value="price-low" {{if eq .Sort "price-low"}}selected{{end}}>Price: low to high</option>
+              <option value="price-high" {{if eq .Sort "price-high"}}selected{{end}}>Price: high to low</option>
+              <option value="traffic" {{if eq .Sort "traffic"}}selected{{end}}>Traffic</option>
+              <option value="publisher" {{if eq .Sort "publisher"}}selected{{end}}>Publisher name</option>
+            </select>
+          </div>
+        </div>
+        <div class="filters-actions">
+          <button class="btn" type="submit">Apply filters</button>
+          <a class="btn btn-ghost" href="/marketplace">Reset</a>
+        </div>
+      </form>
+      {{if .Flash}}
+        <div class="callout">{{.Flash}}</div>
+      {{end}}
+    </div>
+
+    {{if gt .Pager.Total 0}}
+      <div class="slot-summary muted">Showing {{.Pager.Start}}-{{.Pager.End}} of {{.Pager.Total}} slots.</div>
+      <div class="grid market-grid">
+        {{range .Slots}}
+          <div class="card slot-card">
+            <div class="slot-header">
+              <div>
+                <h3>{{.Label}}</h3>
+                <div class="muted">{{.PublisherName}} ({{.Publisher}})</div>
+              </div>
+              <span class="badge {{slotAvailabilityClass .}}">{{slotAvailabilityLabel .}}</span>
+            </div>
+            <p class="muted">{{.Summary}}</p>
+            {{if .Tags}}
+              <div class="slot-tags">
+                {{range .Tags}}<span class="tag">{{.}}</span>{{end}}
+              </div>
+            {{end}}
+            <div class="slot-meta">
+              <div>
+                <span class="slot-meta-label">Placement</span>
+                <strong>{{.Placement}}</strong>
+              </div>
+              <div>
+                <span class="slot-meta-label">Rate</span>
+                <strong>{{formatRate .Rate}}</strong>
+              </div>
+              <div>
+                <span class="slot-meta-label">Traffic</span>
+                <strong>{{formatTraffic .Traffic}}</strong>
+              </div>
+            </div>
+            <div class="slot-meta">
+              <div>
+                <span class="slot-meta-label">Size</span>
+                <strong>{{.Size}}</strong>
+              </div>
+              <div>
+                <span class="slot-meta-label">Category</span>
+                <strong>{{.Category}}</strong>
+              </div>
+              <div>
+                <span class="slot-meta-label">Updated</span>
+                <strong>{{formatDate .UpdatedAt}}</strong>
+              </div>
+            </div>
+            {{if .Lease}}
+              <div class="callout">
+                <strong>Lease:</strong> {{.Lease.Lessee}} until {{formatDate .Lease.EndsAt}}.
+              </div>
+            {{end}}
+            {{if .MinDurationSeconds}}
+              <div class="muted">Minimum term: {{(index (slotDurationOptions .) 0).Label}}</div>
+            {{end}}
+            <div class="slot-actions">
+              <a class="btn btn-outline" href="/publisher/dashboard?publisher={{.Publisher}}">View publisher</a>
+              {{if slotIsAvailable .}}
+                <details class="lease-form">
+                  <summary class="btn btn-ghost">Request lease</summary>
+                  <form method="post" action="/marketplace/lease" class="lease-grid">
+                    <input type="hidden" name="slot_id" value="{{.ID}}" />
+                    <label class="label">Target URL
+                      <input class="input" name="target_url" type="url" placeholder="https://yourbrand.com/landing" required />
+                    </label>
+                    <label class="label">Start date
+                      <input class="input" name="start_date" type="date" />
+                    </label>
+                    <label class="label">Duration
+                      <select class="input" name="duration_seconds" required>
+                        <option value="">Select duration</option>
+                        {{range slotDurationOptions .}}
+                          <option value="{{.Seconds}}">{{.Label}}</option>
+                        {{end}}
+                      </select>
+                    </label>
+                    <button class="btn" type="submit">Confirm lease</button>
+                  </form>
+                </details>
+              {{else}}
+                <span class="muted">Not available</span>
+              {{end}}
+            </div>
+          </div>
+        {{end}}
+      </div>
+
+      <nav class="pagination" aria-label="Pagination">
+        <div class="slot-actions">
+          {{if .Pager.HasPrev}}
+            <a class="btn btn-ghost" href="{{.Pager.PrevURL}}">Previous</a>
+          {{else}}
+            <span class="muted">Previous</span>
+          {{end}}
+          {{if .Pager.HasNext}}
+            <a class="btn btn-ghost" href="{{.Pager.NextURL}}">Next</a>
+          {{else}}
+            <span class="muted">Next</span>
+          {{end}}
+        </div>
+        <div class="muted">Page {{.Pager.Page}} of {{.Pager.Pages}}</div>
+      </nav>
+    {{else}}
+      <div class="card">
+        <h3>No slots found</h3>
+        <p class="muted">Try a different search or clear filters.</p>
+      </div>
+    {{end}}
+  </div>
+</section>
+{{end}}

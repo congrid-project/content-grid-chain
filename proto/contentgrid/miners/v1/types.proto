@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package contentgrid.miners.v1;
+
+import "gogoproto/gogo.proto";
+
+option go_package = "content-grid-chain/x/miners/typespb";
+
+enum MinerStatus {
+  MINER_STATUS_UNSPECIFIED = 0;
+  MINER_STATUS_PENDING = 1;
+  MINER_STATUS_ACTIVE = 2;
+  MINER_STATUS_JAILED = 3;
+}
+
+message Miner {
+  string operator = 1;
+  string metadata_uri = 2;
+  uint32 services = 3;
+  string min_bid_denom = 4;
+  string min_bid_amount = 5;
+  string stake = 6;
+  MinerStatus status = 7;
+  int64 registered_at_height = 8;
+  int64 last_update_height = 9;
+}
+
+message Params {
+  string stake_denom = 1;
+  string min_stake = 2;
+  uint32 max_metadata_length = 3;
+}

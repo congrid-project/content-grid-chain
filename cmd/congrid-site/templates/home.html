@@ -1,0 +1,107 @@
+{{define "home.html"}}{{template "layout" .}}{{end}}
+
+{{define "main"}}
+<section class="hero">
+  <div class="container">
+    <div class="pill">Decentralized content + search protocol</div>
+    <h1>Search and discovery, owned by the open web.</h1>
+    <p class="lead">
+      Congrid (Content Grid) coordinates a network of workers that crawl and index web content, compute embeddings,
+      and serve similarity search — with incentives that reward real publishers and verifiers.
+    </p>
+
+    <div class="hero-actions">
+      <a class="btn" href="/publishers">Become a Publisher</a>
+      <a class="btn btn-outline" href="/verifiers">Become a Verifier</a>
+      <a class="btn btn-ghost" href="/airdrop">Claim airdrop</a>
+      <a class="btn btn-ghost" href="/docs">Read the docs</a>
+    </div>
+
+    <div class="grid cards">
+      <div class="card">
+        <h3>For publishers</h3>
+        <p>
+          Register your primary domain and add the Congrid badge to your homepage.
+          Earn availability rewards and receive high-quality referral traffic from similar sites.
+        </p>
+        <a href="/publishers">How to join →</a>
+      </div>
+      <div class="card">
+        <h3>For verifiers</h3>
+        <p>
+          Run verifier software that checks publisher badges and reports results.
+          Get rewarded for accuracy, coverage, and freshness.
+        </p>
+        <a href="/verifiers">Run a verifier →</a>
+      </div>
+      <div class="card">
+        <h3>Useful work</h3>
+        <p>
+          Instead of wasting compute, the network spends resources on crawling, embeddings, indexing, and verification.
+          Rewards are tied to contributions, not hype.
+        </p>
+        <a href="/docs">Protocol overview →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h2>What Congrid does</h2>
+    <div class="grid two">
+      <div>
+        <h3>Semantic indexing</h3>
+        <p>
+          Workers fetch pages and compute embeddings off-chain (pluggable embedder). Compact similarity signatures
+          help with de-duplication and diversity.
+        </p>
+      </div>
+      <div>
+        <h3>Deterministic assignment</h3>
+        <p>
+          Tasks are assigned using a deterministic, block-hash-based mechanism — no trusted coordinator.
+        </p>
+      </div>
+      <div>
+        <h3>On-chain incentives</h3>
+        <p>
+          The chain routes rewards to the participants who keep the network healthy: publishers, workers, verifiers, and community.
+        </p>
+      </div>
+      <div>
+        <h3>Open participation</h3>
+        <p>
+          Anyone can publish. Anyone can verify. The goal is a durable, community-owned index that resists capture and censorship.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section alt">
+  <div class="container">
+    <h2>Get involved</h2>
+    <div class="grid two">
+      <div class="card">
+        <h3>Publish your site</h3>
+        <ol>
+          <li>Register your domain on-chain.</li>
+          <li>Add the Congrid badge to your homepage.</li>
+          <li>Stay online and keep the badge intact.</li>
+        </ol>
+        <a class="btn" href="/publishers">Publisher onboarding</a>
+      </div>
+      <div class="card">
+        <h3>Verify publishers</h3>
+        <ol>
+          <li>Bond tokens to become eligible.</li>
+          <li>Run verifier software (daemon/agent).</li>
+          <li>Earn for accurate, timely verification.</li>
+        </ol>
+        <a class="btn btn-outline" href="/verifiers">Verifier onboarding</a>
+      </div>
+    </div>
+  </div>
+</section>
+{{end}}

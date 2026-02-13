@@ -1,0 +1,26 @@
+{
+  "grpc_addr": "127.0.0.1:9090",
+  "verifier_address": "grid1verifieraaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_interval_seconds": 15,
+  "verify_scheme": "https",
+  "commit_window_seconds": 300,
+  "round_interval_seconds": 3600,
+  "assignment_delay_max_seconds": 3600,
+  "disable_assignment_check": false,
+  "indexerd_base_url": "http://127.0.0.1:9100",
+  "submit": {
+    "binary": "content-grid-d",
+    "chain_id": "content-grid-1",
+    "node": "tcp://localhost:26657",
+    "from": "verifier-key",
+    "keyring_backend": "os",
+    "keyring_dir": "",
+    "home": "",
+    "gas": "200000",
+    "gas_adjustment": 1.0,
+    "fees": "5000ucongrid",
+    "gas_prices": "",
+    "broadcast_mode": "sync",
+    "yes": true
+  }
+}

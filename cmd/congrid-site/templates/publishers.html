@@ -1,0 +1,77 @@
+{{define "publishers.html"}}{{template "layout" .}}{{end}}
+
+{{define "main"}}
+<section class="section">
+  <div class="container">
+    <h1>Become a Publisher</h1>
+    <p class="lead">
+      Publishers are the heartbeat of Congrid. You register your site and prove ownership by placing a simple badge link on your homepage.
+      In return, you help build an open discovery graph — and you can earn protocol rewards.
+    </p>
+
+    <div class="grid two">
+      <div class="card">
+        <h2>Why join?</h2>
+        <ul>
+          <li><strong>Fair discovery:</strong> your content gets found based on meaning, not opaque ad-driven ranking.</li>
+          <li><strong>Referral traffic:</strong> your URL can appear on similar sites’ Congrid blocks.</li>
+          <li><strong>Rewards:</strong> availability + verification consistency can qualify for payouts.</li>
+          <li><strong>Ownership:</strong> you keep your site — you’re not uploading into a walled garden.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>What you need</h2>
+        <ul>
+          <li>A website with a public homepage at <code>/</code></li>
+          <li>A wallet address (bech32) that will own the publisher registration</li>
+          <li>Ability to add a tiny HTML snippet to your homepage template</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>Step 1 — Add the badge to your homepage</h2>
+    <p>
+      Your homepage must include a link to the Congrid official website, and the link must wrap an image.
+      The image URL must point to <code>{{.BaseURL}}/badge.png</code> and include <code>publisher</code> and <code>wallet</code> parameters.
+      (These parameters bind the badge to your domain and wallet.)
+    </p>
+
+    <div class="code">
+<pre><code>&lt;a href="{{.BaseURL}}"&gt;
+  &lt;img
+    alt="Verified by Congrid"
+    src="{{.BaseURL}}/badge.png?publisher=example.com&amp;wallet=&lt;your-bech32-owner-address&gt;"
+  /&gt;
+&lt;/a&gt;</code></pre>
+    </div>
+
+    <p class="muted">
+      Note: the <code>href</code> must be exactly <code>{{.BaseURL}}</code> (no query string or fragment) to pass strict verification rules.
+    </p>
+
+    <h2>Step 2 — Register your domain</h2>
+    <p>
+      After the badge is live, broadcast the on-chain registration transaction.
+      The protocol locks your <em>primary domain</em> (e.g. <code>example.com</code>) to prevent subdomain squatting.
+    </p>
+
+    <div class="code">
+<pre><code>./content-grid-d publisher register example.com \
+  --from &lt;key-or-address&gt; \
+  --metadata-uri &lt;optional-link&gt;
+</code></pre>
+    </div>
+
+    <h2>Step 3 — Keep it verified</h2>
+    <p>
+      Verifiers periodically fetch your homepage and confirm the badge link is present and matches your registered owner wallet.
+      Keep the badge intact and your site online to stay eligible.
+    </p>
+
+    <div class="callout">
+      <strong>Want help onboarding?</strong>
+      If you share your domain and owner address, we can generate a ready-to-paste snippet customized for your site.
+    </div>
+  </div>
+</section>
+{{end}}
