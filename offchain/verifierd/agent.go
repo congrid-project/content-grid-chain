@@ -125,7 +125,7 @@ func (a *Agent) runAssignment(ctx context.Context, assignment *registrypb.Publis
 		log.Printf("assignment %s: verification failed: %v", key, err)
 	}
 
-	// Similar-site verification (optional): compute expected top-10 and compare to homepage.
+	// Similar-site verification (optional): compute expected top-15 and compare to homepage.
 	var (
 		observedHash string
 	)

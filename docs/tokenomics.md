@@ -34,7 +34,7 @@ Registry verification rewards are paid during round finalization in `x/registry`
 
 - Publisher pool is split evenly across active assignments in that round.
 - A publisher can claim full share only if required external links threshold is met:
-  - `required_external_links_for_full_reward` (default `10`)
+  - `required_external_links_for_full_reward` (default `15`)
 - If below threshold, claim is proportional.
 - Unclaimed publisher amount is burned.
 

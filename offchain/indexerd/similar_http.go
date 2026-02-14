@@ -4,8 +4,10 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"io"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -34,18 +36,31 @@ func (s *Server) handleSimilar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req similarReq
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
+	if r.Body != nil {
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil && err != io.EOF {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+	}
+	if strings.TrimSpace(req.Domain) == "" {
+		req.Domain = strings.TrimSpace(r.URL.Query().Get("domain"))
 	}
 	req.Domain = strings.TrimSpace(strings.ToLower(req.Domain))
 	if req.Domain == "" {
 		w.WriteHeader(http.StatusBadRequest)
+		writeJSON(w, map[string]any{"error": "domain required"})
 		return
 	}
 	limit := req.Limit
 	if limit <= 0 {
-		limit = 10
+		if q := strings.TrimSpace(r.URL.Query().Get("limit")); q != "" {
+			if v, err := strconv.Atoi(q); err == nil {
+				limit = v
+			}
+		}
+	}
+	if limit <= 0 {
+		limit = 15
 	}
 
 	// If chroma is configured, delegate similarity search to it (persistent + scalable).

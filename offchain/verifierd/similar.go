@@ -18,8 +18,8 @@ import (
 )
 
 const (
-	similarTopN            = 10
-	similarOverlapRequired = 6 // 0.6 * 10
+	similarTopN            = 15
+	similarOverlapRequired = 9 // 0.6 * 15
 )
 
 type indexerdSimilarReq struct {

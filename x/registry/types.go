@@ -286,7 +286,7 @@ func DefaultPublisherParams() PublisherParams {
 		CooldownBaseSeconds:                604800, // 7 days
 		PublisherVerificationReward:        sdkmath.NewInt(1_000_000),
 		VerifierVerificationReward:         sdkmath.NewInt(500_000),
-		RequiredExternalLinksForFullReward: 10,
+		RequiredExternalLinksForFullReward: 15,
 		EmissionTotalSupply:                sdkmath.NewInt(1_000_000_000_000000), // 1B CONGRID in ucongrid
 		OperatorReserveBps:                 4000,
 		PublisherEmissionBps:               1000,

@@ -81,6 +81,7 @@ go run ./offchain/indexerd --config offchain/indexerd/config.json
 - `GET /v1/publishers/{domain}` — get cached doc for a publisher
 - `POST /v1/index` — trigger background re-index
 - `POST /v1/query` — semantic search (uses stored embeddings)
+- `POST /v1/similar` — similar publisher domains (`limit` via JSON body or query param; default `15`)
 
 ### Redaction / verbose mode
 

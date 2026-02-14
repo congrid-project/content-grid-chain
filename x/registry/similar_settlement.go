@@ -1,14 +1,15 @@
 package registry
 
 import (
+	"math"
 	"sort"
 )
 
 const (
 	// SimilarTopN is the expected number of similar domains publishers embed.
-	SimilarTopN = int32(10)
+	SimilarTopN = int32(15)
 	// SimilarOverlapThreshold is the minimum overlap ratio (matched/expected) to consider consistent.
-	// With top-10, 0.6 means at least 6 matches.
+	// With top-15, 0.6 means at least 9 matches.
 	SimilarOverlapThreshold = 0.6
 )
 
@@ -50,7 +51,7 @@ func computeSimilarRoundStats(assigned int, subs []PublisherVerificationSubmissi
 		return st
 	}
 
-	// Determine the majority expected hash among submissions that claim to have top-10.
+	// Determine the majority expected hash among submissions that claim to have top-N.
 	hashCounts := map[string]int{}
 	for _, s := range subs {
 		if s.ExpectedSimilarDomains != SimilarTopN {
@@ -89,7 +90,7 @@ func computeSimilarRoundStats(assigned int, subs []PublisherVerificationSubmissi
 			fails++
 			continue
 		}
-		minMatches := int32(6) // 0.6 * 10
+		minMatches := int32(math.Ceil(float64(SimilarTopN) * SimilarOverlapThreshold))
 		if s.MatchedSimilarDomains < minMatches {
 			fails++
 			continue
