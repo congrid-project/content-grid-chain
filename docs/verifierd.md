@@ -5,6 +5,7 @@
 ## What it does
 
 - **Polls assignments** using registry query `VerifierAssignments` for its verifier address.
+  - New publisher registrations are queued for the **next round** (not verified immediately in the current round).
 - **Validates assignment determinism locally** (round seed + domain => expected start time) before submitting tx.
   - Seed source is anchored by chain metadata (`chain_id`, `round_start`, `anchor_height`, `anchor_hash`).
   - `RoundMeta` also exposes `verifier_set_hash` / `verifier_set_size` for auditability of assignment inputs.

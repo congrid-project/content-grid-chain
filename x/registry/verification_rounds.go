@@ -46,7 +46,9 @@ func (k Keeper) assignNewRound(ctx sdk.Context) error {
 	if assignmentDelayMaxSeconds <= 0 || assignmentDelayMaxSeconds > intervalSeconds {
 		assignmentDelayMaxSeconds = intervalSeconds
 	}
-	roundStart := ctx.BlockTime().UTC().Truncate(time.Duration(intervalSeconds) * time.Second)
+	// Always schedule newly-created assignments for the NEXT round boundary,
+	// so publisher registration never triggers immediate same-round verification.
+	roundStart := ctx.BlockTime().UTC().Truncate(time.Duration(intervalSeconds) * time.Second).Add(time.Duration(intervalSeconds) * time.Second)
 	roundStartUnix := roundStart.Unix()
 	if roundStartUnix <= 0 {
 		return nil
