@@ -147,6 +147,30 @@ func (i *Indexer) IndexAll(ctx context.Context) {
 		log.Printf("failed to resolve publishers: %v", err)
 		return
 	}
+
+	keep := make(map[string]struct{}, len(domains))
+	for _, d := range domains {
+		keep[d] = struct{}{}
+	}
+	for _, existing := range i.Store.List() {
+		d := strings.TrimSpace(strings.ToLower(existing.Domain))
+		if d == "" {
+			continue
+		}
+		if _, ok := keep[d]; ok {
+			continue
+		}
+		i.Store.Delete(d)
+		if i.Chroma != nil && i.Cfg.ChromaBaseURL != "" {
+			ctxDel, cancel := context.WithTimeout(ctx, 5*time.Second)
+			if err := i.Chroma.Delete(ctxDel, d); err != nil {
+				log.Printf("prune chroma %s failed: %v", d, err)
+			}
+			cancel()
+		}
+		log.Printf("pruned inactive publisher %s from index", d)
+	}
+
 	for _, d := range domains {
 		ctx2, cancel := context.WithTimeout(ctx, i.Cfg.FetchTimeout()+10*time.Second)
 		res := i.IndexOnce(ctx2, d)
@@ -173,7 +197,22 @@ func (i *Indexer) publisherDomains(ctx context.Context) ([]string, error) {
 	}
 
 	for _, d := range i.Cfg.Publishers {
-		add(d)
+		norm := strings.TrimSpace(strings.ToLower(d))
+		if norm == "" {
+			continue
+		}
+		if i.Chain != nil {
+			ctx2, cancel := context.WithTimeout(ctx, i.Cfg.ChainTimeout())
+			active, err := i.Chain.IsPublisherActive(ctx2, norm)
+			cancel()
+			if err != nil {
+				return nil, err
+			}
+			if !active {
+				continue
+			}
+		}
+		add(norm)
 	}
 
 	if i.Chain != nil {

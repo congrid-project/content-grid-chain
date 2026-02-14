@@ -4,6 +4,7 @@ import (
 	"context"
 	"sort"
 	"strings"
+	"time"
 
 	registrypb "content-grid-chain/x/registry/typespb"
 
@@ -40,6 +41,7 @@ func (c *ChainClient) ListPublishers(ctx context.Context, pageLimit uint64) ([]s
 		pageLimit = 200
 	}
 
+	nowUnix := time.Now().UTC().Unix()
 	seen := make(map[string]struct{})
 	out := make([]string, 0)
 	var nextKey []byte
@@ -51,7 +53,7 @@ func (c *ChainClient) ListPublishers(ctx context.Context, pageLimit uint64) ([]s
 			return nil, err
 		}
 		for _, w := range resp.GetWebsites() {
-			if w == nil {
+			if !isActivePublisher(w, nowUnix) {
 				continue
 			}
 			d := strings.TrimSpace(strings.ToLower(w.GetDomain()))
@@ -72,4 +74,33 @@ func (c *ChainClient) ListPublishers(ctx context.Context, pageLimit uint64) ([]s
 	}
 	sort.Strings(out)
 	return out, nil
+}
+
+func (c *ChainClient) IsPublisherActive(ctx context.Context, domain string) (bool, error) {
+	domain = strings.TrimSpace(strings.ToLower(domain))
+	if domain == "" {
+		return false, nil
+	}
+	resp, err := c.regqry.Publisher(ctx, &registrypb.QueryPublisherRequest{Domain: domain})
+	if err != nil {
+		if strings.Contains(strings.ToLower(err.Error()), "not found") {
+			return false, nil
+		}
+		return false, err
+	}
+	return isActivePublisher(resp.GetWebsite(), time.Now().UTC().Unix()), nil
+}
+
+func isActivePublisher(w *registrypb.Website, nowUnix int64) bool {
+	if w == nil {
+		return false
+	}
+	if w.GetStatus() != registrypb.WebsiteStatus_WEBSITE_STATUS_VERIFIED {
+		return false
+	}
+	if w.GetCooldownUntilUnix() > nowUnix {
+		return false
+	}
+	d := strings.TrimSpace(strings.ToLower(w.GetDomain()))
+	return d != ""
 }

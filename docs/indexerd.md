@@ -20,6 +20,11 @@
 
 If both are configured, `indexerd` will index the union (deduped).
 
+Active-state filtering (current behavior):
+- Chain-discovered publishers are indexed only when `status == VERIFIED` and `cooldown_until_unix <= now`.
+- If a previously indexed publisher is no longer active, indexerd prunes it from in-memory cache and (when enabled) Chroma.
+- Static-list publishers are also filtered through chain status when `chain_grpc_addr` is configured.
+
 ## What is indexed
 
 For each publisher homepage, `indexerd` stores:

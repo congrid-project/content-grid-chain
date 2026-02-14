@@ -53,6 +53,12 @@ func (s *Store) Get(domain string) (PublisherDoc, bool) {
 	return d, ok
 }
 
+func (s *Store) Delete(domain string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	delete(s.docs, domain)
+}
+
 func (s *Store) List() []PublisherDoc {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
