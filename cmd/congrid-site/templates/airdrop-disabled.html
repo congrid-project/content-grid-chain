@@ -1,0 +1,35 @@
+{{define "airdrop-disabled.html"}}{{template "layout" .}}{{end}}
+
+{{define "main"}}
+<section class="section">
+  <div class="container">
+    <h1>Airdrop</h1>
+    <p class="lead">
+      The airdrop page is currently online, but claiming is disabled on this deployment.
+    </p>
+
+    <div class="callout">
+      <strong>Status:</strong> Airdrop claims are not enabled right now.
+    </div>
+
+    <div class="grid two" style="margin-top:16px;">
+      <div class="card">
+        <h2>Why you might see this</h2>
+        <ul>
+          <li>The server was started without the <code>--airdrop</code> flag.</li>
+          <li>No faucet key is configured for this environment.</li>
+          <li>Claims are paused temporarily for maintenance.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>What you can do now</h2>
+        <ul>
+          <li><a href="/publishers">Publisher onboarding</a></li>
+          <li><a href="/verifiers">Verifier onboarding</a></li>
+          <li><a href="/docs">Protocol docs</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+{{end}}

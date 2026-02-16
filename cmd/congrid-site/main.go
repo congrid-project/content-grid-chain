@@ -26,7 +26,7 @@ import (
 var siteFS embed.FS
 
 type server struct {
-	tmpl      *template.Template
+	templates map[string]*template.Template
 	static    http.Handler
 	slotStore SlotStore
 }
@@ -66,7 +66,122 @@ func main() {
 	)
 	flag.Parse()
 
-	tmpl := template.Must(template.New("").Funcs(template.FuncMap{
+	templates, err := buildPageTemplates(siteFS)
+	if err != nil {
+		log.Fatalf("template init: %v", err)
+	}
+
+	subStatic := mustSub(siteFS, "static")
+	// http.FileServer expects an fs.FS wrapped with http.FS.
+	var slotStore SlotStore = newMemorySlotStore()
+	var slotCloser interface{ Close() error }
+	if strings.EqualFold(strings.TrimSpace(*slotsStore), "chain") {
+		cfg := chainSlotConfig{
+			ChainID:            *chainID,
+			NodeRPC:            *nodeRPC,
+			GRPCAddr:           *slotsGRPC,
+			KeyName:            *slotsKeyName,
+			LeaseKeyName:       *leaseKeyName,
+			KeyringBackend:     *keyringBackend,
+			KeyringDir:         *keyringDir,
+			Home:               *slotsHome,
+			Fees:               *slotsFees,
+			GasPrices:          *slotsGasPrices,
+			Gas:                *slotsGas,
+			GasAdjustment:      *slotsGasAdjustment,
+			Binary:             *slotsBinary,
+			RateDenom:          *slotsRateDenom,
+			UnitSeconds:        *slotsUnitSeconds,
+			MinDurationSeconds: *slotsMinDuration,
+			MaxDurationSeconds: *slotsMaxDuration,
+		}
+		chainStore, err := newChainSlotStore(cfg)
+		if err != nil {
+			log.Fatalf("slot store init: %v", err)
+		}
+		slotStore = chainStore
+		slotCloser = chainStore
+	}
+
+	s := &server{
+		templates: templates,
+		static:    http.FileServer(http.FS(subStatic)),
+		slotStore: slotStore,
+	}
+
+	mux := http.NewServeMux()
+	mux.Handle("GET /static/", http.StripPrefix("/static/", s.static))
+	mux.HandleFunc("GET /", s.handleHome(*baseURL))
+	mux.HandleFunc("GET /publishers", s.handlePublishers(*baseURL))
+	mux.HandleFunc("GET /verifiers", s.handleVerifiers(*baseURL))
+	mux.HandleFunc("GET /docs", s.handleDocs(*baseURL))
+	mux.HandleFunc("GET /marketplace", s.handleMarketplace(*baseURL))
+	mux.HandleFunc("POST /marketplace/lease", s.handleMarketplaceLease(*baseURL))
+	mux.HandleFunc("GET /publisher/dashboard", s.handlePublisherDashboard(*baseURL))
+	mux.HandleFunc("POST /publisher/dashboard", s.handlePublisherDashboardPost(*baseURL))
+	mux.HandleFunc("GET /badge.png", s.handleBadgePNG)
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok"))
+	})
+
+	if *airdropEnabled {
+		cfg := airdropConfig{
+			DBPath:        *airdropDB,
+			ChainID:       *chainID,
+			NodeRPC:       *nodeRPC,
+			Denom:         *denom,
+			Amount:        *amount,
+			FaucetKeyName: *faucetKeyName,
+			Keyring:       *keyringBackend,
+			Fees:          *fees,
+			GasPrices:     *gasPrices,
+			BaseURL:       *baseURL,
+		}
+		air, err := newAirdropper(s, cfg)
+		if err != nil {
+			log.Fatalf("airdrop init: %v", err)
+		}
+		mux.HandleFunc("GET /airdrop", air.handleAirdropGet())
+		mux.HandleFunc("POST /airdrop", air.handleAirdropPost())
+	} else {
+		mux.HandleFunc("GET /airdrop", s.handleAirdropUnavailable(*baseURL))
+		mux.HandleFunc("POST /airdrop", s.handleAirdropUnavailablePost(*baseURL))
+	}
+
+	h := http.Handler(mux)
+	if *requestLog {
+		h = withRequestLog(h)
+	}
+
+	httpServer := &http.Server{
+		Addr:              *addr,
+		Handler:           h,
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+
+	go func() {
+		log.Printf("congrid-site listening on %s", *addr)
+		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("listen: %v", err)
+		}
+	}()
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
+	<-stop
+
+	if slotCloser != nil {
+		_ = slotCloser.Close()
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	_ = httpServer.Shutdown(ctx)
+}
+
+func buildPageTemplates(efs embed.FS) (map[string]*template.Template, error) {
+	funcs := template.FuncMap{
 		"nowYear": func() int { return time.Now().Year() },
 		"formatDate": func(t time.Time) string {
 			return formatDate(t)
@@ -110,120 +225,48 @@ func main() {
 			u = strings.TrimPrefix(u, "http://")
 			return strings.TrimRight(u, "/")
 		},
-	}).ParseFS(siteFS, "templates/*.html", "templates/partials/*.html"))
+	}
 
-	subStatic := mustSub(siteFS, "static")
-	// http.FileServer expects an fs.FS wrapped with http.FS.
-	var slotStore SlotStore = newMemorySlotStore()
-	var slotCloser interface{ Close() error }
-	if strings.EqualFold(strings.TrimSpace(*slotsStore), "chain") {
-		cfg := chainSlotConfig{
-			ChainID:            *chainID,
-			NodeRPC:            *nodeRPC,
-			GRPCAddr:           *slotsGRPC,
-			KeyName:            *slotsKeyName,
-			LeaseKeyName:       *leaseKeyName,
-			KeyringBackend:     *keyringBackend,
-			KeyringDir:         *keyringDir,
-			Home:               *slotsHome,
-			Fees:               *slotsFees,
-			GasPrices:          *slotsGasPrices,
-			Gas:                *slotsGas,
-			GasAdjustment:      *slotsGasAdjustment,
-			Binary:             *slotsBinary,
-			RateDenom:          *slotsRateDenom,
-			UnitSeconds:        *slotsUnitSeconds,
-			MinDurationSeconds: *slotsMinDuration,
-			MaxDurationSeconds: *slotsMaxDuration,
+	entries, err := fs.ReadDir(efs, "templates")
+	if err != nil {
+		return nil, fmt.Errorf("read templates dir: %w", err)
+	}
+
+	out := make(map[string]*template.Template)
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
 		}
-		chainStore, err := newChainSlotStore(cfg)
+		name := entry.Name()
+		if !strings.HasSuffix(name, ".html") {
+			continue
+		}
+		t, err := template.New("").Funcs(funcs).ParseFS(efs,
+			"templates/partials/*.html",
+			path.Join("templates", name),
+		)
 		if err != nil {
-			log.Fatalf("slot store init: %v", err)
+			return nil, fmt.Errorf("parse %s: %w", name, err)
 		}
-		slotStore = chainStore
-		slotCloser = chainStore
+		out[name] = t
 	}
 
-	s := &server{
-		tmpl:      tmpl,
-		static:    http.FileServer(http.FS(subStatic)),
-		slotStore: slotStore,
+	if len(out) == 0 {
+		return nil, fmt.Errorf("no page templates found")
 	}
-
-	mux := http.NewServeMux()
-	mux.Handle("GET /static/", http.StripPrefix("/static/", s.static))
-	mux.HandleFunc("GET /", s.handleHome(*baseURL))
-	mux.HandleFunc("GET /publishers", s.handlePublishers(*baseURL))
-	mux.HandleFunc("GET /verifiers", s.handleVerifiers(*baseURL))
-	mux.HandleFunc("GET /docs", s.handleDocs(*baseURL))
-	mux.HandleFunc("GET /marketplace", s.handleMarketplace(*baseURL))
-	mux.HandleFunc("POST /marketplace/lease", s.handleMarketplaceLease(*baseURL))
-	mux.HandleFunc("GET /publisher/dashboard", s.handlePublisherDashboard(*baseURL))
-	mux.HandleFunc("POST /publisher/dashboard", s.handlePublisherDashboardPost(*baseURL))
-	mux.HandleFunc("GET /badge.png", s.handleBadgePNG)
-	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("ok"))
-	})
-
-	if *airdropEnabled {
-		cfg := airdropConfig{
-			DBPath:        *airdropDB,
-			ChainID:       *chainID,
-			NodeRPC:       *nodeRPC,
-			Denom:         *denom,
-			Amount:        *amount,
-			FaucetKeyName: *faucetKeyName,
-			Keyring:       *keyringBackend,
-			Fees:          *fees,
-			GasPrices:     *gasPrices,
-			BaseURL:       *baseURL,
-		}
-		air, err := newAirdropper(s, cfg)
-		if err != nil {
-			log.Fatalf("airdrop init: %v", err)
-		}
-		mux.HandleFunc("GET /airdrop", air.handleAirdropGet())
-		mux.HandleFunc("POST /airdrop", air.handleAirdropPost())
-	} else {
-		mux.HandleFunc("GET /airdrop", func(w http.ResponseWriter, r *http.Request) { http.NotFound(w, r) })
-		mux.HandleFunc("POST /airdrop", func(w http.ResponseWriter, r *http.Request) { http.NotFound(w, r) })
-	}
-
-	h := http.Handler(mux)
-	if *requestLog {
-		h = withRequestLog(h)
-	}
-
-	httpServer := &http.Server{
-		Addr:              *addr,
-		Handler:           h,
-		ReadHeaderTimeout: 5 * time.Second,
-	}
-
-	go func() {
-		log.Printf("congrid-site listening on %s", *addr)
-		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("listen: %v", err)
-		}
-	}()
-
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
-	<-stop
-
-	if slotCloser != nil {
-		_ = slotCloser.Close()
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	_ = httpServer.Shutdown(ctx)
+	return out, nil
 }
 
 func (s *server) render(w http.ResponseWriter, name string, data any) {
+	t, ok := s.templates[name]
+	if !ok {
+		log.Printf("render %s: template not found", name)
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := s.tmpl.ExecuteTemplate(w, name, data); err != nil {
+	if err := t.ExecuteTemplate(w, name, data); err != nil {
 		log.Printf("render %s: %v", name, err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
