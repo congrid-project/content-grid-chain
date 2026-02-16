@@ -1,133 +1,133 @@
-Content Grid Protocol 白皮书 (v1.0)
-摘要
-Content Grid 是一个去中心化的内容网络与搜索引擎协议，旨在构建一个更公平、开放和由内容驱动的互联网。我们通过一个创新的“有用工作量证明”（Useful Proof of Work）机制，激励网站发布者贡献优质内容，并激励网络节点提供抓取、计算和索引服务。
+Content Grid Protocol White Paper (v1.0)
+summary
+Content Grid is a decentralized content network and search engine protocol that aims to build a fairer, open and content-driven Internet. We use an innovative "Useful Proof of Work" mechanism to incentivize website publishers to contribute high-quality content and incentivize network nodes to provide crawling, computing and indexing services.
 
-与依赖广告收入和不透明算法的传统搜索引擎不同，Content Grid 利用区块链技术、全节点向量索引（Full-Node Vector Indexing）和向量相似性搜索，创建一个由社区拥有和维护的、抗审查的内容发现引擎。协议的原生代币 CONGRID 是整个经济生态的核心，用于质押、支付、奖励和治理，确保所有参与者的利益与网络的长期健康发展保持一致。
+Unlike traditional search engines that rely on advertising revenue and opaque algorithms, Content Grid leverages blockchain technology, Full-Node Vector Indexing, and vector similarity search to create a censorship-resistant content discovery engine that is owned and maintained by the community. The protocol’s native token CONGRID is the core of the entire economic ecosystem and is used for staking, payment, rewards and governance to ensure that the interests of all participants are consistent with the long-term healthy development of the network.
 
-1. 愿景与问题
-1.1 现有互联网的困境
-当前的互联网内容生态被少数中心化巨头垄断。这导致了几个核心问题：
+1. Vision and Problems
+1.1 Dilemma of the existing Internet
+The current Internet content ecosystem is monopolized by a few centralized giants. This leads to several core questions:
 
-算法黑箱： 内容的排序和可见性由不透明的商业算法决定，创作者难以获得公平的曝光。
-审查与控制： 中心化平台有权单方面删除内容或封禁账户，威胁言论自由。
-低效的价值分配： 广告驱动的模式使得大部分价值被平台攫取，内容创作者的收益被严重挤压。
-信息孤岛： 内容被锁定在各个平台内，跨平台的发现和连接变得困难。
-1.2 我们的解决方案：一个去中心化的内容经济体
-Content Grid 旨在通过以下方式解决这些问题：
+Algorithmic black box: The ranking and visibility of content are determined by opaque commercial algorithms, making it difficult for creators to obtain fair exposure.
+Censorship and Control: Centralized platforms have the power to unilaterally delete content or ban accounts, threatening free speech.
+Inefficient value distribution: The advertising-driven model allows most of the value to be captured by the platform, and the income of content creators is severely squeezed.
+Information silos: Content is locked within individual platforms, making cross-platform discovery and connection difficult.
+1.2 Our solution: a decentralized content economy
+Content Grid aims to solve these problems by:
 
-去中心化索引： 建立一个不受任何单一实体控制的、全球共享的内容索引数据库。
-基于内容的发现： 通过先进的向量嵌入（Embedding）技术，实现基于内容语义相似度的搜索，而非简单的关键词匹配。
-公平的激励机制： 奖励所有为网络做出贡献的参与者，包括内容发布者和网络节点运营商。
-有用的工作： 将传统区块链挖矿所消耗的算力，转化为对网页进行抓取、分析和索引等有实际价值的工作。
-2. 系统架构
-Content Grid 采用分层架构，将链上共识与链下高性能计算解耦，以实现可扩展性和效率。
+Decentralized Indexing: Establish a globally shared content index database that is not controlled by any single entity.
+Content-based discovery: Through advanced vector embedding (Embedding) technology, search based on content semantic similarity is realized instead of simple keyword matching.
+Fair incentive mechanism: Reward all participants who contribute to the network, including content publishers and network node operators.
+Useful work: Convert the computing power consumed by traditional blockchain mining into valuable work such as crawling, analyzing and indexing web pages.
+2. System architecture
+Content Grid adopts a layered architecture to decouple on-chain consensus from off-chain high-performance computing to achieve scalability and efficiency.
 
-(这是一个概念图占位符，实际图表可以更详细地描绘组件交互)
+(This is a concept diagram placeholder, an actual diagram could depict the component interactions in more detail)
 
-2.1 区块链层 (Coordination Layer)
-我们基于 Cosmos SDK 构建了一条名为 content-grid-chain 的主权应用链。该链是整个系统的“大脑”和信任根基，负责：
+2.1 Blockchain Layer (Coordination Layer)
+We built a sovereign application chain called content-grid-chain based on the Cosmos SDK. This chain is the "brain" and trust foundation of the entire system and is responsible for:
 
-身份与质押管理： 节点运营商通过质押 CONGRID 代币来注册身份并获得网络权限。网站发布者需注册并验证**一级域名**（Primary Domain）的所有权，一个一级域名仅限注册一次。
-区块共识 (Block Consensus)： 采用标准的 Tendermint (CometBFT) BPoS 共识机制。这是 Cosmos SDK 的默认方案，确保了交易的即时最终性（Instant Finality）和网络的高安全性。
-任务分配： 使用基于区块哈希的确定性算法（Block Hash Based Assignment）。具体实现为 `Hash(BlockHash + TaskID + Counter) % TotalMiners`，以此生成伪随机数种子，从活跃矿工列表中确定性地选择执行节点。这种方式利用了 CometBFT 的不可预测性，无需引入额外的 VRF 机制。
-任务结果验证： 采用基于链上共识的多数派验证（On-Chain Majority Consensus）。矿工提交结果哈希上链，CometBFT 确保交易顺序。链上逻辑（`x/tasks` 模块）自动计算提交结果的多数派（需满足 67% Quorum）。只有与多数派结果一致的节点才能获得奖励，作恶或出错的节点将通过**罚没（Slashing）**机制受到经济惩罚。
-经济模型执行： 负责 CONGRID 代币的奖励分发、交易手续费处理和治理投票。
+Identity and pledge management: Node operators register identities and obtain network permissions by staking CONGRID tokens. Website publishers need to register and verify the ownership of the **first-level domain** (Primary Domain). A first-level domain name can only be registered once.
+Block Consensus: Adopts the standard Tendermint (CometBFT) BPoS consensus mechanism. This is the default solution of the Cosmos SDK, ensuring instant finality of transactions and high network security.
+Task allocation: Use a deterministic algorithm based on block hash (Block Hash Based Assignment). The specific implementation is `Hash(BlockHash + TaskID + Counter) % TotalMiners`, which generates a pseudo-random number seed and deterministically selects execution nodes from the list of active miners. This approach takes advantage of the unpredictability of CometBFT without introducing additional VRF mechanisms.
+Task result verification: Adopt majority verification based on on-chain consensus (On-Chain Majority Consensus). Miners submit the result hash to the chain, and CometBFT ensures the order of transactions. On-chain logic (`x/tasks` module) automatically calculates the majority of submitted results (requires 67% Quorum). Only nodes that are consistent with the majority results can receive rewards. Nodes that do evil or make mistakes will be economically punished through the **Slashing** mechanism.
+Economic model execution: Responsible for the reward distribution, transaction fee processing and governance voting of CONGRID tokens.
 
-2.2 全节点索引层 (Full-Node Indexing Layer)
-不同于传统的分布式哈希表（DHT）分片存储，Content Grid 的长期愿景是全节点索引模式：每个工作节点（矿工）都维护整个网络的完整内容索引。
+2.2 Full-Node Indexing Layer
+Unlike traditional distributed hash table (DHT) sharded storage, Content Grid's long-term vision is a full-node indexing model: each worker node (miner) maintains a complete content index of the entire network.
 
-实现上，“向量数据库 / ANN 索引”是可插拔的（例如 Chroma、FAISS、HNSWlib 等）。为了保证效率和存储可扩展性，我们倾向使用较短维度的向量表示，并在需要时进一步派生出更短的**相似度指纹/签名**（例如 128-bit/256-bit），用于多样性约束、去重和轻量路由。
+Implementation-wise, "vector databases/ANN indexes" are pluggable (e.g. Chroma, FAISS, HNSWlib, etc.). To ensure efficiency and storage scalability, we tend to use shorter-dimensional vector representations and further derive shorter similarity fingerprints/signatures (e.g. 128-bit/256-bit) when needed for diversity constraints, deduplication and lightweight routing.
 
-2.3 链下执行与验证 (Execution & Verification)
-这是由独立的工作节点运行的软件，负责执行所有计算密集型任务：
+2.3 Off-chain execution and verification (Execution & Verification)
+This is software run by independent worker nodes responsible for performing all compute-intensive tasks:
 
-网页抓取与 Embedding： 节点抓取目标网页，计算向量嵌入，并存入本地索引。
-相似性查询服务： 当发布者请求代码片段（包含推荐链接）时，网络根据当前区块哈希随机选择一组矿工。这些矿工在本地查询与目标内容最相似的 10 个 URL，并将结果返回。
-验证机制： 节点需要定时验证发布者。
+Web page crawling and Embedding: The node crawls the target web page, calculates the vector embedding, and stores it in the local index.
+Similarity Query Service: When a publisher requests a snippet (containing a referral link), the network randomly selects a group of miners based on the current block hash. These miners locally query the 10 URLs most similar to the target content and return the results.
+Verification mechanism: Nodes need to verify the publisher regularly.
 
-在当前代码实现中，还提供了一个轻量的链下缓存服务 `indexerd`：它从链上 registry 自动发现 publishers，周期性抓取主页并计算 embedding，同时输出短签名（signature）。这样 verifier/其他组件可以直接从 `indexerd` 获取缓存结果，避免重复访问与重复推理，同时将大体量 embedding 保持在链下。
+In the current code implementation, a lightweight off-chain caching service `indexerd` is also provided: it automatically discovers publishers from the on-chain registry, periodically fetches the homepage and calculates embedding, and outputs a short signature at the same time. In this way, verifier/other components can obtain the cached results directly from `indexerd`, avoiding repeated access and repeated reasoning, while keeping large amounts of embedding off-chain.
 
-3. 参与者角色与激励
-3.1 网站发布者 (Content Providers)
-如何参与：
-注册其域名，系统将自动识别对应的**一级域名**（如 `example.com`）并确立唯一所有权，防止子域名被他人滥用。
-在自己的网站首页中嵌入一个包含协议验证信息的 HTML 片段（包含 `congrid.net` 链接和注册者钱包地址）。同时，该片段也将包含由网络推荐的 10 个相似内容链接。
-获得激励：
-可用性奖励： 只要网站保持在线，且代码片段中的链接经矿工验证与网络推荐结果高度重合（通过重合度阈值检查），即可每日获得 CONGRID 代币奖励。
-推荐流量： 其网站链接会出现在其他相似内容网站的HTML片段中，获得高质量的推荐流量。
-3.2 节点运营商 (Network Workers/Miners)
-如何参与：
-质押大量 CONGRID 代币成为备选工作节点。质押量是其信誉和安全性的保证。
-运行 content-grid-d 节点软件和本地向量索引服务，维护全网索引。
-获得激励：
-任务奖励： 被区块哈希算法选中并正确完成查询任务（返回最相似的 10 个 URL）的矿工将获得奖励。
-验证奖励： 正确执行验证任务（检查发布者代码片段）的矿工也将获得奖励。
-惩罚机制： 如果被链上共识仲裁判定为未正确完成任务（如提交结果与多数派不一致），节点将受到惩罚（Slashing）。
-交易手续费： 作为链的验证者，获得打包交易所产生的手续费。
-3.3 消费者 (Service Consumers)
-如何参与：
-任何需要内容发现、数据分析或SEO服务的个人或机构。
-获得服务：
-相似性搜索： 免费或付费使用网络进行高质量的内容相似性搜索。
-发布悬赏任务： 支付 CONGRID 代币来发布定制化任务，例如：
-反向链接购买： 悬赏在特定主题网站上添加自己的链接。
-按需抓取： 支付费用，让网络节点抓取并分析任何指定的网站。
-4. 代币经济模型 (Tokenomics)
-CONGRID 是驱动协议运转的价值载体。以下为**当前实现口径**与后续规划。
+3. Participant roles and incentives
+3.1 Website Publishers (Content Providers)
+How to participate:
+Register its domain name, and the system will automatically identify the corresponding **first-level domain name** (such as `example.com`) and establish unique ownership to prevent the sub-domain name from being abused by others.
+Embed an HTML snippet containing protocol verification information (including the `congrid.net` link and registrant wallet address) on the homepage of your website. At the same time, the snippet will also contain 10 links to similar content recommended by the network.
+Get Incentive:
+Availability rewards: As long as the website remains online and the links in the code snippets are verified by miners to be highly coincident with the network recommendation results (passing the coincidence threshold check), you can receive daily CONGRID token rewards.
+Recommended traffic: Its website links will appear in HTML fragments of other websites with similar content, obtaining high-quality recommended traffic.
+3.2 Node Operators (Network Workers/Miners)
+How to participate:
+Stake a large amount of CONGRID tokens to become an alternative worker node. The amount of pledge is the guarantee of its credibility and security.
+Run the content-grid-d node software and local vector indexing service to maintain the entire network index.
+Get Incentive:
+Task rewards: Miners who are selected by the block hash algorithm and correctly complete the query task (returning the 10 most similar URLs) will receive rewards.
+Validation rewards: Miners who correctly perform validation tasks (checking publisher code snippets) will also be rewarded.
+Penalty mechanism: If the on-chain consensus arbitration determines that the task has not been completed correctly (such as the submission result is inconsistent with the majority), the node will be punished (Slashing).
+Transaction fees: As a validator of the chain, you receive the fees generated by packaged transactions.
+3.3 Consumers (Service Consumers)
+How to participate:
+Any person or organization in need of content discovery, data analysis or SEO services.
+Get service:
+Similarity Search: Free or paid access to the web for high-quality content similarity searches.
+Post bounties: Pay CONGRID tokens to post customized tasks, such as:
+Backlink Buying: Offer a bounty to add your own link to a website on a specific topic.
+Crawl on demand: Pay a fee to have network nodes crawl and analyze any given website.
+4. Tokenomics
+CONGRID is the value carrier that drives the operation of the protocol. The following is the **current implementation caliber** and follow-up plans.
 
-4.1 代币功用 (Utility)
-- 质押（已实现）：验证者通过 `x/verifiers` 质押参与验证分配与收益。
-- 支付（部分实现）：链上已支持 slot/lease 场景的支付与结算；“消费者悬赏任务/高级 API 支付”仍在规划与完善中。
-- 奖励（已实现）：发布者与验证者奖励在 `x/registry` 的轮次最终化中执行。
-- 治理（部分实现）：链具备治理模块基础能力，但自定义模块参数治理入口仍在持续完善。
+4.1 Token Utility (Utility)
+- Staking (implemented): Verifiers participate in verifying distribution and income by staking `x/verifiers`.
+- Payment (partially implemented): The chain already supports payment and settlement in slot/lease scenarios; "Consumer Bounty Tasks/Advanced API Payments" are still being planned and improved.
+- Rewards (implemented): Publisher and validator rewards are implemented in round finalization of `x/registry`.
+- Governance (partially implemented): The chain has the basic capabilities of the governance module, but the custom module parameter governance entrance is still being improved.
 
-4.2 供应与发放池（当前默认）
-创世参考总量设定为 10 亿 CONGRID（`ucongrid` 为最小单位）。
+4.2 Supply and issuance pool (current default)
+The total creation reference amount is set to 1 billion CONGRID (`ucongrid` is the smallest unit).
 
-当前默认发放参数：
-- 运营方保留：40%
-- 发放池：60%（其中发布者 10%，验证者 50%）
-- 发放时长：100 年（按小时线性释放）
+Current default issuance parameters:
+- Operator’s retention: 40%
+- Issuance pool: 60% (of which 10% are publishers and 50% are verifiers)
+- Release duration: 100 years (linear release on an hourly basis)
 
-为避免“每次发奖逐笔增发”，奖励改为池子转账模式：
-- 由 tokenomics 模块维护发放池余额；
-- 每轮奖励从池子转给接收者；
-- 未领取部分直接从池子销毁。
+In order to avoid "increasing the amount of rewards one by one each time", the rewards are changed to the pool transfer mode:
+- The balance of the issuance pool is maintained by the tokenomics module;
+- Each round the reward is transferred from the pool to the recipient;
+- The unclaimed portion will be destroyed directly from the pool.
 
-4.3 每轮（小时）发放与分配规则
-默认一小时轮次（`round_interval_seconds=3600`）下：
-- 发布者池：约 114.155251 CONGRID / 小时
-- 验证者池：约 570.776255 CONGRID / 小时
+4.3 Distribution and allocation rules for each round (hour)
+Under the default one-hour round (`round_interval_seconds=3600`):
+- Publisher pool: ~114.155251 CONGRID/hour
+- Validator pool: ~570.776255 CONGRID/hour
 
-通用公式（按任意轮次秒数）为：
+The general formula (in seconds for any round) is:
 - `publisher_round = total_supply * publisher_bps * round_interval_seconds / (10000 * duration_hours * 3600)`
 - `verifier_round = total_supply * verifier_bps * round_interval_seconds / (10000 * duration_hours * 3600)`
 
-分配细则：
-- 发布者：当轮活跃发布者先均分；若外链未达到阈值（`required_external_links_for_full_reward`），按比例领取；未领取部分销毁。
-- 验证者：仅在通过并成功提交的验证者中分配，权重与其质押成正比，并叠加其邀请的活跃发布者因子（`stake × referral_factor`）；无人可领时销毁。
+Allocation details:
+- Publisher: The active publishers in the current round will be divided equally first; if the external links do not reach the threshold (`required_external_links_for_full_reward`), they will receive it in proportion; the unclaimed part will be destroyed.
+- Validators: distributed only among validators who have passed and submitted successfully, with weight proportional to their pledges, and superimposed with the active publisher factor of their invitations (`stake × referral_factor`); destroyed when no one can claim it.
 
-4.4 价值流动与通缩（当前实现）
-- 供给侧：发布者/验证者奖励来自既定发放池按轮释放。
-- 通缩侧：未领取发布者奖励、无可分配验证者奖励及剩余尾差会执行销毁。
+4.4 Value flow and deflation (current implementation)
+- Supply side: Publisher/verifier rewards are released in rounds from the established distribution pool.
+- Deflation side: Unclaimed publisher rewards, unavailable validator rewards and remaining balance will be destroyed.
 
-说明：
-- 文档中关于“完整区块级通胀路由、消费者悬赏全链路、罚没赔付全链路”等能力，部分仍在分阶段落地中；当前以已上线逻辑为准。
+illustrate:
+- In the document, some of the capabilities such as "complete block-level inflation routing, full link for consumer rewards, and full link for fines and forfeitures" are still being implemented in stages; currently, the logic that has been launched shall prevail.
 
-5. 路线图
-阶段一：协议核心实现
-[✓] 完成 content-grid-chain 基础框架搭建。
-[✓] 实现节点质押与注册模块 (x/nodes, x/miners)。
-[✓] 实现网站注册与验证模块 (x/registry)。
-[✓] 实现基于区块哈希的任务分配、共识与奖励模块 (x/tasks, x/tokenomics)。
-阶段二：链下功能与测试网上线
-[ ] 开发链下任务执行器和全节点向量索引服务。
-[ ] 发布内部测试网，邀请早期节点运营商参与。
-阶段三：经济模型与消费者功能上线
-[ ] 启动激励测试网，引入发布者和代币奖励。
-[ ] 开发API网关和消费者悬赏任务功能。
-阶段四：主网上线与社区治理
-[ ] 完成安全审计，正式启动主网。
-[ ] 将协议治理权逐步移交给 CONGRID 代币持有者社区。
-6. 结论
-Content Grid 不仅仅是一个区块链项目，它是一场构建更开放、更公平的下一代内容互联网的社会实验。通过将所有参与者的利益与网络的健康发展紧密绑定，我们相信可以创造一个充满活力、能够自我进化、并为所有用户带来真正价值的去中心化生态系统。我们邀请您加入我们，共同构建这个未来。
+5. Roadmap
+Phase 1: Protocol Core Implementation
+[✓] Complete the content-grid-chain basic framework construction.
+[✓] Implement node staking and registration modules (x/nodes, x/miners).
+[✓] Implement website registration and verification module (x/registry).
+[✓] Implement task allocation, consensus and reward modules (x/tasks, x/tokenomics) based on block hash.
+Phase 2: Off-chain functions and testnet online
+[ ] Develop off-chain task executor and full-node vector indexing service.
+[ ] Release the internal test network and invite early node operators to participate.
+Phase 3: Economic model and consumer functions come online
+[ ] Launch the incentivized testnet and introduce publisher and token rewards.
+[ ] Develop API gateway and consumer bounty task functions.
+Phase Four: Mainnet Online and Community Governance
+[ ] Completed the security audit and officially launched the main network.
+[ ] Gradually transfer protocol governance rights to the CONGRID token holder community.
+6. Conclusion
+Content Grid is more than just a blockchain project, it is a social experiment to build a more open and fair next-generation content Internet. By tightly tying the interests of all participants to the healthy development of the network, we believe we can create a decentralized ecosystem that is vibrant, self-evolving, and brings real value to all users. We invite you to join us in building this future.

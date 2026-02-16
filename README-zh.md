@@ -1,0 +1,179 @@
+# 内容网格链
+
+内容网格项目的核心协议实现——去中心化的内容网络和搜索协议。
+
+＃＃ 关于
+该链（基于 Cosmos SDK）协调并激励工人网络：
+- 抓取并获取网页内容
+- 链外计算嵌入（可插入嵌入器；当前的开发设置使用 SentenceTransformer HTTP 服务）
+- 导出**紧凑的相似性签名**（例如 128 位）以实现多样性/重复数据删除启发式
+- 索引内容并通过确定性分配提供相似性搜索
+
+快速链接：有关设计，请参阅 `whitepaper.md`；有关经济蓝图，请参阅 `docs/tokenomics.md`；有关贡献指南，请参阅 `AGENTS.md`。
+
+＃＃ 要求
+- Go 1.22+（使用最新的稳定版本）
+- 推荐类 Unix 环境 (macOS/Linux)
+
+## 构建、运行、测试
+- 构建：`go build -o content-grid-d ./cmd/content-grid-d`
+- 运行：`./content-grid-d version` 或 `./content-grid-d init`（占位符）
+- 测试：`go test ./...`
+- 原型：`./scripts/proto-gen.sh` 修改 `proto/` 后重新生成 gRPC 代码
+
+### 本地单节点启动
+
+1. 运行`./content-grid-d devnet --home ./devnet-home --chain-id grid-dev-1`，CLI将自动完成`init → keys add → add-genesis-account → gentx → collect-gentxs`，并使用默认验证器密钥（名称`validator`，密钥环后端为`test`）生成单节点创世文件。
+2. 执行`./content-grid-d start --home ./devnet-home`启动本地节点。如果需要重新初始化，请附加 `--force` 以清除旧的主目录。
+
+### 本地多节点网络（手动）
+
+下面以3个节点为例。流程为：初始化→生成密钥→在同一创世上生成gentx→收集gentx→分发最终创世→配置端口和互连。
+
+1. 初始化和按键
+   ```bash
+   go build -o content-grid-d ./cmd/content-grid-d
+
+   CHAIN_ID=grid-local-1
+   HOME1=./localnet/node1
+   HOME2=./localnet/node2
+   HOME3=./localnet/node3
+
+   ./content-grid-d init node1 --chain-id $CHAIN_ID --home $HOME1
+   ./content-grid-d init node2 --chain-id $CHAIN_ID --home $HOME2
+   ./content-grid-d init node3 --chain-id $CHAIN_ID --home $HOME3
+
+   ./content-grid-d keys add node1 --home $HOME1 --keyring-backend test
+   ./content-grid-d keys add node2 --home $HOME2 --keyring-backend test
+   ./content-grid-d keys add node3 --home $HOME3 --keyring-backend test
+   ```
+
+2. 生成地址并加入创世账户（对node1的创世进行操作）
+   ```bash
+   ADDR1=$(./content-grid-d keys show node1 --home $HOME1 --keyring-backend test --address)
+   ADDR2=$(./content-grid-d keys show node2 --home $HOME2 --keyring-backend test --address)
+   ADDR3=$(./content-grid-d keys show node3 --home $HOME3 --keyring-backend test --address)
+
+   ./content-grid-d genesis add-genesis-account $ADDR1 100000000ucongrid --home $HOME1
+   ./content-grid-d genesis add-genesis-account $ADDR2 100000000ucongrid --home $HOME1
+   ./content-grid-d genesis add-genesis-account $ADDR3 100000000ucongrid --home $HOME1
+   ```
+
+3. 分发相同的 genesis 副本，然后单独生成 gentx。
+   ```bash
+   cp $HOME1/config/genesis.json $HOME2/config/genesis.json
+   cp $HOME1/config/genesis.json $HOME3/config/genesis.json
+
+   ./content-grid-d genesis gentx node1 1000000ucongrid --chain-id $CHAIN_ID --home $HOME1 --keyring-backend test
+   ./content-grid-d genesis gentx node2 1000000ucongrid --chain-id $CHAIN_ID --home $HOME2 --keyring-backend test
+   ./content-grid-d genesis gentx node3 1000000ucongrid --chain-id $CHAIN_ID --home $HOME3 --keyring-backend test
+   ```
+
+4. 收集gentx并分发最终创世币
+   ```bash
+   cp $HOME2/config/gentx/*.json $HOME1/config/gentx/
+   cp $HOME3/config/gentx/*.json $HOME1/config/gentx/
+   ./content-grid-d genesis collect-gentxs --home $HOME1
+
+   cp $HOME1/config/genesis.json $HOME2/config/genesis.json
+   cp $HOME1/config/genesis.json $HOME3/config/genesis.json
+   ```
+
+5. 配置端口和互连（以避免本地端口冲突）
+- 编辑`config/config.toml`：设置`p2p.laddr`和`rpc.laddr`。
+- 编辑`config/app.toml`：设置`api.address`和`grpc.address`。
+- 端口分配示例：
+     - 节点1：p2p `26656`，rpc `26657`，api `1317`，grpc `9090`
+     - 节点2：p2p `26666`，rpc `26667`，api `1417`，grpc `9190`
+     - 节点3：p2p `26676`，rpc `26677`，api `1517`，grpc `9290`
+
+6. 设置持久对等点（至少让node2/node3连接到node1）
+   ```bash
+   NODE1_ID=$(./content-grid-d tendermint show-node-id --home $HOME1)
+   ```
+在node2和node3的`config/config.toml`中设置：
+   ```
+   p2p.persistent_peers = "${NODE1_ID}@127.0.0.1:26656"
+   ```
+
+7. 分别启动节点（不同终端）
+   ```bash
+   ./content-grid-d start --home $HOME1
+   ./content-grid-d start --home $HOME2
+   ./content-grid-d start --home $HOME3
+   ```
+
+### 出版商注册
+
+1. **添加Congrid官方链接+归因图片（验证所需）**：您必须在要绑定的网站首页（`/`）添加Congrid官方网站的链接，并且该链接必须用归因图片（徽章）包裹。
+
+目前验证者判定规则参见`offchain/registry/verifier.go`：
+- 官方网站链接必须为**`<a href="https://congrid.net">`**（或`https://www.congrid.net/`）。 **官网地址本身不允许包含查询/片段**。
+- `<img src="...">` 必须包含在 `a` 内。
+- `img src` 必须是 `https://congrid.net/...` （或 `https://www.congrid.net/...`）并在 **路径或查询** 中携带：
+- `publisher=<your-domain>`（允许不带端口），用于统计归因
+- `wallet=<bech32-owner-address>`，必须等于注册交易的所有者地址（`publisher register --from`），用于防止抢注
+
+**推荐格式：**
+   ```html
+   <a href="https://congrid.net">
+     <img
+       alt="Verified by Congrid"
+       src="https://congrid.net/badge.png?publisher=example.com&wallet=<bech32-owner-address>"
+     />
+   </a>
+   ```
+
+2. **执行注册命令**：运行`./content-grid-d publisher register <domain> --from <key-or-address> [--metadata-uri <link>] [--referrer <address>]`。
+- `--referrer`：可选，referrer地址（用于影响验证者的收益权重；publisher推荐publisher不生效）。
+- 系统会自动识别并锁定域名的**一级域名**（Primary Domain，如`example.com`）。
+- 同一一级域名下只能注册一个站点，防止他人抢注子域名。支持非默认端口（例如 `example.com:8080`）。
+3. **验证完成**：命令会访问`https://<domain>/`来验证是否包含congrid官方链接；链下验证节点也会定期抓取主页进行确认。
+- **无需押金/质押**：发布者注册本身不需要锁定或质押。
+- **仍然需要链上交易费（gas费）**：广播`publisher register`此类交易通常需要支付网络费用（除非链上参数允许0费用或使用`feegrant`）。
+4. **查询状态**：注册成功后，可以通过gRPC查询或CLI `content-grid-d query registry publisher <domain>`查看。
+
+### 矿工注册（链上协议部分）
+
+1. 使用`./content-grid-d miner register <metadata-uri> <services-bitmask> <min-bid-amount> --stake <amount>`完成矿工数据上传链上。 `services-bitmask` 使用位掩码（例如，`3` 表示同时提供获取和嵌入），并且质押和最低出价暂时使用相同的面额。
+2. 随后，您可以通过`./content-grid-d miner update --metadata-uri ... --services ... --min-bid-amount ...`更新服务报表，或者使用`./content-grid-d miner stake <amount> [--decrease]`调整记录的质押金额。
+3. 链上查询接口`query miners`/`query miner <address>`会返回当前在线矿工、服务能力、报价和质押信息，任务调度将直接根据这些状态进行。
+
+### 验证者债券（普通地址+托管）
+
+验证者以普通账户地址（`grid1...`）参与验证网络，首先将代币绑定到模块托管账户**（escrow）后才被认为符合资格。
+
+- 债券：`./content-grid-d verifier bond <amount> --denom ucongrid --from <key>`
+- 解绑：`./content-grid-d verifier unbond <amount> --denom ucongrid --from <key>`
+
+有关详细信息，请参阅 `docs/verifiers.md`。
+
+### 经济公用事业
+
+- 使用 `go run ./cmd/tokenomics <subcommand>` 模拟供应、生成创世模板或制作空投表。
+- 有关参数详细信息，请参阅 `docs/tokenomics.md`；有关提案流程，请参阅 `docs/governance.md`。
+
+笔记：
+- 不要提交构建工件（请参阅 `.gitignore`）。
+- CLI 是一个最小的框架，等待完整的服务器/运行时连接。
+
+## 链下组件
+- `offchain/indexerd`：发布者主页索引 + 嵌入 + **紧凑签名**（请参阅 `docs/indexerd.md`）。
+- `offchain/verifierd`：链驱动的发布者验证代理（请参阅`docs/verifierd.md`）。
+- `offchain/executor`：链工作者原型，用于获取、嵌入、分类和发布内容记录（请参阅`offchain/executor/README.md`）。
+- `offchain/services/sentence_transformer_server.py`：Python HTTP 服务包装 SentenceTransformer 嵌入。
+
+## 项目状态
+第一阶段骨架。 `app/` 包为 Cosmos SDK v0.53 提供模块基础知识、编码和默认创世帮助程序。
+- `x/registry`：发布者注册和验证逻辑。
+- `x/miners`：矿工注册和服务发现。
+- `x/tasks`：任务分配（区块哈希）和结果验证（链上共识）以及自动奖励分配。
+- `x/tokenomics`：经济参数、通货膨胀逻辑和结算管理员。
+
+## 路线图（高级）
+1) [x] 运行时连接：depinject + `runtime.App`，auth/bank/stake 的守护者，ABCI 服务
+2) [x] CLI/服务器：`init`、`start`、配置/主目录管理、密钥
+3) [x] 第一个模块：`x/` 下的最小任务分配/提交模型
+4) [ ] P2P/Indexing：全节点向量索引&基于块哈希的查询路由
+5) [x] 经济/治理：奖励、削减、参数、建议
+6) 测试网：可复制的起源、文档和 CI

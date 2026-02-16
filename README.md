@@ -19,18 +19,18 @@ Quick links: see `whitepaper.md` for the design, `docs/tokenomics.md` for the ec
 - Build: `go build -o content-grid-d ./cmd/content-grid-d`
 - Run: `./content-grid-d version` or `./content-grid-d init` (placeholder)
 - Test: `go test ./...`
-- Proto: `./scripts/proto-gen.sh` 在修改 `proto/` 后重新生成 gRPC 代码
+- Proto: `./scripts/proto-gen.sh` regenerates gRPC code after modifying `proto/`
 
-### 本地单节点启动
+### Local single node startup
 
-1. 运行 `./content-grid-d devnet --home ./devnet-home --chain-id grid-dev-1`，CLI 会自动完成 `init → keys add → add-genesis-account → gentx → collect-gentxs`，生成带有默认验证人密钥（名称 `validator`，keyring backend 为 `test`）的单节点创世文件。
-2. 执行 `./content-grid-d start --home ./devnet-home` 即可启动本地节点。若需重新初始化，附加 `--force` 以清空旧的 home 目录。
+1. Run `./content-grid-d devnet --home ./devnet-home --chain-id grid-dev-1`, the CLI will automatically complete `init → keys add → add-genesis-account → gentx → collect-gentxs`, and generate a single-node genesis file with the default validator key (name `validator`, keyring backend is `test`).
+2. Execute `./content-grid-d start --home ./devnet-home` to start the local node. If reinitialization is required, append `--force` to clear the old home directory.
 
-### 本地多节点网络（手动）
+### Local multi-node network (manual)
 
-下面示例以 3 个节点为例，流程是：初始化 → 生成密钥 → 在同一份 genesis 上生成 gentx → 收集 gentx → 分发最终 genesis → 配置端口与互连。
+The following example takes 3 nodes as an example. The process is: initialization → generate key → generate gentx on the same genesis → collect gentx → distribute the final genesis → configure ports and interconnections.
 
-1. 初始化与密钥
+1. Initialization and keys
    ```bash
    go build -o content-grid-d ./cmd/content-grid-d
 
@@ -48,7 +48,7 @@ Quick links: see `whitepaper.md` for the design, `docs/tokenomics.md` for the ec
    ./content-grid-d keys add node3 --home $HOME3 --keyring-backend test
    ```
 
-2. 生成地址并加入创世账户（在 node1 的 genesis 上操作）
+2. Generate the address and join the genesis account (operate on the genesis of node1)
    ```bash
    ADDR1=$(./content-grid-d keys show node1 --home $HOME1 --keyring-backend test --address)
    ADDR2=$(./content-grid-d keys show node2 --home $HOME2 --keyring-backend test --address)
@@ -59,7 +59,7 @@ Quick links: see `whitepaper.md` for the design, `docs/tokenomics.md` for the ec
    ./content-grid-d genesis add-genesis-account $ADDR3 100000000ucongrid --home $HOME1
    ```
 
-3. 分发同一份 genesis，再各自生成 gentx
+3. Distribute the same copy of genesis, and then generate gentx separately.
    ```bash
    cp $HOME1/config/genesis.json $HOME2/config/genesis.json
    cp $HOME1/config/genesis.json $HOME3/config/genesis.json
@@ -69,7 +69,7 @@ Quick links: see `whitepaper.md` for the design, `docs/tokenomics.md` for the ec
    ./content-grid-d genesis gentx node3 1000000ucongrid --chain-id $CHAIN_ID --home $HOME3 --keyring-backend test
    ```
 
-4. 收集 gentx 并分发最终 genesis
+4. Collect gentx and distribute final genesis
    ```bash
    cp $HOME2/config/gentx/*.json $HOME1/config/gentx/
    cp $HOME3/config/gentx/*.json $HOME1/config/gentx/
@@ -79,42 +79,42 @@ Quick links: see `whitepaper.md` for the design, `docs/tokenomics.md` for the ec
    cp $HOME1/config/genesis.json $HOME3/config/genesis.json
    ```
 
-5. 配置端口与互连（避免本机端口冲突）
-   - 编辑 `config/config.toml`：设置 `p2p.laddr` 与 `rpc.laddr`。
-   - 编辑 `config/app.toml`：设置 `api.address` 与 `grpc.address`。
-   - 示例端口分配：
+5. Configure ports and interconnections (to avoid local port conflicts)
+- Edit `config/config.toml`: set `p2p.laddr` and `rpc.laddr`.
+- Edit `config/app.toml`: set `api.address` and `grpc.address`.
+- Example port assignment:
      - node1: p2p `26656`, rpc `26657`, api `1317`, grpc `9090`
      - node2: p2p `26666`, rpc `26667`, api `1417`, grpc `9190`
      - node3: p2p `26676`, rpc `26677`, api `1517`, grpc `9290`
 
-6. 设置 persistent peers（至少让 node2/node3 连接 node1）
+6. Set up persistent peers (at least let node2/node3 connect to node1)
    ```bash
    NODE1_ID=$(./content-grid-d tendermint show-node-id --home $HOME1)
    ```
-   在 node2 与 node3 的 `config/config.toml` 中设置：
+Set in `config/config.toml` of node2 and node3:
    ```
    p2p.persistent_peers = "${NODE1_ID}@127.0.0.1:26656"
    ```
 
-7. 分别启动节点（不同终端）
+7. Start the nodes separately (different terminals)
    ```bash
    ./content-grid-d start --home $HOME1
    ./content-grid-d start --home $HOME2
    ./content-grid-d start --home $HOME3
    ```
 
-### Publisher 注册
+### Publisher Registration
 
-1. **添加 Congrid 官方链接 + 归因图片（验证必需）**：在您要绑定的网站主页（`/`）必须添加一个指向 Congrid 官网的链接，并且该链接必须包裹一张归因图片（badge）。
+1. **Add Congrid official link + attribution image (required for verification)**: You must add a link to the Congrid official website on the homepage (`/`) of the website you want to bind, and the link must be wrapped with an attribution image (badge).
 
-   当前 verifier 的判定规则见 `offchain/registry/verifier.go`：
-   - 官网链接必须是 **`<a href="https://congrid.net">`**（或 `https://www.congrid.net/`），**官网地址本身不允许带 query/fragment**。
-   - `a` 内必须包含 `<img src="...">`。
-   - `img src` 必须是 `https://congrid.net/...`（或 `https://www.congrid.net/...`），并且在 **path 或 query** 中携带：
-     - `publisher=<your-domain>`（允许不带端口），用于统计归因
-     - `wallet=<bech32-owner-address>`，必须等于注册交易的 owner 地址（`publisher register --from`），用于防止抢注
+For the current verifier determination rules, see `offchain/registry/verifier.go`:
+- The official website link must be **`<a href="https://congrid.net">`** (or `https://www.congrid.net/`). **The official website address itself is not allowed to contain query/fragment**.
+- `<img src="...">` must be included within `a`.
+- `img src` must be `https://congrid.net/...` (or `https://www.congrid.net/...`) and carried in **path or query**:
+- `publisher=<your-domain>` (allowed without port), for statistical attribution
+- `wallet=<bech32-owner-address>`, must be equal to the owner address of the registered transaction (`publisher register --from`), used to prevent squatting
 
-   **推荐格式：**
+**Recommended format:**
    ```html
    <a href="https://congrid.net">
      <img
@@ -124,29 +124,29 @@ Quick links: see `whitepaper.md` for the design, `docs/tokenomics.md` for the ec
    </a>
    ```
 
-2. **执行注册命令**：运行 `./content-grid-d publisher register <domain> --from <key-or-address> [--metadata-uri <link>] [--referrer <address>]`。
-   - `--referrer`：可选，引荐人地址（用于影响 verifier 的收益权重；publisher 引荐 publisher 不生效）。
-   - 系统会自动识别并锁定该域名的**一级域名**（Primary Domain，如 `example.com`）。
-   - 同一个一级域名下只能注册一个站点，防止他人抢注子域名。支持非默认端口（如 `example.com:8080`）。
-3. **完成验证**：命令会访问 `https://<domain>/` 校验是否包含 congrid 官方链接；链下验证节点也会定期抓取主页确认。
-   - **无需押金/质押**：Publisher 注册本身不要求锁仓或抵押。
-   - **仍需链上交易手续费（gas fee）**：广播 `publisher register` 这类交易通常需要支付网络手续费（除非链参数允许 0 fee 或使用 `feegrant`）。
-4. **查询状态**：注册成功后，可通过 gRPC 查询或 CLI `content-grid-d query registry publisher <domain>` 查看。
+2. **Execute registration command**: Run `./content-grid-d publisher register <domain> --from <key-or-address> [--metadata-uri <link>] [--referrer <address>]`.
+- `--referrer`: optional, referrer address (used to affect the revenue weight of verifier; publisher recommendation publisher does not take effect).
+- The system will automatically identify and lock the **first-level domain name** (Primary Domain, such as `example.com`) of the domain name.
+- Only one site can be registered under the same first-level domain name to prevent others from preemptively registering subdomain names. Supports non-default ports (such as `example.com:8080`).
+3. **Verification completed**: The command will access `https://<domain>/` to verify whether it contains the congrid official link; the off-chain verification node will also regularly crawl the homepage for confirmation.
+- **No deposit/pledge required**: Publisher registration itself does not require locking or staking.
+- **On-chain transaction fee (gas fee) is still required**: Broadcasting `publisher register` Such transactions usually require payment of network fees (unless the chain parameters allow 0 fee or use `feegrant`).
+4. **Query status**: After successful registration, it can be viewed through gRPC query or CLI `content-grid-d query registry publisher <domain>`.
 
-### Miner 注册（链上协议部分）
+### Miner registration (on-chain protocol part)
 
-1. 使用 `./content-grid-d miner register <metadata-uri> <services-bitmask> <min-bid-amount> --stake <amount>` 完成矿工资料上链。`services-bitmask` 采用位掩码（例如 `3` 表示同时提供抓取与 embedding），质押与最低报价暂使用同一 denom。
-2. 后续可通过 `./content-grid-d miner update --metadata-uri ... --services ... --min-bid-amount ...` 更新服务声明，或使用 `./content-grid-d miner stake <amount> [--decrease]` 调整记录的质押数量。
-3. 链上查询接口 `query miners`/`query miner <address>` 会返回当前在线矿工、服务能力、报价以及质押信息，任务调度将直接基于这些状态。
+1. Use `./content-grid-d miner register <metadata-uri> <services-bitmask> <min-bid-amount> --stake <amount>` to complete the uploading of miner data to the chain. `services-bitmask` uses a bitmask (for example, `3` means providing both fetching and embedding), and the pledge and the lowest bid temporarily use the same denom.
+2. Subsequently, you can update the service statement through `./content-grid-d miner update --metadata-uri ... --services ... --min-bid-amount ...`, or use `./content-grid-d miner stake <amount> [--decrease]` to adjust the recorded pledge amount.
+3. The on-chain query interface `query miners`/`query miner <address>` will return the current online miners, service capabilities, quotations and pledge information, and task scheduling will be directly based on these statuses.
 
-### Verifier Bond（普通地址 + escrow）
+### Verifier Bond (normal address + escrow)
 
-Verifier 以普通账户地址（`grid1...`）参与验证网络，先把代币 **bond 到模块托管账户**（escrow）才会被视为 eligible。
+Verifier participates in the verification network with a normal account address (`grid1...`), and first bonds the token to the module escrow account** (escrow) before it is considered eligible.
 
 - Bond：`./content-grid-d verifier bond <amount> --denom ucongrid --from <key>`
 - Unbond：`./content-grid-d verifier unbond <amount> --denom ucongrid --from <key>`
 
-更多见 `docs/verifiers.md`。
+See `docs/verifiers.md` for more information.
 
 ### Economics utilities
 
