@@ -1,52 +1,52 @@
-# 生产运行手册（Runbook）
+# Production runbook (Runbook)
 
-> 适用于：`content-grid-d`、`verifierd`、`drand-relayer`、`congrid-site`。  
-> 目标：出现问题时，值班同学 5 分钟内定位方向，15 分钟内执行缓解动作。
+> Applies to: `content-grid-d`, `verifierd`, `drand-relayer`, `congrid-site`.
+> Goal: When a problem occurs, students on duty will locate the direction within 5 minutes and implement mitigating actions within 15 minutes.
 
 ---
 
-## 0. 环境信息（当前建议基线）
+## 0. Environmental information (current recommended baseline)
 
-- 代码目录：`/home/eking/workspace/congrid.net`
-- 链节点 HOME：`/home/eking/.content-grid-d`（当前默认基线）
-- verifierd 配置：`/home/eking/workspace/congrid.net/offchain/verifierd/config.json`
-- drand-relayer 配置：`/home/eking/workspace/congrid.net/offchain/drandrelayer/config.json`
-- site 配置（建议 env 文件）：`/home/eking/workspace/congrid.net/.env.site`
-- 日志目录（建议）：`/home/eking/workspace/congrid.net/logs/`
-- 时区：`America/Toronto`
+- Code directory: `/home/eking/workspace/congrid.net`
+- Chain node HOME: `/home/eking/.content-grid-d` (current default baseline)
+- verifierd configuration: `/home/eking/workspace/congrid.net/offchain/verifierd/config.json`
+- drand-relayer configuration: `/home/eking/workspace/congrid.net/offchain/drandrelayer/config.json`
+- site configuration (env file recommended): `/home/eking/workspace/congrid.net/.env.site`
+- Log directory (recommended): `/home/eking/workspace/congrid.net/logs/`
+- Time zone: `America/Toronto`
 
-负责人（当前临时）：
-- 链：`eking`
+Person in charge (currently interim):
+- Chain: `eking`
 - verifierd：`eking`
 - site：`eking`
-- 值班通知：`Telegram @eking (id:6148992071)`
+- Duty notification: `Telegram @eking (id:6148992071)`
 
 ---
 
-## 1. 服务清单与职责
+## 1. Service list and responsibilities
 
-- 链节点：`content-grid-d`
-  - 责任：共识、状态执行、gRPC/RPC 提供
-- 验证代理：`verifierd`
-  - 责任：拉取 assignment，commit/reveal，站点验证
-- 随机信标中继：`drand-relayer`
-  - 责任：拉取 drand 最新 beacon 并上链提交
-- 官网/市场：`congrid-site`
-  - 责任：展示与用户入口，链上 slot/lease 提交
+- Chain node: `content-grid-d`
+- Responsibilities: consensus, state execution, gRPC/RPC provision
+- Verification agent: `verifierd`
+- Responsibilities: pull assignment, commit/reveal, site verification
+- Random beacon relay: `drand-relayer`
+- Responsibility: Pull the latest beacon of drand and upload it to the chain for submission
+- Official website/market: `congrid-site`
+- Responsibility: display and user entrance, slot/lease submission on the chain
 
 ---
 
-## 2. 启停与健康检查
+## 2. Start, stop and health check
 
 ## 2.1 content-grid-d
 
-### 启动（手工模式）
+### Start (manual mode)
 ```bash
 cd /home/eking/workspace/congrid.net
 ./content-grid-d start --home /home/eking/.content-grid-d
 ```
 
-### 健康检查
+### Health Check
 ```bash
 # RPC
 echo >/dev/tcp/127.0.0.1/26657
@@ -58,48 +58,48 @@ echo >/dev/tcp/127.0.0.1/9090
 ./content-grid-d query block --type height --home /home/eking/.content-grid-d --node tcp://127.0.0.1:26657 -o json
 ```
 
-关键检查：
-- 最新区块持续增长
-- 无连续 panic / consensus failure
+Key checks:
+- The latest blocks continue to grow
+- No consecutive panic / consensus failure
 
 ## 2.2 verifierd
 
-### 启动（手工模式）
+### Start (manual mode)
 ```bash
 cd /home/eking/workspace/congrid.net
 ./verifierd --config /home/eking/workspace/congrid.net/offchain/verifierd/config.json
 ```
 
-### 单轮探活
+### Single round exploration
 ```bash
 ./verifierd --config /home/eking/workspace/congrid.net/offchain/verifierd/config.json --once
 ```
 
-关键日志关键词：
+Key log keywords:
 - `submitted commit`
 - `revealed result (passed=true|false)`
 - `commit failed` / `reveal failed`
 
 ## 2.3 drand-relayer
 
-### 启动（手工模式）
+### Start (manual mode)
 ```bash
 cd /home/eking/workspace/congrid.net
 ./drand-relayer --config /home/eking/workspace/congrid.net/offchain/drandrelayer/config.json
 ```
 
-### 单轮探活
+### Single round exploration
 ```bash
 ./drand-relayer --config /home/eking/workspace/congrid.net/offchain/drandrelayer/config.json --once
 ```
 
-关键日志关键词：
+Key log keywords:
 - `submitted beacon round=`
 - `sync error`
 
 ## 2.4 congrid-site
 
-### 启动（示例）
+### Start (example)
 ```bash
 cd /home/eking/workspace/congrid.net
 go run ./cmd/congrid-site \
@@ -114,99 +114,99 @@ go run ./cmd/congrid-site \
   --keyring-backend os
 ```
 
-健康检查：
-- `/`、`/marketplace`、`/publisher/dashboard` 可访问
-- 提交 slot/lease 时 tx 返回成功且有 txhash
+Health check:
+- `/`, `/marketplace`, `/publisher/dashboard` are accessible
+- When submitting slot/lease, tx returns successfully and has txhash
 
 ---
 
-## 3. 日常巡检（每班次）
+## 3. Daily inspection (each shift)
 
-- [ ] 链高度正常增长
-- [ ] verifierd 最近 15 分钟 commit/reveal 成功率达标
-- [ ] drand beacon 上链轮次持续增长（无长时间停滞）
-- [ ] publisher VERIFIED 比例无异常下降
-- [ ] lease 违约（VIOLATED）比例无异常上升
-- [ ] site 可用，提交路径可用
+- [ ] Chain height grows normally
+- [ ] verifierd The commit/reveal success rate in the last 15 minutes meets the standard
+- [ ] The number of drand beacon winding rounds continues to increase (no long-term stagnation)
+- [ ] publisher VERIFIED There is no abnormal decrease in the ratio
+- [ ] Lease default (VIOLATED) ratio has not increased abnormally
+- [ ] site is available, submission path is available
 
-建议阈值：
-- assignment 拉取成功率（5min）`>= 99%`
-- commit 成功率（15min）`>= 95%`
-- reveal 成功率（15min）`>= 90%`
+Recommended threshold:
+- assignment pull success rate (5min) `>= 99%`
+- Commit success rate (15min) `>= 95%`
+- reveal success rate (15min)`>= 90%`
 
 ---
 
-## 4. 典型告警处置
+## 4. Typical alarm handling
 
-## 4.1 告警：publisher 长时间 PENDING
+## 4.1 Warning: publisher is PENDING for a long time
 
-排查：
-1. 查 assignment 是否生成
-2. 查 verifierd 是否有 `submitted commit` / `revealed result`
-3. 查是否频繁 `reveal window not open` / `account sequence mismatch`
+Troubleshooting:
+1. Check whether assignment is generated
+2. Check if verifierd has `submitted commit` / `revealed result`
+3. Check whether `reveal window not open` / `account sequence mismatch` occurs frequently
 
-命令：
+Order:
 ```bash
 ./content-grid-d query registry publisher --domain <domain> --node tcp://127.0.0.1:26657 --grpc-addr 127.0.0.1:9090 --grpc-insecure -o json
 ./content-grid-d verifier assignments <verifier-addr> --node tcp://127.0.0.1:26657 --grpc-addr 127.0.0.1:9090 --grpc-insecure -o json
 ```
 
-缓解：
-- 确认 verifierd 配置（poll、commit window）
-- 必要时重启 verifierd（保留日志）
-- 如链参数不合理，走参数调整流程
+ease:
+- Confirm verifierd configuration (poll, commit window)
+- Restart verifierd if necessary (keep logs)
+- If the chain parameters are unreasonable, follow the parameter adjustment process
 
 ---
 
-## 4.2 告警：reveal 失败率飙升
+## 4.2 Warning: Reveal failure rate soars
 
-排查：
-1. 失败是否集中在窗口时序（window not open/closed）
-2. 是否账号 sequence 冲突
-3. 节点是否出块抖动或时钟偏差
+Troubleshooting:
+1. Whether the failure is concentrated in window timing (window not open/closed)
+2. Whether the account sequence conflicts?
+3. Whether the node produces block jitter or clock deviation
 
-缓解：
-- 确认 tx 串行提交是否生效
-- 适当增加 reveal 缓冲等待
-- 检查系统时钟（NTP）
-
----
-
-## 4.3 告警：链节点 panic / consensus failure
-
-立即动作：
-1. 保护现场日志（node + verifierd + site）
-2. 拉起备用节点或重启（按预案）
-3. 通知 SEV1 值班群
-
-排查要点：
-- panic 栈顶模块
-- 最近变更（代码/参数）
-- 是否可通过回滚缓解
+ease:
+- Confirm whether tx serial submission is effective
+- Appropriately increase the reveal buffer wait
+- Check system clock (NTP)
 
 ---
 
-## 5. 应急操作（最小集）
+## 4.3 Warning: Link node panic / consensus failure
 
-- 暂停新业务入口（site 层）
-- 暂停 slot 上架（必要时）
-- 回滚到上一个稳定版本
-- 恢复后逐步放量
+Immediate action:
+1. Protect on-site logs (node ​​+ verifierd + site)
+2. Pull up the standby node or restart (according to plan)
+3. Notify SEV1 duty group
 
-> 建议把上述动作脚本化，避免人工误操作。
+Troubleshooting points:
+- panic stack top module
+- Recent changes (code/parameters)
+- Whether it can be mitigated by rolling back
 
 ---
 
-## 6. 回滚流程（执行版）
+## 5. Emergency operations (minimum set)
 
-1. 宣布进入回滚窗口（记录时间、影响范围）
-2. 记录当前版本号与参数快照
-3. 切回稳定版本（建议回滚锚点：`4202f66`，按实际发布版本调整）
-4. 重启服务并做健康检查
-5. 验证核心链路（publisher verify / slot / lease）
-6. 宣布回滚完成
+- Suspended new business entrance (site layer)
+- Pause slot listing (if necessary)
+- Roll back to the previous stable version
+- Gradually increase the volume after recovery
 
-回滚后必须执行：
+> It is recommended to script the above actions to avoid manual errors.
+
+---
+
+## 6. Rollback process (execution version)
+
+1. Announcement of entering the rollback window (recording time, scope of impact)
+2. Record the current version number and parameter snapshot
+3. Switch back to the stable version (recommended rollback anchor point: `4202f66`, adjusted according to the actual released version)
+4. Restart the service and do a health check
+5. Verify core link (publisher verify / slot / lease)
+6. Announce rollback completion
+
+Must be executed after rollback:
 ```bash
 cd /home/eking/workspace/congrid.net
 go test ./...
@@ -215,19 +215,19 @@ go test ./...
 
 ---
 
-## 7. 事后复盘（Postmortem）
+## 7. Postmortem
 
-- 事件编号：
-- 影响范围：
-- 发现时间 / 恢复时间：
-- 根因：
-- 直接修复：
-- 长期改进项：
+- Event number:
+- Scope of influence:
+- Discovery time / recovery time:
+- Root cause:
+- Direct fix:
+- Long-term improvements:
 - Owner + Deadline：
 
 ---
 
-## 8. 常用排查命令
+## 8. Common troubleshooting commands
 
 ```bash
 cd /home/eking/workspace/congrid.net
