@@ -7,6 +7,10 @@
     <p class="lead">
       Browse publisher link slots across the network. Search, compare, and request leases for high-intent placements.
     </p>
+    <div class="callout">
+      <strong>No login required:</strong> lease requests and listings are keyed by on-chain slot/lease IDs.
+      <a href="/leases">View lease publish board →</a>
+    </div>
 
     <div class="card">
       <form class="filters" method="get" action="/marketplace">
@@ -84,7 +88,8 @@
             </div>
             {{if .Lease}}
               <div class="callout">
-                <strong>Lease:</strong> {{.Lease.Lessee}} until {{formatDate .Lease.EndsAt}}.
+                <strong>Lease:</strong> {{.Lease.Lessee}} until {{formatDate .Lease.EndsAt}}.<br />
+                <span class="muted">slot_id={{.Lease.SlotID}} · lease_id={{.Lease.LeaseID}}</span>
               </div>
             {{end}}
             {{if .MinDurationSeconds}}

@@ -7,6 +7,9 @@
     <p class="lead">
       Manage your link slots, pricing, and availability. Create listings and pause or unlist them when needed.
     </p>
+    <div class="callout">
+      <strong>No login required:</strong> enter your publisher domain and manage lease publishing data with on-chain slot/lease IDs.
+    </div>
 
     {{if .Flash}}
       <div class="callout">{{.Flash}}</div>
@@ -133,12 +136,17 @@
     {{end}}
 
     <h2>Leases</h2>
+    <div class="callout">
+      <strong>Lease publish rule:</strong> use backend-generated <code>slot_id</code> and <code>lease_id</code>. Put <code>slot_id</code> on the HTML wrapper element (attribute: <code>data-congrid-slot-id</code>).
+    </div>
     {{if .Leases}}
       <div class="table-wrap">
         <table class="table">
           <thead>
             <tr>
               <th>Slot</th>
+              <th>Slot ID</th>
+              <th>Lease ID</th>
               <th>Lessee</th>
               <th>Term</th>
               <th>Rate</th>
@@ -150,13 +158,15 @@
             {{range .Leases}}
               <tr>
                 <td>{{.SlotLabel}}</td>
+                <td><code>{{.SlotID}}</code></td>
+                <td><code>{{.LeaseID}}</code></td>
                 <td>{{.Lessee}}</td>
                 <td>{{formatLeaseTerm .}}</td>
                 <td>{{formatRate .Rate}}</td>
                 <td><span class="badge {{leaseStatusClass .}}">{{leaseStatusLabel .}}</span></td>
                 <td>
-                  {{if .LeaseID}}
-                    <code class="snippet">&lt;a href="{{.TargetURL}}" data-congrid-slot="{{.SlotID}}" data-congrid-lease="{{.LeaseID}}"&gt;Link&lt;/a&gt;</code>
+                  {{if and .SlotID .LeaseID .TargetURL}}
+                    <code class="snippet">{{leaseEmbedSnippet .}}</code>
                   {{else}}
                     <span class="muted">—</span>
                   {{end}}

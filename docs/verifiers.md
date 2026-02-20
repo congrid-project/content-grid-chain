@@ -19,6 +19,16 @@ List assignments:
 ./content-grid-d verifier assignments --from <key>
 ```
 
+## Assignment Rule (Current)
+
+Assignments are deterministic and stake-weighted:
+
+- Candidate set: active, non-suspended verifiers that satisfy min bond.
+- Selection: deterministic weighted random sampling **without replacement**.
+- Weight: verifier bonded stake (`bond.amount`).
+
+This means higher bonded stake increases assignment probability, while still keeping selection auditable from on-chain round seed + verifier set.
+
 Commit / Reveal:
 ```bash
 ./content-grid-d verifier commit example.com --passed --nonce <nonce> --from <key>
@@ -36,14 +46,19 @@ Commit / Reveal:
 
 Only successful verifiers in finalized pass-majority rounds participate in verifier payout.
 
-Weight per verifier:
+Assignment-level verifier payout is split into two buckets:
+
+1. **Base bucket** (default `verifier_reward_base_share_bps = 4000`, i.e. 40%)
+   - equally split among successful verifiers for that assignment.
+2. **Weighted bucket** (remaining 60%)
+   - proportional to
 
 `weight = bonded_stake × referral_factor`
 
 - `bonded_stake`: verifier bond in verifier module
 - `referral_factor`: active referred-publisher factor (minimum 1)
 
-So payout is proportional to stake and referral activity.
+If no positive weighted verifier exists for an assignment, the weighted bucket is burned from the emission pool.
 
 ## Penalties
 

@@ -2,6 +2,7 @@ package registryoffchain
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -88,5 +89,63 @@ func TestHTTPContentVerifier(t *testing.T) {
 				t.Fatalf("expected verification to pass: %v", err)
 			}
 		})
+	}
+}
+
+func TestEnsureLeaseAnchors_RequiresWrapperSlotID(t *testing.T) {
+	html := `
+<div data-congrid-slot-id="slot-000123">
+  <a href="https://advertiser.example/landing" data-congrid-lease="lease-000456">Sponsored</a>
+</div>`
+	err := ensureLeaseAnchors(html, []LeaseExpectation{{
+		SlotID:    "slot-000123",
+		LeaseID:   "lease-000456",
+		TargetURL: "https://advertiser.example/landing",
+	}})
+	if err != nil {
+		t.Fatalf("expected lease anchors to pass: %v", err)
+	}
+}
+
+func TestEnsureLeaseAnchors_FailsWhenWrapperSlotIDMissing(t *testing.T) {
+	html := `<a href="https://advertiser.example/landing" data-congrid-slot="slot-000123" data-congrid-lease="lease-000456">Sponsored</a>`
+	err := ensureLeaseAnchors(html, []LeaseExpectation{{
+		SlotID:    "slot-000123",
+		LeaseID:   "lease-000456",
+		TargetURL: "https://advertiser.example/landing",
+	}})
+	if err == nil {
+		t.Fatalf("expected lease anchor verification to fail without wrapper slot id")
+	}
+}
+
+func TestHTTPContentVerifier_VerifyWithLeases(t *testing.T) {
+	body := ""
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != DefaultVerifyPath {
+			http.NotFound(w, r)
+			return
+		}
+		_, _ = w.Write([]byte(body))
+	}))
+	t.Cleanup(server.Close)
+
+	parsed, err := url.Parse(server.URL)
+	if err != nil {
+		t.Fatalf("failed to parse server url: %v", err)
+	}
+
+	badge := fmt.Sprintf(`<a href="https://congrid.net"><img src="https://congrid.net/badge.png?publisher=%s&wallet=cosmos1owner" /></a>`, parsed.Host)
+	lease := `<div data-congrid-slot-id="slot-000123"><a href="https://advertiser.example/landing" data-congrid-lease="lease-000456">Sponsored</a></div>`
+	body = badge + lease
+
+	verifier := HTTPContentVerifier{Scheme: parsed.Scheme, Client: server.Client()}
+	err = verifier.VerifyWithLeases(context.Background(), parsed.Host, "cosmos1owner", []LeaseExpectation{{
+		SlotID:    "slot-000123",
+		LeaseID:   "lease-000456",
+		TargetURL: "https://advertiser.example/landing",
+	}})
+	if err != nil {
+		t.Fatalf("expected VerifyWithLeases to pass: %v", err)
 	}
 }

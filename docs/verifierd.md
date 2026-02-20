@@ -16,8 +16,9 @@
     - `<a href="https://congrid.net">` (or `https://www.congrid.net/`) with no query/fragment
     - the `<a>` wraps an `<img>`
     - `<img src>` is served from `https://congrid.net/...` and includes `publisher=<domain>` and `wallet=<owner>`
-  - if there are active leases, homepage also contains lease anchors for each active lease:
-    - `<a href="https://advertiser.example/landing" data-congrid-slot="slot-000123" data-congrid-lease="lease-000456">`
+  - if there are active leases, homepage also contains lease markup for each active lease:
+    - wrapper element with backend slot id: `<div data-congrid-slot-id="slot-000123" data-congrid-lease="lease-000456"> ... </div>`
+    - wrapped anchor: `<a href="https://advertiser.example/landing">...`
     - `href` must match lease `target_url` (host + path)
 - **Submits commit** via `content-grid-d verifier commit ...`.
 - **Waits for reveal window**, then **reveals** via `content-grid-d verifier reveal ...`.

@@ -42,15 +42,21 @@ Registry verification rewards are paid during round finalization in `x/registry`
 
 Only verifiers with successful submissions in finalized pass-majority rounds are eligible.
 
-Verifier weight:
+Verifier payout per assignment uses a hybrid split:
+
+1. **Base share** (`verifier_reward_base_share_bps`, default `4000` = 40%)
+   - equal split among successful verifiers.
+2. **Weighted share** (remaining 60%)
+   - proportional to
 
 `weight = bonded_stake × referral_factor`
 
 Where referral factor uses active referred publishers (minimum factor 1).
 
-- Higher stake => higher share.
-- More active referred publishers => higher share.
+- Base share improves small-operator participation.
+- Weighted share preserves stake-based Sybil resistance.
 - If no eligible verifier exists, verifier pool for that assignment is burned.
+- If weighted share has no positive-weight verifier, that weighted remainder is burned.
 
 ## Important Scope Notes
 

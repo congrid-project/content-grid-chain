@@ -116,7 +116,7 @@ func (s *server) handleMarketplaceLease(baseURL string) http.HandlerFunc {
 			return
 		}
 
-		flash := fmt.Sprintf(`Lease booked for %s. Share this embed with the publisher: <a href="%s" data-congrid-slot="%s" data-congrid-lease="%s">Link</a>`, slot.Label, lease.TargetURL, lease.SlotID, lease.LeaseID)
+		flash := fmt.Sprintf("Lease booked for %s. Publish with slot_id=%s lease_id=%s and target=%s.", slot.Label, lease.SlotID, lease.LeaseID, lease.TargetURL)
 		http.Redirect(w, r, marketplaceFlash("/marketplace", flash), http.StatusSeeOther)
 	}
 }

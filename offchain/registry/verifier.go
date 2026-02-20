@@ -382,6 +382,11 @@ func BuildPageURL(scheme, domain, path string) (string, error) {
 	return u.String(), nil
 }
 
+type leaseAnchorCtx struct {
+	slotID  string
+	leaseID string
+}
+
 func ensureLeaseAnchors(pageHTML string, leases []LeaseExpectation) error {
 	if len(leases) == 0 {
 		return nil
@@ -402,6 +407,8 @@ func ensureLeaseAnchors(pageHTML string, leases []LeaseExpectation) error {
 	}
 	found := map[string]bool{}
 
+	stack := make([]leaseAnchorCtx, 0)
+
 	tok := html.NewTokenizer(strings.NewReader(pageHTML))
 	for {
 		tt := tok.Next()
@@ -412,27 +419,42 @@ func ensureLeaseAnchors(pageHTML string, leases []LeaseExpectation) error {
 			}
 			missing := missingLeaseKeys(expected, found)
 			return fmt.Errorf("missing lease anchors: %s", strings.Join(missing, ", "))
-		case html.StartTagToken, html.SelfClosingTagToken:
+
+		case html.StartTagToken:
 			name, hasAttr := tok.TagName()
 			tag := strings.ToLower(string(name))
+			attrs := parseLeaseTagAttrs(hasAttr, tok)
+
+			if tag == "a" {
+				href := attrs["href"]
+				slotID := nearestSlotID(stack)
+				leaseID := firstNonEmpty(attrs["data-congrid-lease"], nearestLeaseID(stack))
+				if slotID != "" && leaseID != "" {
+					key := slotID + ":" + leaseID
+					if exp, ok := expected[key]; ok && leaseHrefMatches(exp.TargetURL, href) {
+						found[key] = true
+						if len(found) == len(expected) {
+							return nil
+						}
+					}
+				}
+			}
+
+			stack = append(stack, leaseAnchorCtx{
+				slotID:  firstNonEmpty(attrs["data-congrid-slot-id"], attrs["data-congrid-slot"]),
+				leaseID: attrs["data-congrid-lease"],
+			})
+
+		case html.SelfClosingTagToken:
+			name, hasAttr := tok.TagName()
+			tag := strings.ToLower(string(name))
+			attrs := parseLeaseTagAttrs(hasAttr, tok)
 			if tag != "a" {
 				continue
 			}
-			var href, slotID, leaseID string
-			for hasAttr {
-				k, v, more := tok.TagAttr()
-				hasAttr = more
-				key := strings.ToLower(string(k))
-				val := strings.TrimSpace(string(v))
-				switch key {
-				case "href":
-					href = val
-				case "data-congrid-slot":
-					slotID = val
-				case "data-congrid-lease":
-					leaseID = val
-				}
-			}
+			href := attrs["href"]
+			slotID := nearestSlotID(stack)
+			leaseID := firstNonEmpty(attrs["data-congrid-lease"], nearestLeaseID(stack))
 			if slotID == "" || leaseID == "" {
 				continue
 			}
@@ -447,8 +469,50 @@ func ensureLeaseAnchors(pageHTML string, leases []LeaseExpectation) error {
 					return nil
 				}
 			}
+
+		case html.EndTagToken:
+			if len(stack) > 0 {
+				stack = stack[:len(stack)-1]
+			}
 		}
 	}
+}
+
+func parseLeaseTagAttrs(hasAttr bool, tok *html.Tokenizer) map[string]string {
+	attrs := map[string]string{}
+	for hasAttr {
+		k, v, more := tok.TagAttr()
+		hasAttr = more
+		attrs[strings.ToLower(string(k))] = strings.TrimSpace(string(v))
+	}
+	return attrs
+}
+
+func nearestSlotID(stack []leaseAnchorCtx) string {
+	for i := len(stack) - 1; i >= 0; i-- {
+		if stack[i].slotID != "" {
+			return stack[i].slotID
+		}
+	}
+	return ""
+}
+
+func nearestLeaseID(stack []leaseAnchorCtx) string {
+	for i := len(stack) - 1; i >= 0; i-- {
+		if stack[i].leaseID != "" {
+			return stack[i].leaseID
+		}
+	}
+	return ""
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, v := range values {
+		if strings.TrimSpace(v) != "" {
+			return strings.TrimSpace(v)
+		}
+	}
+	return ""
 }
 
 func missingLeaseKeys(expected map[string]LeaseExpectation, found map[string]bool) []string {

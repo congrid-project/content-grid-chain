@@ -116,6 +116,7 @@ func main() {
 	mux.HandleFunc("GET /verifiers", s.handleVerifiers(*baseURL))
 	mux.HandleFunc("GET /docs", s.handleDocs(*baseURL))
 	mux.HandleFunc("GET /marketplace", s.handleMarketplace(*baseURL))
+	mux.HandleFunc("GET /leases", s.handleLeases(*baseURL))
 	mux.HandleFunc("POST /marketplace/lease", s.handleMarketplaceLease(*baseURL))
 	mux.HandleFunc("GET /publisher/dashboard", s.handlePublisherDashboard(*baseURL))
 	mux.HandleFunc("POST /publisher/dashboard", s.handlePublisherDashboardPost(*baseURL))
@@ -218,6 +219,9 @@ func buildPageTemplates(efs embed.FS) (map[string]*template.Template, error) {
 		},
 		"formatLeaseTerm": func(lease SlotLease) string {
 			return formatLeaseTerm(lease)
+		},
+		"leaseEmbedSnippet": func(lease SlotLease) string {
+			return leaseEmbedSnippet(lease)
 		},
 		"trimScheme": func(u string) string {
 			u = strings.TrimSpace(u)

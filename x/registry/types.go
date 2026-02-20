@@ -244,6 +244,7 @@ type PublisherParams struct {
 	CooldownBaseSeconds                int64                 `json:"cooldown_base_seconds"`
 	PublisherVerificationReward        sdkmath.Int           `json:"publisher_verification_reward"`
 	VerifierVerificationReward         sdkmath.Int           `json:"verifier_verification_reward"`
+	VerifierRewardBaseShareBps         int64                 `json:"verifier_reward_base_share_bps"`
 	RequiredExternalLinksForFullReward int32                 `json:"required_external_links_for_full_reward"`
 	EmissionTotalSupply                sdkmath.Int           `json:"emission_total_supply"`
 	OperatorReserveBps                 int64                 `json:"operator_reserve_bps"`
@@ -286,6 +287,7 @@ func DefaultPublisherParams() PublisherParams {
 		CooldownBaseSeconds:                604800, // 7 days
 		PublisherVerificationReward:        sdkmath.NewInt(1_000_000),
 		VerifierVerificationReward:         sdkmath.NewInt(500_000),
+		VerifierRewardBaseShareBps:         4000,
 		RequiredExternalLinksForFullReward: 15,
 		EmissionTotalSupply:                sdkmath.NewInt(1_000_000_000_000000), // 1B CONGRID in ucongrid
 		OperatorReserveBps:                 4000,
@@ -361,6 +363,9 @@ func (pp PublisherParams) Validate() error {
 	if pp.VerifierVerificationReward.IsNegative() {
 		return fmt.Errorf("verifier verification reward must be >= 0")
 	}
+	if pp.VerifierRewardBaseShareBps < 0 || pp.VerifierRewardBaseShareBps > 10000 {
+		return fmt.Errorf("verifier reward base share bps must be within [0,10000]")
+	}
 	if pp.RequiredExternalLinksForFullReward < 0 {
 		return fmt.Errorf("required external links for full reward must be >= 0")
 	}
@@ -416,6 +421,13 @@ func (pp PublisherParams) EffectiveRequiredExternalLinksForFullReward() int32 {
 		return pp.RequiredExternalLinksForFullReward
 	}
 	return DefaultPublisherParams().RequiredExternalLinksForFullReward
+}
+
+func (pp PublisherParams) EffectiveVerifierRewardBaseShareBps() int64 {
+	if pp.VerifierRewardBaseShareBps < 0 || pp.VerifierRewardBaseShareBps > 10000 {
+		return DefaultPublisherParams().VerifierRewardBaseShareBps
+	}
+	return pp.VerifierRewardBaseShareBps
 }
 
 func (pp PublisherParams) EffectiveEmissionTotalSupply() sdkmath.Int {

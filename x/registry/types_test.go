@@ -109,6 +109,14 @@ func TestPublisherParamsValidate(t *testing.T) {
 	params = DefaultPublisherParams()
 	params.RequiredExternalLinksForFullReward = -1
 	require.Error(t, params.Validate())
+
+	params = DefaultPublisherParams()
+	params.VerifierRewardBaseShareBps = -1
+	require.Error(t, params.Validate())
+
+	params = DefaultPublisherParams()
+	params.VerifierRewardBaseShareBps = 10001
+	require.Error(t, params.Validate())
 }
 
 func TestRoundEmissionPools(t *testing.T) {

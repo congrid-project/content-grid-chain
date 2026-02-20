@@ -1,10 +1,11 @@
 package registry
 
 import (
-	"bytes"
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"math/big"
 	"sort"
 	"strings"
 	"time"
@@ -76,7 +77,7 @@ func (k Keeper) assignNewRound(ctx sdk.Context) error {
 	})
 	sort.Slice(publishers, func(i, j int) bool { return publishers[i].Domain < publishers[j].Domain })
 
-	eligible, err := k.eligibleVerifierAddrs(ctx)
+	eligible, verifierStakeByAddr, err := k.eligibleVerifierAddrs(ctx)
 	if err != nil {
 		return err
 	}
@@ -150,7 +151,12 @@ func (k Keeper) assignNewRound(ctx sdk.Context) error {
 		startAtUnix := registrypb.ComputeAssignmentStartAtUnix(roundSeed, w.Domain, roundStartUnix, intervalSeconds, assignmentDelayMaxSeconds)
 		deadlineUnix := startAtUnix + params.SubmissionWindowSeconds
 
-		selected := selectDeterministic(eligible, params.MinVerifierCount, append(append([]byte{}, roundSeed[:]...), []byte(w.Domain)...))
+		selected := selectDeterministicWeighted(
+			eligible,
+			verifierStakeByAddr,
+			params.MinVerifierCount,
+			append(append([]byte{}, roundSeed[:]...), []byte(w.Domain)...),
+		)
 		sort.Strings(selected)
 
 		assignment := PublisherVerificationAssignment{
@@ -363,13 +369,14 @@ func (k Keeper) finalizeAssignments(ctx sdk.Context) error {
 	return errOut
 }
 
-func (k Keeper) eligibleVerifierAddrs(ctx sdk.Context) ([]string, error) {
+func (k Keeper) eligibleVerifierAddrs(ctx sdk.Context) ([]string, map[string]sdkmath.Int, error) {
 	if k.verifiers == nil {
-		return nil, nil
+		return nil, nil, nil
 	}
 	vparams := k.verifiers.GetParams(ctx)
 	all := k.verifiers.ListVerifiers(ctx)
 	eligible := make([]string, 0, len(all))
+	stakeByAddr := make(map[string]sdkmath.Int, len(all))
 	nowUnix := ctx.BlockTime().UTC().Unix()
 	for _, v := range all {
 		if v.Status != verifiers.StatusActive {
@@ -385,9 +392,10 @@ func (k Keeper) eligibleVerifierAddrs(ctx sdk.Context) ([]string, error) {
 			continue
 		}
 		eligible = append(eligible, v.Address)
+		stakeByAddr[v.Address] = v.Bond.Amount
 	}
 	sort.Strings(eligible)
-	return eligible, nil
+	return eligible, stakeByAddr, nil
 }
 
 func requiredQuorum(assigned int) int {
@@ -411,38 +419,165 @@ func hashVerifierSet(verifiers []string) [32]byte {
 	return out
 }
 
-func selectDeterministic(candidates []string, k int, seed []byte) []string {
+func selectDeterministicWeighted(candidates []string, stakeByAddr map[string]sdkmath.Int, k int, seed []byte) []string {
 	if k <= 0 || len(candidates) == 0 {
 		return nil
 	}
+
+	// Fall back to deterministic full set when requested count covers all candidates.
 	if len(candidates) <= k {
 		out := append([]string(nil), candidates...)
+		sort.Strings(out)
 		return out
 	}
-	type scored struct {
-		addr string
-		hash [32]byte
+
+	type weightedCandidate struct {
+		addr   string
+		weight sdkmath.Int
 	}
-	scoredList := make([]scored, 0, len(candidates))
+	pool := make([]weightedCandidate, 0, len(candidates))
 	for _, addr := range candidates {
-		buf := make([]byte, 0, len(seed)+len(addr))
-		buf = append(buf, seed...)
-		buf = append(buf, []byte(addr)...)
-		h := sha256.Sum256(buf)
-		scoredList = append(scoredList, scored{addr: addr, hash: h})
-	}
-	sort.Slice(scoredList, func(i, j int) bool {
-		cmp := bytes.Compare(scoredList[i].hash[:], scoredList[j].hash[:])
-		if cmp == 0 {
-			return scoredList[i].addr < scoredList[j].addr
+		weight := stakeByAddr[addr]
+		if !weight.IsPositive() {
+			// Defensive fallback for any unexpected zero/missing stake.
+			weight = sdkmath.OneInt()
 		}
-		return cmp < 0
-	})
-	out := make([]string, 0, k)
-	for i := 0; i < k; i++ {
-		out = append(out, scoredList[i].addr)
+		pool = append(pool, weightedCandidate{addr: addr, weight: weight})
 	}
-	return out
+
+	selected := make([]string, 0, k)
+	for draw := 0; draw < k && len(pool) > 0; draw++ {
+		totalWeight := big.NewInt(0)
+		for _, entry := range pool {
+			totalWeight.Add(totalWeight, entry.weight.BigInt())
+		}
+		if totalWeight.Sign() <= 0 {
+			break
+		}
+
+		pick := deterministicPick(seed, draw, totalWeight)
+		running := big.NewInt(0)
+		pickedIdx := len(pool) - 1
+		for i, entry := range pool {
+			running.Add(running, entry.weight.BigInt())
+			if running.Cmp(pick) == 1 {
+				pickedIdx = i
+				break
+			}
+		}
+
+		selected = append(selected, pool[pickedIdx].addr)
+		pool = append(pool[:pickedIdx], pool[pickedIdx+1:]...)
+	}
+
+	if len(selected) < k {
+		remaining := make([]string, 0, len(pool))
+		for _, entry := range pool {
+			remaining = append(remaining, entry.addr)
+		}
+		sort.Strings(remaining)
+		for _, addr := range remaining {
+			if len(selected) >= k {
+				break
+			}
+			selected = append(selected, addr)
+		}
+	}
+	return selected
+}
+
+func deterministicPick(seed []byte, draw int, totalWeight *big.Int) *big.Int {
+	buf := make([]byte, 8)
+	binary.BigEndian.PutUint64(buf, uint64(draw))
+
+	h := sha256.New()
+	_, _ = h.Write(seed)
+	_, _ = h.Write(buf)
+	hashed := h.Sum(nil)
+
+	pick := new(big.Int).SetBytes(hashed)
+	pick.Mod(pick, totalWeight)
+	return pick
+}
+
+func splitVerifierAssignmentRewards(total sdkmath.Int, successful []string, weightByAddr map[string]sdkmath.Int, baseShareBps int64) (map[string]sdkmath.Int, sdkmath.Int) {
+	payoutByAddr := make(map[string]sdkmath.Int, len(successful))
+	if !total.IsPositive() || len(successful) == 0 {
+		return payoutByAddr, total
+	}
+	if baseShareBps < 0 {
+		baseShareBps = 0
+	}
+	if baseShareBps > 10000 {
+		baseShareBps = 10000
+	}
+
+	remaining := total
+	basePool := total.MulRaw(baseShareBps).QuoRaw(10000)
+	weightedPool := total.Sub(basePool)
+
+	if basePool.IsPositive() {
+		per := basePool.QuoRaw(int64(len(successful)))
+		distributed := sdkmath.ZeroInt()
+		for i, addr := range successful {
+			share := per
+			if i == len(successful)-1 {
+				share = basePool.Sub(distributed)
+			}
+			if !share.IsPositive() {
+				continue
+			}
+			if existing, ok := payoutByAddr[addr]; ok {
+				payoutByAddr[addr] = existing.Add(share)
+			} else {
+				payoutByAddr[addr] = share
+			}
+			distributed = distributed.Add(share)
+			remaining = remaining.Sub(share)
+		}
+	}
+
+	type weightedVerifier struct {
+		addr   string
+		weight sdkmath.Int
+	}
+	weighted := make([]weightedVerifier, 0, len(successful))
+	totalWeight := sdkmath.ZeroInt()
+	for _, addr := range successful {
+		weight, ok := weightByAddr[addr]
+		if !ok || !weight.IsPositive() {
+			continue
+		}
+		weighted = append(weighted, weightedVerifier{addr: addr, weight: weight})
+		totalWeight = totalWeight.Add(weight)
+	}
+
+	if weightedPool.IsPositive() && len(weighted) > 0 && totalWeight.IsPositive() {
+		distributed := sdkmath.ZeroInt()
+		for i, entry := range weighted {
+			share := sdkmath.ZeroInt()
+			if i == len(weighted)-1 {
+				share = weightedPool.Sub(distributed)
+			} else {
+				share = weightedPool.Mul(entry.weight).Quo(totalWeight)
+			}
+			if !share.IsPositive() {
+				continue
+			}
+			if existing, ok := payoutByAddr[entry.addr]; ok {
+				payoutByAddr[entry.addr] = existing.Add(share)
+			} else {
+				payoutByAddr[entry.addr] = share
+			}
+			distributed = distributed.Add(share)
+			remaining = remaining.Sub(share)
+		}
+	}
+
+	if remaining.IsNegative() {
+		remaining = sdkmath.ZeroInt()
+	}
+	return payoutByAddr, remaining
 }
 
 func (k Keeper) rewardVerifiedPublisher(ctx sdk.Context, assignment PublisherVerificationAssignment, website Website, submissions []PublisherVerificationSubmission, matchedExternalLinks int32, intervalSeconds int64, params PublisherParams) error {
@@ -520,15 +655,21 @@ func (k Keeper) rewardVerifiedPublisher(ctx sdk.Context, assignment PublisherVer
 		return nil
 	}
 
-	eligible := make([]string, 0, len(submissions))
+	successfulSet := make(map[string]struct{}, len(submissions))
 	for _, sub := range submissions {
 		if sub.Passed {
-			eligible = append(eligible, sub.Verifier)
+			successfulSet[sub.Verifier] = struct{}{}
 		}
 	}
-	if len(eligible) == 0 {
+	if len(successfulSet) == 0 {
 		return k.tokenomics.BurnFromPool(ctx, sdk.NewCoins(sdk.NewCoin(verificationRewardDenom, verifierPoolPerAssignment)))
 	}
+
+	successful := make([]string, 0, len(successfulSet))
+	for addr := range successfulSet {
+		successful = append(successful, addr)
+	}
+	sort.Strings(successful)
 
 	bondByAddr := map[string]sdkmath.Int{}
 	bondDenom := verificationRewardDenom
@@ -542,15 +683,10 @@ func (k Keeper) rewardVerifiedPublisher(ctx sdk.Context, assignment PublisherVer
 		}
 	}
 
-	type weightedVerifier struct {
-		addr   string
-		weight sdkmath.Int
-	}
-	weighted := make([]weightedVerifier, 0, len(eligible))
-	totalWeight := sdkmath.ZeroInt()
-	for _, addr := range eligible {
-		stake := bondByAddr[addr]
-		if !stake.IsPositive() {
+	weightByAddr := make(map[string]sdkmath.Int, len(successful))
+	for _, addr := range successful {
+		stake, ok := bondByAddr[addr]
+		if !ok || !stake.IsPositive() {
 			continue
 		}
 		refActive := k.CountActiveReferredPublishers(ctx, addr)
@@ -559,42 +695,30 @@ func (k Keeper) rewardVerifiedPublisher(ctx sdk.Context, assignment PublisherVer
 			refFactor = 1
 		}
 		weight := stake.MulRaw(refFactor)
-		if !weight.IsPositive() {
+		if weight.IsPositive() {
+			weightByAddr[addr] = weight
+		}
+	}
+
+	payoutByAddr, remaining := splitVerifierAssignmentRewards(
+		verifierPoolPerAssignment,
+		successful,
+		weightByAddr,
+		params.EffectiveVerifierRewardBaseShareBps(),
+	)
+
+	for _, addr := range successful {
+		share := payoutByAddr[addr]
+		if !share.IsPositive() {
 			continue
 		}
-		totalWeight = totalWeight.Add(weight)
-		weighted = append(weighted, weightedVerifier{addr: addr, weight: weight})
-	}
-
-	if len(weighted) == 0 || totalWeight.IsZero() {
-		return k.tokenomics.BurnFromPool(ctx, sdk.NewCoins(sdk.NewCoin(verificationRewardDenom, verifierPoolPerAssignment)))
-	}
-
-	remaining := verifierPoolPerAssignment
-	for i, entry := range weighted {
-		acc, err := sdk.AccAddressFromBech32(entry.addr)
+		acc, err := sdk.AccAddressFromBech32(addr)
 		if err != nil {
 			return err
 		}
-		share := sdkmath.ZeroInt()
-		if i == len(weighted)-1 {
-			share = remaining
-		} else {
-			share = verifierPoolPerAssignment.Mul(entry.weight).Quo(totalWeight)
-			if share.GT(remaining) {
-				share = remaining
-			}
-		}
-		if share.IsZero() {
-			continue
-		}
-		remaining = remaining.Sub(share)
 		coin := sdk.NewCoin(verificationRewardDenom, share)
 		if err := k.tokenomics.SendFromPool(ctx, acc, sdk.NewCoins(coin)); err != nil {
 			return err
-		}
-		if remaining.IsZero() {
-			break
 		}
 	}
 	if remaining.IsPositive() {

@@ -235,9 +235,11 @@ func newMemorySlotStore() *memorySlotStore {
 			UpdatedAt:     now.Add(-4 * 24 * time.Hour),
 			Tags:          []string{"Creative"},
 			Lease: &SlotLease{
+				LeaseID:   "lease-002",
 				SlotID:    "slot-009",
 				SlotLabel: "Case Study Inline",
 				Lessee:    "archway.design",
+				TargetURL: "https://archway.design",
 				StartsAt:  now.Add(-3 * 24 * time.Hour),
 				EndsAt:    now.Add(10 * 24 * time.Hour),
 				Rate:      130,
@@ -704,6 +706,26 @@ func formatLeaseTerm(lease SlotLease) string {
 		return "-"
 	}
 	return fmt.Sprintf("%s - %s", formatDate(lease.StartsAt), formatDate(lease.EndsAt))
+}
+
+func leaseEmbedSnippet(lease SlotLease) string {
+	slotID := strings.TrimSpace(lease.SlotID)
+	leaseID := strings.TrimSpace(lease.LeaseID)
+	targetURL := strings.TrimSpace(lease.TargetURL)
+	if slotID == "" || leaseID == "" || targetURL == "" {
+		return ""
+	}
+	return fmt.Sprintf(`<div data-congrid-slot-id="%s" data-congrid-lease="%s"><a href="%s">Sponsored Link</a></div>`, escapeHTMLAttr(slotID), escapeHTMLAttr(leaseID), escapeHTMLAttr(targetURL))
+}
+
+func escapeHTMLAttr(value string) string {
+	replacer := strings.NewReplacer(
+		"&", "&amp;",
+		`"`, "&quot;",
+		"<", "&lt;",
+		">", "&gt;",
+	)
+	return replacer.Replace(value)
 }
 
 func leaseActive(lease SlotLease) bool {

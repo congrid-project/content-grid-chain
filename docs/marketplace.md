@@ -67,10 +67,17 @@ Useful queries:
 
 ## Verification link requirements
 
-When a lease is active, publishers must include anchors like:
+When a lease is active, publishers must include markup like:
 
 ```html
-<a href="https://advertiser.example/landing" data-congrid-slot="slot-000123" data-congrid-lease="lease-000456">Link</a>
+<div data-congrid-slot-id="slot-000123" data-congrid-lease="lease-000456">
+  <a href="https://advertiser.example/landing">Link</a>
+</div>
 ```
 
-The verifier checks host + path match and the `data-congrid-*` attributes.
+Requirements:
+- `slot_id` must be backend-generated and placed on the wrapper element (`data-congrid-slot-id`).
+- `lease_id` must be present (`data-congrid-lease`).
+- Anchor `href` must match lease `target_url` (host + path).
+
+The verifier checks host + path and these `data-congrid-*` attributes.
