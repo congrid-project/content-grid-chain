@@ -109,8 +109,6 @@ go run ./cmd/congrid-site \
   --chain-id content-grid-1 \
   --node tcp://127.0.0.1:26657 \
   --slots-grpc 127.0.0.1:9090 \
-  --slots-key publisher-key \
-  --slots-home /home/eking/.content-grid-d \
   --keyring-backend os
 ```
 

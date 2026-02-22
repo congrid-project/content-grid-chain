@@ -8,9 +8,10 @@ A small Go web server for the Congrid (Content Grid Protocol) official website.
 go run ./cmd/congrid-site --addr :8080 --base-url http://localhost:8080
 ```
 
-### Chain-backed slot marketplace
+### Chain-backed slot marketplace (wallet signing)
 
-To use on-chain slots/leases instead of the in-memory demo store:
+Slots and leases are read directly from the chain. Slot creation, status updates, and lease booking
+are signed by the user wallet in the browser (Keplr/Leap).
 
 ```bash
 go run ./cmd/congrid-site \
@@ -19,12 +20,10 @@ go run ./cmd/congrid-site \
   --slots-store chain \
   --chain-id <chain-id> \
   --node <rpc-url> \
-  --slots-grpc <grpc-host:port> \
-  --slots-key <publisher-key-name> \
-  --keyring-backend <backend>
+  --slots-grpc <grpc-host:port>
 ```
 
-Optional slot tx flags: `--slots-home`, `--slot-fees`, `--slot-gas`, `--slot-gas-prices`, `--slot-gas-adjustment`, `--slot-rate-denom`, `--slot-unit-seconds`, `--slot-min-duration-seconds`, `--slot-max-duration-seconds`, `--lease-key`.
+Optional slot defaults: `--slot-rate-denom`, `--slot-unit-seconds`, `--slot-min-duration-seconds`, `--slot-max-duration-seconds`. Use `--gas-prices` to set the wallet gas price (default `0.001ucongrid`).
 
 Open: <http://localhost:8080>
 

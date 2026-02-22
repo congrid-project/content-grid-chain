@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"net/url"
 	"sort"
@@ -54,12 +53,13 @@ func (s *server) handleMarketplace(baseURL string) http.HandlerFunc {
 
 		data := marketplacePageData{
 			pageData: pageData{
-				Title:       "Marketplace — Congrid",
-				Description: "Browse publisher link slots and request leases across the Congrid network.",
-				BaseURL:     baseURL,
-				Path:        r.URL.Path,
-				NowYear:     time.Now().Year(),
-				Flash:       flash,
+				Title:        "Marketplace — Congrid",
+				Description:  "Browse publisher link slots and request leases across the Congrid network.",
+				BaseURL:      baseURL,
+				Path:         r.URL.Path,
+				NowYear:      time.Now().Year(),
+				Flash:        flash,
+				WalletConfig: s.walletCfg,
 			},
 			Query: query,
 			Sort:  sortKey,
@@ -72,52 +72,7 @@ func (s *server) handleMarketplace(baseURL string) http.HandlerFunc {
 
 func (s *server) handleMarketplaceLease(baseURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if err := r.ParseForm(); err != nil {
-			http.Redirect(w, r, marketplaceFlash("/marketplace", "Invalid form."), http.StatusSeeOther)
-			return
-		}
-		slotID := strings.TrimSpace(r.Form.Get("slot_id"))
-		targetURL := strings.TrimSpace(r.Form.Get("target_url"))
-		durationSeconds := parsePositiveInt64(r.Form.Get("duration_seconds"), 0)
-		startDate := strings.TrimSpace(r.Form.Get("start_date"))
-
-		if slotID == "" || targetURL == "" {
-			http.Redirect(w, r, marketplaceFlash("/marketplace", "Slot and target URL are required."), http.StatusSeeOther)
-			return
-		}
-		if durationSeconds <= 0 {
-			http.Redirect(w, r, marketplaceFlash("/marketplace", "Select a lease duration."), http.StatusSeeOther)
-			return
-		}
-
-		slot, err := s.slotStore.GetSlot(r.Context(), slotID)
-		if err != nil {
-			http.Redirect(w, r, marketplaceFlash("/marketplace", "Slot not found."), http.StatusSeeOther)
-			return
-		}
-		if !slotIsAvailable(slot) {
-			http.Redirect(w, r, marketplaceFlash("/marketplace", "Slot is not available."), http.StatusSeeOther)
-			return
-		}
-
-		startAt, err := parseStartDate(startDate)
-		if err != nil {
-			http.Redirect(w, r, marketplaceFlash("/marketplace", err.Error()), http.StatusSeeOther)
-			return
-		}
-
-		lease, err := s.slotStore.CreateLease(r.Context(), slotID, CreateLeaseInput{
-			TargetURL:       targetURL,
-			StartsAt:        startAt,
-			DurationSeconds: durationSeconds,
-		})
-		if err != nil {
-			http.Redirect(w, r, marketplaceFlash("/marketplace", "Lease request failed: "+err.Error()), http.StatusSeeOther)
-			return
-		}
-
-		flash := fmt.Sprintf("Lease booked for %s. Publish with slot_id=%s lease_id=%s and target=%s.", slot.Label, lease.SlotID, lease.LeaseID, lease.TargetURL)
-		http.Redirect(w, r, marketplaceFlash("/marketplace", flash), http.StatusSeeOther)
+		http.Error(w, "wallet signing required", http.StatusMethodNotAllowed)
 	}
 }
 
@@ -306,26 +261,6 @@ func parsePositiveInt64(value string, fallback int64) int64 {
 		return fallback
 	}
 	return parsed
-}
-
-func parseStartDate(value string) (time.Time, error) {
-	value = strings.TrimSpace(value)
-	if value == "" {
-		return time.Time{}, nil
-	}
-	parsed, err := time.Parse("2006-01-02", value)
-	if err != nil {
-		return time.Time{}, fmt.Errorf("invalid start date")
-	}
-	startAt := time.Date(parsed.Year(), parsed.Month(), parsed.Day(), 0, 0, 0, 0, time.UTC)
-	now := time.Now().UTC()
-	if startAt.Before(now.AddDate(0, 0, -1)) {
-		return time.Time{}, fmt.Errorf("start date must be today or later")
-	}
-	if startAt.Before(now) {
-		startAt = now.Add(5 * time.Minute)
-	}
-	return startAt, nil
 }
 
 func marketplaceFlash(basePath, message string) string {

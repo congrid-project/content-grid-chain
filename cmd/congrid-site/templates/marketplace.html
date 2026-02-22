@@ -8,9 +8,12 @@
       Browse publisher link slots across the network. Search, compare, and request leases for high-intent placements.
     </p>
     <div class="callout">
-      <strong>No login required:</strong> lease requests and listings are keyed by on-chain slot/lease IDs.
+      <strong>Wallet required:</strong> connect a wallet to sign on-chain lease transactions.
+      <div class="muted">Wallet: <span data-wallet-address>Not connected</span></div>
+      <button class="btn btn-ghost" type="button" data-wallet-connect>Connect wallet</button>
       <a href="/leases">View lease publish board →</a>
     </div>
+    <div class="callout" data-wallet-flash hidden></div>
 
     <div class="card">
       <form class="filters" method="get" action="/marketplace">
@@ -100,7 +103,7 @@
               {{if slotIsAvailable .}}
                 <details class="lease-form">
                   <summary class="btn btn-ghost">Request lease</summary>
-                  <form method="post" action="/marketplace/lease" class="lease-grid">
+                  <form method="post" action="/marketplace/lease" class="lease-grid" data-wallet-lease>
                     <input type="hidden" name="slot_id" value="{{.ID}}" />
                     <label class="label">Target URL
                       <input class="input" name="target_url" type="url" placeholder="https://yourbrand.com/landing" required />

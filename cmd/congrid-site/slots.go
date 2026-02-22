@@ -63,9 +63,6 @@ type SlotStore interface {
 	ListPublisherSlots(ctx context.Context, publisher string) ([]Slot, error)
 	ListPublisherLeases(ctx context.Context, publisher string) ([]SlotLease, error)
 	GetSlot(ctx context.Context, slotID string) (Slot, error)
-	CreateSlot(ctx context.Context, publisher string, input CreateSlotInput) (Slot, error)
-	UpdateSlotStatus(ctx context.Context, publisher, slotID string, status SlotStatus) error
-	CreateLease(ctx context.Context, slotID string, input CreateLeaseInput) (SlotLease, error)
 }
 
 // CreateLeaseInput captures advertiser booking details.

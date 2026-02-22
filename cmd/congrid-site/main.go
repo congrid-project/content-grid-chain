@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"embed"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -29,6 +30,7 @@ type server struct {
 	templates map[string]*template.Template
 	static    http.Handler
 	slotStore SlotStore
+	walletCfg WalletConfig
 }
 
 func main() {
@@ -49,20 +51,12 @@ func main() {
 		fees           = flag.String("fees", "", "optional explicit fees (e.g. 0ucongrid or 2000stake)")
 		gasPrices      = flag.String("gas-prices", "", "optional gas prices (e.g. 0.001ucongrid)")
 
-		slotsStore         = flag.String("slots-store", "memory", "slot store backend (memory|chain)")
-		slotsGRPC          = flag.String("slots-grpc", "", "grpc endpoint for chain slot queries (e.g. localhost:9090)")
-		slotsKeyName       = flag.String("slots-key", "", "keyring key name for slot txs")
-		leaseKeyName       = flag.String("lease-key", "", "keyring key name for lease txs (defaults to slots-key)")
-		slotsHome          = flag.String("slots-home", "", "content-grid-d home directory for slot/lease txs (optional)")
-		slotsBinary        = flag.String("slots-binary", "./content-grid-d", "content-grid-d binary path for slot txs")
-		slotsFees          = flag.String("slot-fees", "", "optional explicit fees for slot txs")
-		slotsGasPrices     = flag.String("slot-gas-prices", "", "optional gas prices for slot txs")
-		slotsGas           = flag.String("slot-gas", "auto", "gas limit for slot txs")
-		slotsGasAdjustment = flag.String("slot-gas-adjustment", "1.3", "gas adjustment for slot txs")
-		slotsRateDenom     = flag.String("slot-rate-denom", "ucongrid", "slot rate denom")
-		slotsUnitSeconds   = flag.Int64("slot-unit-seconds", 7*24*60*60, "slot billing unit in seconds")
-		slotsMinDuration   = flag.Int64("slot-min-duration-seconds", 7*24*60*60, "minimum slot lease duration in seconds")
-		slotsMaxDuration   = flag.Int64("slot-max-duration-seconds", 90*24*60*60, "maximum slot lease duration in seconds")
+		slotsStore       = flag.String("slots-store", "chain", "slot store backend (chain)")
+		slotsGRPC        = flag.String("slots-grpc", "", "grpc endpoint for chain slot queries (e.g. localhost:9090)")
+		slotsRateDenom   = flag.String("slot-rate-denom", "ucongrid", "slot rate denom")
+		slotsUnitSeconds = flag.Int64("slot-unit-seconds", 7*24*60*60, "slot billing unit in seconds")
+		slotsMinDuration = flag.Int64("slot-min-duration-seconds", 7*24*60*60, "minimum slot lease duration in seconds")
+		slotsMaxDuration = flag.Int64("slot-max-duration-seconds", 90*24*60*60, "maximum slot lease duration in seconds")
 	)
 	flag.Parse()
 
@@ -73,40 +67,47 @@ func main() {
 
 	subStatic := mustSub(siteFS, "static")
 	// http.FileServer expects an fs.FS wrapped with http.FS.
-	var slotStore SlotStore = newMemorySlotStore()
-	var slotCloser interface{ Close() error }
-	if strings.EqualFold(strings.TrimSpace(*slotsStore), "chain") {
-		cfg := chainSlotConfig{
-			ChainID:            *chainID,
-			NodeRPC:            *nodeRPC,
-			GRPCAddr:           *slotsGRPC,
-			KeyName:            *slotsKeyName,
-			LeaseKeyName:       *leaseKeyName,
-			KeyringBackend:     *keyringBackend,
-			KeyringDir:         *keyringDir,
-			Home:               *slotsHome,
-			Fees:               *slotsFees,
-			GasPrices:          *slotsGasPrices,
-			Gas:                *slotsGas,
-			GasAdjustment:      *slotsGasAdjustment,
-			Binary:             *slotsBinary,
-			RateDenom:          *slotsRateDenom,
-			UnitSeconds:        *slotsUnitSeconds,
-			MinDurationSeconds: *slotsMinDuration,
-			MaxDurationSeconds: *slotsMaxDuration,
-		}
-		chainStore, err := newChainSlotStore(cfg)
-		if err != nil {
-			log.Fatalf("slot store init: %v", err)
-		}
-		slotStore = chainStore
-		slotCloser = chainStore
+	if !strings.EqualFold(strings.TrimSpace(*slotsStore), "chain") {
+		log.Fatalf("slots-store must be chain")
+	}
+	if strings.TrimSpace(*slotsGRPC) == "" {
+		log.Fatalf("slots-grpc required for chain-backed marketplace")
+	}
+	chainStore, err := newChainSlotStore(chainSlotConfig{
+		GRPCAddr: *slotsGRPC,
+	})
+	if err != nil {
+		log.Fatalf("slot store init: %v", err)
+	}
+	var slotStore SlotStore = chainStore
+	var slotCloser interface{ Close() error } = chainStore
+
+	walletCfg := WalletConfig{
+		Enabled:                true,
+		ChainID:                strings.TrimSpace(*chainID),
+		RPC:                    strings.TrimSpace(*nodeRPC),
+		FeeDenom:               strings.TrimSpace(*denom),
+		GasPrice:               strings.TrimSpace(*gasPrices),
+		SlotRateDenom:          strings.TrimSpace(*slotsRateDenom),
+		SlotUnitSeconds:        *slotsUnitSeconds,
+		SlotMinDurationSeconds: *slotsMinDuration,
+		SlotMaxDurationSeconds: *slotsMaxDuration,
+		GasCreateSlot:          220000,
+		GasUpdateSlot:          140000,
+		GasLeaseSlot:           220000,
+	}
+	if walletCfg.GasPrice == "" {
+		walletCfg.GasPrice = "0.001ucongrid"
+	}
+	if walletCfg.ChainID == "" || walletCfg.RPC == "" {
+		log.Fatalf("chain-id and node (rpc) required for wallet signing")
 	}
 
 	s := &server{
 		templates: templates,
 		static:    http.FileServer(http.FS(subStatic)),
 		slotStore: slotStore,
+		walletCfg: walletCfg,
 	}
 
 	mux := http.NewServeMux()
@@ -183,6 +184,13 @@ func main() {
 
 func buildPageTemplates(efs embed.FS) (map[string]*template.Template, error) {
 	funcs := template.FuncMap{
+		"toJSON": func(v any) template.JS {
+			b, err := json.Marshal(v)
+			if err != nil {
+				return template.JS("{}")
+			}
+			return template.JS(b)
+		},
 		"nowYear": func() int { return time.Now().Year() },
 		"formatDate": func(t time.Time) string {
 			return formatDate(t)
@@ -278,22 +286,39 @@ func (s *server) render(w http.ResponseWriter, name string, data any) {
 }
 
 type pageData struct {
-	Title       string
-	Description string
-	BaseURL     string
-	Path        string
-	NowYear     int
-	Flash       string
+	Title        string
+	Description  string
+	BaseURL      string
+	Path         string
+	NowYear      int
+	Flash        string
+	WalletConfig WalletConfig
+}
+
+type WalletConfig struct {
+	Enabled                bool   `json:"enabled"`
+	ChainID                string `json:"chain_id"`
+	RPC                    string `json:"rpc"`
+	FeeDenom               string `json:"fee_denom"`
+	GasPrice               string `json:"gas_price"`
+	SlotRateDenom          string `json:"slot_rate_denom"`
+	SlotUnitSeconds        int64  `json:"slot_unit_seconds"`
+	SlotMinDurationSeconds int64  `json:"slot_min_duration_seconds"`
+	SlotMaxDurationSeconds int64  `json:"slot_max_duration_seconds"`
+	GasCreateSlot          int64  `json:"gas_create_slot"`
+	GasUpdateSlot          int64  `json:"gas_update_slot"`
+	GasLeaseSlot           int64  `json:"gas_lease_slot"`
 }
 
 func (s *server) handleHome(baseURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.render(w, "home.html", pageData{
-			Title:       "Congrid — Content Grid Protocol",
-			Description: "A decentralized content network and search protocol. Become a Publisher or a Verifier to help build an open, community-owned discovery engine.",
-			BaseURL:     baseURL,
-			Path:        r.URL.Path,
-			NowYear:     time.Now().Year(),
+			Title:        "Congrid — Content Grid Protocol",
+			Description:  "A decentralized content network and search protocol. Become a Publisher or a Verifier to help build an open, community-owned discovery engine.",
+			BaseURL:      baseURL,
+			Path:         r.URL.Path,
+			NowYear:      time.Now().Year(),
+			WalletConfig: s.walletCfg,
 		})
 	}
 }
@@ -301,11 +326,12 @@ func (s *server) handleHome(baseURL string) http.HandlerFunc {
 func (s *server) handlePublishers(baseURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.render(w, "publishers.html", pageData{
-			Title:       "Become a Publisher — Congrid",
-			Description: "Register your site, add the Congrid verification badge, and earn rewards while sending high-quality referral traffic across the open web.",
-			BaseURL:     baseURL,
-			Path:        r.URL.Path,
-			NowYear:     time.Now().Year(),
+			Title:        "Become a Publisher — Congrid",
+			Description:  "Register your site, add the Congrid verification badge, and earn rewards while sending high-quality referral traffic across the open web.",
+			BaseURL:      baseURL,
+			Path:         r.URL.Path,
+			NowYear:      time.Now().Year(),
+			WalletConfig: s.walletCfg,
 		})
 	}
 }
@@ -313,11 +339,12 @@ func (s *server) handlePublishers(baseURL string) http.HandlerFunc {
 func (s *server) handleVerifiers(baseURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.render(w, "verifiers.html", pageData{
-			Title:       "Become a Verifier — Congrid",
-			Description: "Run verifier software to help confirm publishers and earn a share of the network’s rewards.",
-			BaseURL:     baseURL,
-			Path:        r.URL.Path,
-			NowYear:     time.Now().Year(),
+			Title:        "Become a Verifier — Congrid",
+			Description:  "Run verifier software to help confirm publishers and earn a share of the network’s rewards.",
+			BaseURL:      baseURL,
+			Path:         r.URL.Path,
+			NowYear:      time.Now().Year(),
+			WalletConfig: s.walletCfg,
 		})
 	}
 }
@@ -325,11 +352,12 @@ func (s *server) handleVerifiers(baseURL string) http.HandlerFunc {
 func (s *server) handleDocs(baseURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.render(w, "docs.html", pageData{
-			Title:       "Docs — Congrid",
-			Description: "Whitepaper, protocol overview, and contribution links.",
-			BaseURL:     baseURL,
-			Path:        r.URL.Path,
-			NowYear:     time.Now().Year(),
+			Title:        "Docs — Congrid",
+			Description:  "Whitepaper, protocol overview, and contribution links.",
+			BaseURL:      baseURL,
+			Path:         r.URL.Path,
+			NowYear:      time.Now().Year(),
+			WalletConfig: s.walletCfg,
 		})
 	}
 }

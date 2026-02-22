@@ -63,11 +63,12 @@ func (s *server) handleLeases(baseURL string) http.HandlerFunc {
 
 		s.render(w, "leases.html", leasesPageData{
 			pageData: pageData{
-				Title:       "Leases — Congrid",
-				Description: "Published lease placements and copy-ready embed snippets.",
-				BaseURL:     baseURL,
-				Path:        r.URL.Path,
-				NowYear:     time.Now().Year(),
+				Title:        "Leases — Congrid",
+				Description:  "Published lease placements and copy-ready embed snippets.",
+				BaseURL:      baseURL,
+				Path:         r.URL.Path,
+				NowYear:      time.Now().Year(),
+				WalletConfig: s.walletCfg,
 			},
 			Items: items,
 		})

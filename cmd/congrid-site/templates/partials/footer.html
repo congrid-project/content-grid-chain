@@ -5,4 +5,10 @@
     <div class="muted">Built in Go. Designed for an open, community-owned web.</div>
   </div>
 </footer>
+{{if .WalletConfig.Enabled}}
+<script>
+  window.CongridConfig = {{toJSON .WalletConfig}};
+</script>
+<script type="module" src="/static/wallet.js"></script>
+{{end}}
 {{end}}

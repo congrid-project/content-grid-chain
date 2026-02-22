@@ -8,9 +8,9 @@ Congrid（内容网格协议）官方网站的小型 Go Web 服务器。
 go run ./cmd/congrid-site --addr :8080 --base-url http://localhost:8080
 ```
 
-### 链支持的老虎机市场
+### 链支持的老虎机市场（钱包签名）
 
-要使用链上插槽/租约而不是内存中的演示存储：
+插槽和租约直接从链上读取，插槽创建、状态更新和租约下单由浏览器钱包签名（Keplr/Leap）。
 
 ```bash
 go run ./cmd/congrid-site \
@@ -19,12 +19,10 @@ go run ./cmd/congrid-site \
   --slots-store chain \
   --chain-id <chain-id> \
   --node <rpc-url> \
-  --slots-grpc <grpc-host:port> \
-  --slots-key <publisher-key-name> \
-  --keyring-backend <backend>
+  --slots-grpc <grpc-host:port>
 ```
 
-可选插槽发送标志：`--slots-home`、`--slot-fees`、`--slot-gas`、`--slot-gas-prices`、`--slot-gas-adjustment`、`--slot-rate-denom`、`--slot-unit-seconds`、`--slot-min-duration-seconds`、`--slot-max-duration-seconds`、`--lease-key`。
+可选插槽默认值：`--slot-rate-denom`、`--slot-unit-seconds`、`--slot-min-duration-seconds`、`--slot-max-duration-seconds`。使用 `--gas-prices` 设置钱包 gas price（默认 `0.001ucongrid`）。
 
 打开： <http://localhost:8080>
 
