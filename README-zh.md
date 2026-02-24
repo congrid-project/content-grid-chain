@@ -103,6 +103,42 @@
    ./content-grid-d start --home $HOME3
    ```
 
+### 线上正式环境部署（主网）
+
+本仓库尚未提供一键主网上线脚本，主网上线请使用官方发布包（binary + genesis + peers）。运维基线见 `docs/runbook-zh.md` 与 `docs/launch-checklist-zh.md`。
+
+1. 构建或下载固定版本的发布包，并确认 `./content-grid-d version`。
+2. 初始化节点主目录，用官方主网 `genesis.json` 替换 `config/genesis.json`。
+3. 配置 `config/config.toml`（`seeds`/`persistent_peers`、p2p/rpc 端口）与 `config/app.toml`（api/grpc、`minimum-gas-prices`）。
+4. 以服务方式启动节点并完成 RPC/gRPC 健康检查。
+
+**运营商保留与发行池代币分配**
+
+发行拆分由创世参数 `app_state.registry.params` 控制，默认与白皮书一致：
+
+```json
+"registry": {
+  "params": {
+    "emission_total_supply": "1000000000000000",
+    "operator_reserve_bps": 4000,
+    "publisher_emission_bps": 1000,
+    "verifier_emission_bps": 5000,
+    "emission_duration_hours": 876000
+  }
+}
+```
+
+发行池（发布者 + 验证者）由 `tokenomics` 模块账户在运行时维护，在每轮结算时按需补足。若希望在创世时预置发行池余额，需要在 `app_state.bank.balances` 为 `tokenomics` 模块账户添加余额，并同步更新 `app_state.bank.supply`。
+
+运营商保留部分目前未在链上自动分发，请在创世时显式分配（例如分配给多签金库或锁仓账户），可通过 `app_state.bank.balances` 或 `content-grid-d genesis add-genesis-account` 完成。
+
+**其他节点 / 发布者 / 验证者部署**
+
+- 其他全节点：重复主网节点步骤，使用独立 `--home` 和端口，并设置 `p2p.persistent_peers` 或 `p2p.seeds`。
+- 发布者：部署站点、挂载验证徽章，并按下方“出版商注册”流程在主网 RPC/gRPC 上执行注册。
+- 验证者（发布者验证代理）：创建并充值验证者地址，执行 `content-grid-d verifier bond` 绑定，再按 `docs/verifierd.md` 部署 `verifierd`。
+- 共识验证人：创世期走标准 Cosmos `gentx` 流程；主网运行后可用 `content-grid-d tx staking create-validator`。
+
 ### 出版商注册
 
 1. **添加Congrid官方链接+归因图片（验证所需）**：您必须在要绑定的网站首页（`/`）添加Congrid官方网站的链接，并且该链接必须用归因图片（徽章）包裹。

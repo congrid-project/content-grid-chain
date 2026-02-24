@@ -103,6 +103,42 @@ Set in `config/config.toml` of node2 and node3:
    ./content-grid-d start --home $HOME3
    ```
 
+### Production deployment (mainnet)
+
+Production deployment is not fully automated in this repo yet. Use the official release bundle (binary + genesis + peers) when mainnet is announced. Operational baselines live in `docs/runbook.md` and `docs/launch-checklist.md`.
+
+1. Build or download the pinned release, then verify `./content-grid-d version`.
+2. Initialize a home directory and replace `config/genesis.json` with the official mainnet genesis.
+3. Update `config/config.toml` (seeds/persistent peers, p2p/rpc ports) and `config/app.toml` (api/grpc, minimum gas prices).
+4. Start the node as a service and validate RPC/gRPC health.
+
+**Operator reserve and issuance pool allocation**
+
+The issuance split is controlled by registry params in genesis (`app_state.registry.params`). The defaults align with the whitepaper:
+
+```json
+"registry": {
+  "params": {
+    "emission_total_supply": "1000000000000000",
+    "operator_reserve_bps": 4000,
+    "publisher_emission_bps": 1000,
+    "verifier_emission_bps": 5000,
+    "emission_duration_hours": 876000
+  }
+}
+```
+
+The issuance pool (publisher + verifier emission) is maintained by the `tokenomics` module account at runtime and funded on-demand during round finalization. If you want to pre-fund it at genesis, add a balance for the `tokenomics` module account in `app_state.bank.balances` and include it in `app_state.bank.supply`.
+
+The operator reserve portion is not yet distributed by on-chain logic in this repo. Allocate it explicitly in genesis (for example to a multisig treasury or vesting account) using `app_state.bank.balances` or `content-grid-d genesis add-genesis-account`.
+
+**Other node / publisher / verifier deployment**
+
+- Additional full nodes: repeat the production node steps with a separate `--home` and ports, then set `p2p.persistent_peers` or `p2p.seeds` to the mainnet peer list.
+- Publishers: deploy your site, add the verification badge, then use the "Publisher Registration" flow below against the mainnet RPC/gRPC endpoints.
+- Verifiers (publisher verification agents): create and fund a verifier account, bond with `content-grid-d verifier bond`, and run `verifierd` using `docs/verifierd.md`.
+- Consensus validators: use the standard Cosmos `gentx` flow for genesis validators or `content-grid-d tx staking create-validator` after launch.
+
 ### Publisher Registration
 
 1. **Add Congrid official link + attribution image (required for verification)**: You must add a link to the Congrid official website on the homepage (`/`) of the website you want to bind, and the link must be wrapped with an attribution image (badge).
