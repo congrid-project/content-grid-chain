@@ -5,7 +5,7 @@ Utilities for preparing genesis allocations, running economic simulations, and m
 ## Quick Start
 
 ```
-go run ./cmd/tokenomics simulate --years 5 --bonded 0.6 --consumer-spend 50000000
+go run ./cmd/tokenomics simulate --years 5 --bonded 0.6
 ```
 
 - Values passed to `simulate`, `genesis-template`, `airdrop` are in CONGRID (the CLI converts to `ucongrid`).
@@ -17,7 +17,7 @@ go run ./cmd/tokenomics simulate --years 5 --bonded 0.6 --consumer-spend 5000000
 go run ./cmd/tokenomics genesis-template \
   --foundation grid1... \
   --team grid1... \
-  --workers grid1...
+  --verifiers grid1...
 ```
 
 Writes the economic defaults with provided addresses substituted for each allocation bucket.

@@ -46,9 +46,8 @@ func TestBlockRewardSplit(t *testing.T) {
 	params := tokenomics.DefaultParams()
 	minted := sdkmath.LegacyMustNewDecFromStr("1000")
 	split := params.SplitBlockRewards(minted)
-	require.InDelta(t, 550.0, split.Tasks.MustFloat64(), 0.001)
 	require.InDelta(t, 250.0, split.Staking.MustFloat64(), 0.001)
-	require.InDelta(t, 100.0, split.Publishers.MustFloat64(), 0.001)
+	require.InDelta(t, 650.0, split.Publishers.MustFloat64(), 0.001)
 	require.InDelta(t, 100.0, split.Community.MustFloat64(), 0.001)
 }
 

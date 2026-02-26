@@ -51,7 +51,7 @@ Fields:
 
 ## Run
 
-One immediate poll (and wait for any started assignment workers):
+One immediate poll (and wait for any started assignment windows):
 
 ```bash
 go run ./offchain/verifierd --config offchain/verifierd/config.json --once

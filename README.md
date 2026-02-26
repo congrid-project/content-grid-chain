@@ -3,13 +3,13 @@
 Core protocol implementation for the Content Grid project — a decentralized content network and search protocol.
 
 ## About
-This chain (Cosmos SDK–based) coordinates and incentivizes a network of workers that:
-- Crawl and fetch web content
-- Compute embeddings off-chain (pluggable embedder; current dev setup uses a SentenceTransformer HTTP service)
-- Derive **compact similarity signatures** (e.g. 128-bit) for diversity / de-duplication heuristics
-- Index content and serve similarity search via deterministic assignment
+This chain (Cosmos SDK–based) coordinates a publisher registry and a verifier network that:
+- Registers publisher domains on-chain
+- Assigns verification rounds to bonded verifiers
+- Confirms publisher badges and records verification outcomes
+- Distributes publisher/verifier rewards via on-chain parameters
 
-Quick links: see `whitepaper.md` for the design, `docs/tokenomics.md` for the economic blueprint, and `AGENTS.md` for contribution guidelines.
+Quick links: see `whitepaper.md` for the design (note: legacy sections may not reflect current scope), `docs/tokenomics.md` for the economic blueprint, and `AGENTS.md` for contribution guidelines.
 
 ## Requirements
 - Go 1.22+ (use the latest stable release)
@@ -169,12 +169,6 @@ For the current verifier determination rules, see `offchain/registry/verifier.go
 - **On-chain transaction fee (gas fee) is still required**: Broadcasting `publisher register` Such transactions usually require payment of network fees (unless the chain parameters allow 0 fee or use `feegrant`).
 4. **Query status**: After successful registration, it can be viewed through gRPC query or CLI `content-grid-d query registry publisher <domain>`.
 
-### Miner registration (on-chain protocol part)
-
-1. Use `./content-grid-d miner register <metadata-uri> <services-bitmask> <min-bid-amount> --stake <amount>` to complete the uploading of miner data to the chain. `services-bitmask` uses a bitmask (for example, `3` means providing both fetching and embedding), and the pledge and the lowest bid temporarily use the same denom.
-2. Subsequently, you can update the service statement through `./content-grid-d miner update --metadata-uri ... --services ... --min-bid-amount ...`, or use `./content-grid-d miner stake <amount> [--decrease]` to adjust the recorded pledge amount.
-3. The on-chain query interface `query miners`/`query miner <address>` will return the current online miners, service capabilities, quotations and pledge information, and task scheduling will be directly based on these statuses.
-
 ### Verifier Bond (normal address + escrow)
 
 Verifier participates in the verification network with a normal account address (`grid1...`), and first bonds the token to the module escrow account** (escrow) before it is considered eligible.
@@ -194,22 +188,16 @@ Notes:
 - The CLI is a minimal skeleton pending full server/runtime wiring.
 
 ## Off-chain Components
-- `offchain/indexerd`: publisher homepage indexing + embeddings + **compact signatures** (see `docs/indexerd.md`).
 - `offchain/verifierd`: chain-driven publisher verification agent (see `docs/verifierd.md`).
-- `offchain/executor`: chain worker prototype that fetches, embeds, classifies and publishes content records (see `offchain/executor/README.md`).
-- `offchain/services/sentence_transformer_server.py`: python HTTP service wrapping SentenceTransformer embeddings.
 
 ## Project Status
 Phase 1 skeleton. The `app/` package provides module basics, encoding, and default genesis helpers for Cosmos SDK v0.53.
 - `x/registry`: Publisher registration and verification logic.
-- `x/miners`: Miner registration and service discovery.
-- `x/tasks`: Task assignment (Block Hash) and result verification (On-Chain Consensus) with automated reward distribution.
 - `x/tokenomics`: Economic parameters, inflation logic, and settlement keeper.
 
 ## Roadmap (High Level)
 1) [x] Runtime wiring: depinject + `runtime.App`, keepers for auth/bank/staking, ABCI services
 2) [x] CLI/server: `init`, `start`, config/home management, keys
-3) [x] First modules: minimal task assignment/commit model under `x/`
-4) [ ] P2P/Indexing: Full-node vector indexing & Block Hash-based query routing
-5) [x] Economics/Governance: rewards, slashing, parameters, proposals
-6) Testnet: reproducible genesis, docs, and CI
+3) [x] Publisher registry + verifier reward parameters
+4) [x] Economics/Governance: rewards, slashing, parameters, proposals
+5) Testnet: reproducible genesis, docs, and CI

@@ -8,12 +8,10 @@ import (
 
 // Params capture all configurable knobs for the Content Grid monetary policy.
 type Params struct {
-	Inflation       InflationParams  `json:"inflation"`
-	BlockRewards    BlockRewardSplit `json:"block_rewards"`
-	TaskRewardSplit TaskRewardSplit  `json:"task_reward_split"`
-	FeeSplit        FeeSplit         `json:"fee_split"`
-	ConsumerSplit   ConsumerSplit    `json:"consumer_split"`
-	SlashSplit      SlashSplit       `json:"slash_split"`
+	Inflation    InflationParams  `json:"inflation"`
+	BlockRewards BlockRewardSplit `json:"block_rewards"`
+	FeeSplit     FeeSplit         `json:"fee_split"`
+	SlashSplit   SlashSplit       `json:"slash_split"`
 }
 
 // DefaultParams returns the monetary policy described in the tokenomics plan.
@@ -28,22 +26,12 @@ func DefaultParams() Params {
 			BlocksPerYear:    5_256_000, // 365 days * 24h * 60m * 60s / 6s block time
 		},
 		BlockRewards: BlockRewardSplit{
-			TaskRewards:      mustNewDec("0.55"),
 			StakingRewards:   mustNewDec("0.25"),
-			PublisherRewards: mustNewDec("0.10"),
+			PublisherRewards: mustNewDec("0.65"),
 			CommunityPool:    mustNewDec("0.10"),
 		},
-		TaskRewardSplit: TaskRewardSplit{
-			Execution:  mustNewDec("0.70"),
-			Validation: mustNewDec("0.30"),
-		},
 		FeeSplit: FeeSplit{
-			ToTaskRewards: mustNewDec("0.80"),
-			ToBurn:        mustNewDec("0.20"),
-		},
-		ConsumerSplit: ConsumerSplit{
-			ToExecution:     mustNewDec("0.60"),
-			ToCommunityPool: mustNewDec("0.20"),
+			ToCommunityPool: mustNewDec("0.80"),
 			ToBurn:          mustNewDec("0.20"),
 		},
 		SlashSplit: SlashSplit{
@@ -62,13 +50,7 @@ func (p Params) Validate() error {
 	if err := p.BlockRewards.Validate("block rewards"); err != nil {
 		return err
 	}
-	if err := p.TaskRewardSplit.Validate(); err != nil {
-		return err
-	}
 	if err := p.FeeSplit.Validate(); err != nil {
-		return err
-	}
-	if err := p.ConsumerSplit.Validate(); err != nil {
 		return err
 	}
 	if err := p.SlashSplit.Validate(); err != nil {
@@ -121,7 +103,6 @@ func (ip InflationParams) Validate() error {
 
 // BlockRewardSplit represents how freshly minted tokens are routed each block.
 type BlockRewardSplit struct {
-	TaskRewards      sdkmath.LegacyDec `json:"task_rewards"`
 	StakingRewards   sdkmath.LegacyDec `json:"staking_rewards"`
 	PublisherRewards sdkmath.LegacyDec `json:"publisher_rewards"`
 	CommunityPool    sdkmath.LegacyDec `json:"community_pool"`
@@ -129,23 +110,8 @@ type BlockRewardSplit struct {
 
 // Validate ensures the split sums to 1.
 func (br BlockRewardSplit) Validate(name string) error {
-	shares := []sdkmath.LegacyDec{br.TaskRewards, br.StakingRewards, br.PublisherRewards, br.CommunityPool}
+	shares := []sdkmath.LegacyDec{br.StakingRewards, br.PublisherRewards, br.CommunityPool}
 	if err := ensureSharesSumToOne(shares, name); err != nil {
-		return err
-	}
-	return nil
-}
-
-// TaskRewardSplit splits the task rewards between executors and validators.
-type TaskRewardSplit struct {
-	Execution  sdkmath.LegacyDec `json:"execution"`
-	Validation sdkmath.LegacyDec `json:"validation"`
-}
-
-// Validate ensures values are sane.
-func (trs TaskRewardSplit) Validate() error {
-	shares := []sdkmath.LegacyDec{trs.Execution, trs.Validation}
-	if err := ensureSharesSumToOne(shares, "task reward split"); err != nil {
 		return err
 	}
 	return nil
@@ -153,30 +119,14 @@ func (trs TaskRewardSplit) Validate() error {
 
 // FeeSplit defines how protocol fees get redistributed.
 type FeeSplit struct {
-	ToTaskRewards sdkmath.LegacyDec `json:"to_task_rewards"`
-	ToBurn        sdkmath.LegacyDec `json:"to_burn"`
-}
-
-// Validate ensures the fee split sums to 1.
-func (fs FeeSplit) Validate() error {
-	shares := []sdkmath.LegacyDec{fs.ToTaskRewards, fs.ToBurn}
-	if err := ensureSharesSumToOne(shares, "fee split"); err != nil {
-		return err
-	}
-	return nil
-}
-
-// ConsumerSplit defines how consumer payments are applied at settlement.
-type ConsumerSplit struct {
-	ToExecution     sdkmath.LegacyDec `json:"to_execution"`
 	ToCommunityPool sdkmath.LegacyDec `json:"to_community_pool"`
 	ToBurn          sdkmath.LegacyDec `json:"to_burn"`
 }
 
-// Validate ensures the consumer split sums to 1.
-func (cs ConsumerSplit) Validate() error {
-	shares := []sdkmath.LegacyDec{cs.ToExecution, cs.ToCommunityPool, cs.ToBurn}
-	if err := ensureSharesSumToOne(shares, "consumer split"); err != nil {
+// Validate ensures the fee split sums to 1.
+func (fs FeeSplit) Validate() error {
+	shares := []sdkmath.LegacyDec{fs.ToCommunityPool, fs.ToBurn}
+	if err := ensureSharesSumToOne(shares, "fee split"); err != nil {
 		return err
 	}
 	return nil

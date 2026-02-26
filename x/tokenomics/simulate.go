@@ -38,12 +38,11 @@ func (ip InflationParams) InflationRate(bondedRatio sdkmath.LegacyDec) sdkmath.L
 
 // SimulationConfig captures the scenario used when simulating supply over time.
 type SimulationConfig struct {
-	Years               int
-	InitialSupply       sdkmath.LegacyDec
-	BondedRatio         sdkmath.LegacyDec
-	AnnualProtocolFees  sdkmath.LegacyDec
-	AnnualConsumerSpend sdkmath.LegacyDec
-	AnnualSlashingLoss  sdkmath.LegacyDec
+	Years              int
+	InitialSupply      sdkmath.LegacyDec
+	BondedRatio        sdkmath.LegacyDec
+	AnnualProtocolFees sdkmath.LegacyDec
+	AnnualSlashingLoss sdkmath.LegacyDec
 }
 
 // DefaultSimulationConfig returns a conservative baseline scenario spanning 5 years.
@@ -54,26 +53,24 @@ func DefaultSimulationConfig(gs GenesisState) SimulationConfig {
 		return sdkmath.LegacyNewDec(amount).Mul(micro)
 	}
 	return SimulationConfig{
-		Years:               5,
-		InitialSupply:       supply,
-		BondedRatio:         mustNewDec("0.60"),
-		AnnualProtocolFees:  toMicro(15_000_000),
-		AnnualConsumerSpend: toMicro(50_000_000),
-		AnnualSlashingLoss:  toMicro(1_000_000),
+		Years:              5,
+		InitialSupply:      supply,
+		BondedRatio:        mustNewDec("0.60"),
+		AnnualProtocolFees: toMicro(15_000_000),
+		AnnualSlashingLoss: toMicro(1_000_000),
 	}
 }
 
 // YearProjection captures the monetary movements for a given simulation year.
 type YearProjection struct {
-	Year           int               `json:"year"`
-	StartSupply    sdkmath.LegacyDec `json:"start_supply"`
-	InflationRate  sdkmath.LegacyDec `json:"inflation_rate"`
-	NewlyMinted    sdkmath.LegacyDec `json:"newly_minted"`
-	FeeBurned      sdkmath.LegacyDec `json:"fee_burned"`
-	ConsumerBurned sdkmath.LegacyDec `json:"consumer_burned"`
-	SlashBurned    sdkmath.LegacyDec `json:"slash_burned"`
-	NetIssuance    sdkmath.LegacyDec `json:"net_issuance"`
-	EndSupply      sdkmath.LegacyDec `json:"end_supply"`
+	Year          int               `json:"year"`
+	StartSupply   sdkmath.LegacyDec `json:"start_supply"`
+	InflationRate sdkmath.LegacyDec `json:"inflation_rate"`
+	NewlyMinted   sdkmath.LegacyDec `json:"newly_minted"`
+	FeeBurned     sdkmath.LegacyDec `json:"fee_burned"`
+	SlashBurned   sdkmath.LegacyDec `json:"slash_burned"`
+	NetIssuance   sdkmath.LegacyDec `json:"net_issuance"`
+	EndSupply     sdkmath.LegacyDec `json:"end_supply"`
 }
 
 // SimulateYears returns yearly projections under the provided params and scenario.
@@ -87,7 +84,7 @@ func SimulateYears(params Params, cfg SimulationConfig) ([]YearProjection, error
 	if cfg.BondedRatio.IsNegative() || cfg.BondedRatio.GT(sdkmath.LegacyOneDec()) {
 		return nil, fmt.Errorf("bonded ratio must be within [0,1]")
 	}
-	if cfg.AnnualProtocolFees.IsNegative() || cfg.AnnualConsumerSpend.IsNegative() || cfg.AnnualSlashingLoss.IsNegative() {
+	if cfg.AnnualProtocolFees.IsNegative() || cfg.AnnualSlashingLoss.IsNegative() {
 		return nil, fmt.Errorf("annual inputs must be non-negative")
 	}
 
@@ -98,28 +95,25 @@ func SimulateYears(params Params, cfg SimulationConfig) ([]YearProjection, error
 	projections := make([]YearProjection, 0, cfg.Years)
 	supply := cfg.InitialSupply
 	feeBurnPercent := params.FeeSplit.ToBurn
-	consumerBurnPercent := params.ConsumerSplit.ToBurn
 	slashBurnPercent := params.SlashSplit.ToBurn
 
 	for year := 1; year <= cfg.Years; year++ {
 		rate := params.Inflation.InflationRate(cfg.BondedRatio)
 		minted := supply.Mul(rate)
 		feeBurn := cfg.AnnualProtocolFees.Mul(feeBurnPercent)
-		consumerBurn := cfg.AnnualConsumerSpend.Mul(consumerBurnPercent)
 		slashBurn := cfg.AnnualSlashingLoss.Mul(slashBurnPercent)
-		net := minted.Sub(feeBurn).Sub(consumerBurn).Sub(slashBurn)
+		net := minted.Sub(feeBurn).Sub(slashBurn)
 		endSupply := supply.Add(net)
 
 		projections = append(projections, YearProjection{
-			Year:           year,
-			StartSupply:    supply,
-			InflationRate:  rate,
-			NewlyMinted:    minted,
-			FeeBurned:      feeBurn,
-			ConsumerBurned: consumerBurn,
-			SlashBurned:    slashBurn,
-			NetIssuance:    net,
-			EndSupply:      endSupply,
+			Year:          year,
+			StartSupply:   supply,
+			InflationRate: rate,
+			NewlyMinted:   minted,
+			FeeBurned:     feeBurn,
+			SlashBurned:   slashBurn,
+			NetIssuance:   net,
+			EndSupply:     endSupply,
 		})
 		supply = endSupply
 	}
@@ -130,7 +124,7 @@ func SimulateYears(params Params, cfg SimulationConfig) ([]YearProjection, error
 // ProjectionTable renders the simulation into a human readable table-ready structure.
 func ProjectionTable(projections []YearProjection) [][]string {
 	rows := make([][]string, 0, len(projections)+1)
-	header := []string{"Year", "Start Supply", "Inflation", "Minted", "Burn (fees)", "Burn (consumer)", "Burn (slash)", "Net", "End Supply"}
+	header := []string{"Year", "Start Supply", "Inflation", "Minted", "Burn (fees)", "Burn (slash)", "Net", "End Supply"}
 	rows = append(rows, header)
 	for _, proj := range projections {
 		rows = append(rows, []string{
@@ -139,7 +133,6 @@ func ProjectionTable(projections []YearProjection) [][]string {
 			fmt.Sprintf("%.2f%%", proj.InflationRate.MulInt64(100).MustFloat64()),
 			formatDec(proj.NewlyMinted),
 			formatDec(proj.FeeBurned),
-			formatDec(proj.ConsumerBurned),
 			formatDec(proj.SlashBurned),
 			formatDec(proj.NetIssuance),
 			formatDec(proj.EndSupply),

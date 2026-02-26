@@ -6,7 +6,7 @@ import (
 	"net/url"
 )
 
-// NodeStatus represents the current lifecycle status of a worker node.
+// NodeStatus represents the current lifecycle status of a network node.
 type NodeStatus int32
 
 const (
@@ -28,7 +28,7 @@ func (s NodeStatus) String() string {
 	}
 }
 
-// Node describes a staking operator that can be assigned execution tasks.
+// Node describes a staking operator registered with the network.
 type Node struct {
 	Operator string     `json:"operator"`
 	Stake    uint64     `json:"stake"`

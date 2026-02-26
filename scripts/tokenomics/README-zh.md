@@ -5,7 +5,7 @@
 ## 快速入门
 
 ```
-go run ./cmd/tokenomics simulate --years 5 --bonded 0.6 --consumer-spend 50000000
+go run ./cmd/tokenomics simulate --years 5 --bonded 0.6
 ```
 
 - 传递给 `simulate`、`genesis-template`、`airdrop` 的值位于 CONGRID 中（CLI 转换为 `ucongrid`）。
@@ -17,7 +17,7 @@ go run ./cmd/tokenomics simulate --years 5 --bonded 0.6 --consumer-spend 5000000
 go run ./cmd/tokenomics genesis-template \
   --foundation grid1... \
   --team grid1... \
-  --workers grid1...
+  --verifiers grid1...
 ```
 
 使用提供的地址替换每个分配桶写入经济默认值。

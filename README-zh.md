@@ -3,13 +3,13 @@
 内容网格项目的核心协议实现——去中心化的内容网络和搜索协议。
 
 ＃＃ 关于
-该链（基于 Cosmos SDK）协调并激励工人网络：
-- 抓取并获取网页内容
-- 链外计算嵌入（可插入嵌入器；当前的开发设置使用 SentenceTransformer HTTP 服务）
-- 导出**紧凑的相似性签名**（例如 128 位）以实现多样性/重复数据删除启发式
-- 索引内容并通过确定性分配提供相似性搜索
+该链（基于 Cosmos SDK）协调 Publisher 注册与 Verifier 验证网络：
+- Publisher 域名上链注册
+- 验证者参与验证轮次并提交结果
+- 确认 Badge 与归属关系
+- 通过链上参数分配 Publisher 与 Verifier 奖励
 
-快速链接：有关设计，请参阅 `whitepaper.md`；有关经济蓝图，请参阅 `docs/tokenomics.md`；有关贡献指南，请参阅 `AGENTS.md`。
+快速链接：有关设计，请参阅 `whitepaper.md`（注意：部分历史内容可能与当前范围不同）；有关经济蓝图，请参阅 `docs/tokenomics.md`；有关贡献指南，请参阅 `AGENTS.md`。
 
 ＃＃ 要求
 - Go 1.22+（使用最新的稳定版本）
@@ -169,12 +169,6 @@
 - **仍然需要链上交易费（gas费）**：广播`publisher register`此类交易通常需要支付网络费用（除非链上参数允许0费用或使用`feegrant`）。
 4. **查询状态**：注册成功后，可以通过gRPC查询或CLI `content-grid-d query registry publisher <domain>`查看。
 
-### 矿工注册（链上协议部分）
-
-1. 使用`./content-grid-d miner register <metadata-uri> <services-bitmask> <min-bid-amount> --stake <amount>`完成矿工数据上传链上。 `services-bitmask` 使用位掩码（例如，`3` 表示同时提供获取和嵌入），并且质押和最低出价暂时使用相同的面额。
-2. 随后，您可以通过`./content-grid-d miner update --metadata-uri ... --services ... --min-bid-amount ...`更新服务报表，或者使用`./content-grid-d miner stake <amount> [--decrease]`调整记录的质押金额。
-3. 链上查询接口`query miners`/`query miner <address>`会返回当前在线矿工、服务能力、报价和质押信息，任务调度将直接根据这些状态进行。
-
 ### 验证者债券（普通地址+托管）
 
 验证者以普通账户地址（`grid1...`）参与验证网络，首先将代币绑定到模块托管账户**（escrow）后才被认为符合资格。
@@ -194,22 +188,16 @@
 - CLI 是一个最小的框架，等待完整的服务器/运行时连接。
 
 ## 链下组件
-- `offchain/indexerd`：发布者主页索引 + 嵌入 + **紧凑签名**（请参阅 `docs/indexerd.md`）。
 - `offchain/verifierd`：链驱动的发布者验证代理（请参阅`docs/verifierd.md`）。
-- `offchain/executor`：链工作者原型，用于获取、嵌入、分类和发布内容记录（请参阅`offchain/executor/README.md`）。
-- `offchain/services/sentence_transformer_server.py`：Python HTTP 服务包装 SentenceTransformer 嵌入。
 
 ## 项目状态
 第一阶段骨架。 `app/` 包为 Cosmos SDK v0.53 提供模块基础知识、编码和默认创世帮助程序。
 - `x/registry`：发布者注册和验证逻辑。
-- `x/miners`：矿工注册和服务发现。
-- `x/tasks`：任务分配（区块哈希）和结果验证（链上共识）以及自动奖励分配。
 - `x/tokenomics`：经济参数、通货膨胀逻辑和结算管理员。
 
 ## 路线图（高级）
 1) [x] 运行时连接：depinject + `runtime.App`，auth/bank/stake 的守护者，ABCI 服务
 2) [x] CLI/服务器：`init`、`start`、配置/主目录管理、密钥
-3) [x] 第一个模块：`x/` 下的最小任务分配/提交模型
-4) [ ] P2P/Indexing：全节点向量索引&基于块哈希的查询路由
-5) [x] 经济/治理：奖励、削减、参数、建议
-6) 测试网：可复制的起源、文档和 CI
+3) [x] Publisher 注册 + Verifier 激励参数
+4) [x] 经济/治理：奖励、削减、参数、建议
+5) 测试网：可复制的起源、文档和 CI

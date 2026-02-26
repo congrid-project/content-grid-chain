@@ -33,20 +33,18 @@ func main() {
 
 func newSimulateCmd() *cobra.Command {
 	var (
-		years         int
-		bondedStr     string
-		supplyTokens  float64
-		protocolFees  float64
-		consumerSpend float64
-		slashLoss     float64
-		outputJSON    bool
+		years        int
+		bondedStr    string
+		supplyTokens float64
+		protocolFees float64
+		slashLoss    float64
+		outputJSON   bool
 	)
 
 	defaultGenesis := tokenomics.DefaultGenesisState()
 	supplyTokens = defaultGenesis.InitialSupply.ToLegacyDec().Quo(sdkmath.LegacyNewDec(1_000_000)).MustFloat64()
 	bondedStr = "0.60"
 	protocolFees = 15_000_000
-	consumerSpend = 50_000_000
 	slashLoss = 1_000_000
 	years = 5
 
@@ -60,12 +58,11 @@ func newSimulateCmd() *cobra.Command {
 			}
 
 			cfg := tokenomics.SimulationConfig{
-				Years:               years,
-				InitialSupply:       toMicroDec(supplyTokens),
-				BondedRatio:         bonded,
-				AnnualProtocolFees:  toMicroDec(protocolFees),
-				AnnualConsumerSpend: toMicroDec(consumerSpend),
-				AnnualSlashingLoss:  toMicroDec(slashLoss),
+				Years:              years,
+				InitialSupply:      toMicroDec(supplyTokens),
+				BondedRatio:        bonded,
+				AnnualProtocolFees: toMicroDec(protocolFees),
+				AnnualSlashingLoss: toMicroDec(slashLoss),
 			}
 
 			projections, err := tokenomics.SimulateYears(tokenomics.DefaultParams(), cfg)
@@ -80,17 +77,16 @@ func newSimulateCmd() *cobra.Command {
 			}
 
 			tw := tabwriter.NewWriter(os.Stdout, 2, 4, 2, ' ', 0)
-			fmt.Fprintln(tw, "YEAR\tSTART(M)\tINFL%\tMINTED(M)\tFEE BURN(M)\tCONSUMER BURN(M)\tSLASH BURN(M)\tNET(M)\tEND(M)")
+			fmt.Fprintln(tw, "YEAR\tSTART(M)\tINFL%\tMINTED(M)\tFEE BURN(M)\tSLASH BURN(M)\tNET(M)\tEND(M)")
 			for _, proj := range projections {
 				fmt.Fprintf(
 					tw,
-					"%d\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\n",
+					"%d\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\n",
 					proj.Year,
 					decToMillions(proj.StartSupply),
 					proj.InflationRate.MulInt64(100).MustFloat64(),
 					decToMillions(proj.NewlyMinted),
 					decToMillions(proj.FeeBurned),
-					decToMillions(proj.ConsumerBurned),
 					decToMillions(proj.SlashBurned),
 					decToMillions(proj.NetIssuance),
 					decToMillions(proj.EndSupply),
@@ -104,7 +100,6 @@ func newSimulateCmd() *cobra.Command {
 	cmd.Flags().StringVar(&bondedStr, "bonded", bondedStr, "target bonded ratio (0-1)")
 	cmd.Flags().Float64Var(&supplyTokens, "supply", supplyTokens, "initial supply in CONGRID tokens")
 	cmd.Flags().Float64Var(&protocolFees, "protocol-fees", protocolFees, "annual on-chain protocol fees in CONGRID")
-	cmd.Flags().Float64Var(&consumerSpend, "consumer-spend", consumerSpend, "annual consumer spend routed through settlements in CONGRID")
 	cmd.Flags().Float64Var(&slashLoss, "slash-loss", slashLoss, "annual slashed stake in CONGRID")
 	cmd.Flags().BoolVar(&outputJSON, "json", false, "emit projections as JSON")
 
@@ -116,7 +111,7 @@ func newGenesisTemplateCmd() *cobra.Command {
 		outputPath string
 		foundation string
 		team       string
-		workers    string
+		verifiers  string
 		publishers string
 		liquidity  string
 		treasury   string
@@ -135,7 +130,7 @@ func newGenesisTemplateCmd() *cobra.Command {
 			}
 			update("foundation_reserve", foundation)
 			update("team_and_advisors", team)
-			update("worker_bootstrap_pool", workers)
+			update("verifier_bootstrap_pool", verifiers)
 			update("publisher_growth_fund", publishers)
 			update("public_sale_and_liquidity", liquidity)
 			update("community_treasury", treasury)
@@ -165,7 +160,7 @@ func newGenesisTemplateCmd() *cobra.Command {
 	cmd.Flags().StringVar(&outputPath, "output", "", "write template to file (defaults to stdout)")
 	cmd.Flags().StringVar(&foundation, "foundation", "", "foundation reserve address")
 	cmd.Flags().StringVar(&team, "team", "", "team and advisors address")
-	cmd.Flags().StringVar(&workers, "workers", "", "worker bootstrap pool address")
+	cmd.Flags().StringVar(&verifiers, "verifiers", "", "verifier bootstrap pool address")
 	cmd.Flags().StringVar(&publishers, "publishers", "", "publisher growth fund address")
 	cmd.Flags().StringVar(&liquidity, "liquidity", "", "public sale / liquidity address")
 	cmd.Flags().StringVar(&treasury, "treasury", "", "community treasury address")

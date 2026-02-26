@@ -34,9 +34,6 @@ This playbook documents how the Content Grid chain manages monetary policy and o
 | Parameter | Default | Module | Notes |
 | --- | --- | --- | --- |
 | Inflation min/max/base | 4% / 12% / 7% | `x/tokenomics` | Computed vs bonded ratio |
-| Block reward split | 50/25/15/10 | `x/tokenomics` | Tasks/Staking/Publishers/Community |
-| Fee burn share | 20% | `x/tokenomics` | Rest flows to task pool |
-| Worker reward weights | 40/25/20/15 | `x/tasks` | Success/Consensus/Latency/Uptime |
 | Publisher reward weights | 50/30/20 | `x/registry` | Availability/Engagement/Freshness |
 
 ## Emergency Checklist

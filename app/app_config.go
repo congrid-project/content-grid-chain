@@ -57,10 +57,8 @@ import (
 	_ "github.com/cosmos/cosmos-sdk/x/staking"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	"content-grid-chain/x/miners"
 	"content-grid-chain/x/nodes"
 	"content-grid-chain/x/registry"
-	"content-grid-chain/x/tasks"
 	"content-grid-chain/x/tokenomics"
 	"content-grid-chain/x/verifiers"
 )
@@ -161,10 +159,8 @@ var (
 		vestingtypes.ModuleName,
 		upgradetypes.ModuleName,
 		nodes.ModuleName,
-		miners.ModuleName,
 		verifiers.ModuleName,
 		registry.ModuleName,
-		tasks.ModuleName,
 		tokenomics.ModuleName,
 	}
 
@@ -185,10 +181,8 @@ var (
 		vestingtypes.ModuleName,
 		upgradetypes.ModuleName,
 		nodes.ModuleName,
-		miners.ModuleName,
 		verifiers.ModuleName,
 		registry.ModuleName,
-		tasks.ModuleName,
 		tokenomics.ModuleName,
 	}
 

@@ -129,43 +129,6 @@ func (k Keeper) BurnFromPool(ctx sdk.Context, coins sdk.Coins) error {
 	return nil
 }
 
-// DistributeTaskRewards handles splitting and sending rewards to task winners.
-func (k Keeper) DistributeTaskRewards(ctx sdk.Context, winners []string, totalAmount sdkmath.Int) error {
-	if len(winners) == 0 {
-		return nil
-	}
-
-	// In a real implementation, we would fetch denom from params or use a default.
-	denom := DefaultDenom
-
-	// Calculate per-winner share
-	share := totalAmount.QuoRaw(int64(len(winners)))
-	if share.IsZero() {
-		return nil
-	}
-
-	rewardCoins := sdk.NewCoins(sdk.NewCoin(denom, share))
-
-	for _, winner := range winners {
-		addr, err := sdk.AccAddressFromBech32(winner)
-		if err != nil {
-			return fmt.Errorf("invalid winner address %s: %w", winner, err)
-		}
-
-		// In a real implementation, we might mint here or pull from a rewards pool module account.
-		// For now, assume it's minted to this module then sent.
-		if err := k.bank.MintCoins(ctx, ModuleName, rewardCoins); err != nil {
-			return fmt.Errorf("failed to mint rewards: %w", err)
-		}
-
-		if err := k.bank.SendCoinsFromModuleToAccount(ctx, ModuleName, addr, rewardCoins); err != nil {
-			return fmt.Errorf("failed to send reward to %s: %w", winner, err)
-		}
-	}
-
-	return nil
-}
-
 var (
 	paramsStorePrefix       = []byte{0x01}
 	paramsKey               = []byte{0x00}

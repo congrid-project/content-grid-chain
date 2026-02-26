@@ -73,7 +73,7 @@ func (a *Agent) PollOnce(ctx context.Context) error {
 	return nil
 }
 
-// Wait blocks until all in-flight assignment workers launched by PollOnce complete.
+// Wait blocks until all in-flight assignment runs launched by PollOnce complete.
 func (a *Agent) Wait() {
 	a.wg.Wait()
 }

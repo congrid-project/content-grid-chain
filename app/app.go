@@ -25,11 +25,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"content-grid-chain/x/miners"
 	"content-grid-chain/x/nodes"
 	"content-grid-chain/x/registry"
-	"content-grid-chain/x/tasks"
-	taskskeeper "content-grid-chain/x/tasks/keeper"
 	"content-grid-chain/x/tokenomics"
 	"content-grid-chain/x/verifiers"
 
@@ -70,8 +67,6 @@ type App struct {
 	BankKeeper        bankkeeper.Keeper
 
 	RegistryKeeper   registry.Keeper
-	MinersKeeper     miners.Keeper
-	TasksKeeper      taskskeeper.Keeper
 	TokenomicsKeeper tokenomics.Keeper
 	VerifiersKeeper  verifiers.Keeper
 }
@@ -79,10 +74,8 @@ type App struct {
 // ModuleBasics contains the Content Grid-specific module basics used for genesis helpers.
 var ModuleBasics = module.NewBasicManager(
 	nodes.AppModuleBasic{},
-	miners.AppModuleBasic{},
 	registry.AppModuleBasic{},
 	verifiers.AppModuleBasic{},
-	tasks.AppModuleBasic{},
 	tokenomics.AppModuleBasic{},
 )
 
@@ -134,13 +127,6 @@ func NewApp(
 func registerCustomModules(app *App) {
 	nodesModule := nodes.NewAppModule()
 
-	minersStoreKey := storetypes.NewKVStoreKey(miners.StoreKey)
-	if err := app.RegisterStores(minersStoreKey); err != nil {
-		panic(err)
-	}
-	minersKeeper := miners.NewKeeper(app.appCodec, minersStoreKey)
-	minersModule := miners.NewAppModule(minersKeeper)
-
 	verifiersStoreKey := storetypes.NewKVStoreKey(verifiers.StoreKey)
 	if err := app.RegisterStores(verifiersStoreKey); err != nil {
 		panic(err)
@@ -165,28 +151,19 @@ func registerCustomModules(app *App) {
 	registryKeeper := registry.NewKeeper(app.appCodec, registryStoreKey, verifiersKeeper, tokenomicsKeeper, app.BankKeeper)
 	registryModule := registry.NewAppModule(registryKeeper)
 
-	tasksStoreKey := storetypes.NewKVStoreKey(tasks.StoreKey)
-	if err := app.RegisterStores(tasksStoreKey); err != nil {
-		panic(err)
-	}
-	tasksKeeper := taskskeeper.NewKeeper(app.appCodec, tasksStoreKey, tokenomicsKeeper)
-	tasksModule := tasks.NewAppModule(tasksKeeper)
-
-	if err := app.RegisterModules(&nodesModule, &registryModule, &minersModule, &verifiersModule, &tasksModule, &tokenomicsModule); err != nil {
+	if err := app.RegisterModules(&nodesModule, &registryModule, &verifiersModule, &tokenomicsModule); err != nil {
 		panic(err)
 	}
 	app.RegistryKeeper = registryKeeper
-	app.MinersKeeper = minersKeeper
 	app.VerifiersKeeper = verifiersKeeper
-	app.TasksKeeper = tasksKeeper
 	app.TokenomicsKeeper = tokenomicsKeeper
 }
 
 // registerCustomModuleOrders appends project modules to the init/export order so genesis includes them.
 func registerCustomModuleOrders(app *App) {
 	// Ensure custom modules participate in init/export and block processing.
-	orderInit := appendUnique(runtimeInitGenesisOrder, nodes.ModuleName, registry.ModuleName, miners.ModuleName, verifiers.ModuleName, tasks.ModuleName, tokenomics.ModuleName)
-	orderExport := appendUnique(runtimeExportGenesisOrder, nodes.ModuleName, registry.ModuleName, miners.ModuleName, verifiers.ModuleName, tasks.ModuleName, tokenomics.ModuleName)
+	orderInit := appendUnique(runtimeInitGenesisOrder, nodes.ModuleName, registry.ModuleName, verifiers.ModuleName, tokenomics.ModuleName)
+	orderExport := appendUnique(runtimeExportGenesisOrder, nodes.ModuleName, registry.ModuleName, verifiers.ModuleName, tokenomics.ModuleName)
 
 	// The runtime module manager is built from AppConfig before we register custom modules.
 	// Re-apply begin/end blocker ordering here so newly-registered modules (notably registry.EndBlock)

@@ -38,10 +38,8 @@ import (
 	"github.com/spf13/cast"
 
 	"content-grid-chain/app"
-	"content-grid-chain/x/miners"
 	"content-grid-chain/x/nodes"
 	"content-grid-chain/x/registry"
-	"content-grid-chain/x/tasks"
 	"content-grid-chain/x/tokenomics"
 	"content-grid-chain/x/verifiers"
 )
@@ -71,10 +69,8 @@ func NewRootCmd() *cobra.Command {
 	// Our chain wires several custom modules manually; they still need to be present here
 	// so `init`/`devnet` genesis includes their state (params, etc.).
 	moduleBasicManager[nodes.ModuleName] = nodes.AppModuleBasic{}
-	moduleBasicManager[miners.ModuleName] = miners.AppModuleBasic{}
 	moduleBasicManager[registry.ModuleName] = registry.AppModuleBasic{}
 	moduleBasicManager[verifiers.ModuleName] = verifiers.AppModuleBasic{}
-	moduleBasicManager[tasks.ModuleName] = tasks.AppModuleBasic{}
 	moduleBasicManager[tokenomics.ModuleName] = tokenomics.AppModuleBasic{}
 
 	autoCliOpts.ClientCtx = clientCtx
@@ -169,7 +165,6 @@ func initRootCmd(rootCmd *cobra.Command, txConfig client.TxConfig, basicManager 
 	rootCmd.AddCommand(
 		server.StatusCommand(),
 		devnetCommand(),
-		minerCommand(),
 		publisherCommand(),
 		verifierCommand(),
 		genesisCommand(txConfig, basicManager),

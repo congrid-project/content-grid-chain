@@ -82,10 +82,10 @@ func DefaultGenesisState() GenesisState {
 				},
 			},
 			{
-				Category: "worker_bootstrap_pool",
+				Category: "verifier_bootstrap_pool",
 				Percent:  mustNewDec("0.20"),
-				Address:  "grid1workerbootstrap000000000000000000000",
-				Notes:    "delegated incentives for early node operators",
+				Address:  "grid1verifierbootstrap000000000000000000",
+				Notes:    "delegated incentives for early verifier operators",
 				Vesting: VestingSchedule{
 					CliffMonths:   0,
 					VestingMonths: 24,

@@ -1,5 +1,6 @@
 Content Grid Protocol White Paper (v1.0)
 summary
+Scope note (current implementation): the network presently focuses on publisher registration and verifier-driven badge verification. Mining/task allocation/indexing features referenced below are legacy or roadmap items and are not active in the current codebase.
 Content Grid is a decentralized content network and search engine protocol that aims to build a fairer, open and content-driven Internet. We use an innovative "Useful Proof of Work" mechanism to incentivize website publishers to contribute high-quality content and incentivize network nodes to provide crawling, computing and indexing services.
 
 Unlike traditional search engines that rely on advertising revenue and opaque algorithms, Content Grid leverages blockchain technology, Full-Node Vector Indexing, and vector similarity search to create a censorship-resistant content discovery engine that is owned and maintained by the community. The protocol’s native token CONGRID is the core of the entire economic ecosystem and is used for staking, payment, rewards and governance to ensure that the interests of all participants are consistent with the long-term healthy development of the network.
@@ -30,7 +31,7 @@ We built a sovereign application chain called content-grid-chain based on the Co
 Identity and pledge management: Node operators register identities and obtain network permissions by staking CONGRID tokens. Website publishers need to register and verify the ownership of the **first-level domain** (Primary Domain). A first-level domain name can only be registered once.
 Block Consensus: Adopts the standard Tendermint (CometBFT) BPoS consensus mechanism. This is the default solution of the Cosmos SDK, ensuring instant finality of transactions and high network security.
 Task allocation: Use a deterministic algorithm based on block hash (Block Hash Based Assignment). The specific implementation is `Hash(BlockHash + TaskID + Counter) % TotalMiners`, which generates a pseudo-random number seed and deterministically selects execution nodes from the list of active miners. This approach takes advantage of the unpredictability of CometBFT without introducing additional VRF mechanisms.
-Task result verification: Adopt majority verification based on on-chain consensus (On-Chain Majority Consensus). Miners submit the result hash to the chain, and CometBFT ensures the order of transactions. On-chain logic (`x/tasks` module) automatically calculates the majority of submitted results (requires 67% Quorum). Only nodes that are consistent with the majority results can receive rewards. Nodes that do evil or make mistakes will be economically punished through the **Slashing** mechanism.
+Task result verification: Adopt majority verification based on on-chain consensus (On-Chain Majority Consensus). Miners submit the result hash to the chain, and CometBFT ensures the order of transactions. Legacy on-chain task logic (removed from current scope) automatically calculates the majority of submitted results (requires 67% Quorum). Only nodes that are consistent with the majority results can receive rewards. Nodes that do evil or make mistakes will be economically punished through the **Slashing** mechanism.
 Economic model execution: Responsible for the reward distribution, transaction fee processing and governance voting of CONGRID tokens.
 
 2.2 Full-Node Indexing Layer
@@ -117,9 +118,9 @@ illustrate:
 5. Roadmap
 Phase 1: Protocol Core Implementation
 [✓] Complete the content-grid-chain basic framework construction.
-[✓] Implement node staking and registration modules (x/nodes, x/miners).
+[✓] Implement node staking and registration modules (legacy mining scope).
 [✓] Implement website registration and verification module (x/registry).
-[✓] Implement task allocation, consensus and reward modules (x/tasks, x/tokenomics) based on block hash.
+[✓] Implement task allocation, consensus and reward modules (legacy, removed from current scope).
 Phase 2: Off-chain functions and testnet online
 [ ] Develop off-chain task executor and full-node vector indexing service.
 [ ] Release the internal test network and invite early node operators to participate.
