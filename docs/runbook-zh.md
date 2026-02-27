@@ -112,6 +112,8 @@ go run ./cmd/congrid-site \
   --keyring-backend os
 ```
 
+可选：如果 content-grid-d 的 keyring 不在默认路径，请设置 `--keyring-dir`。
+
 健康检查：
 - `/`、`/marketplace`、`/publisher/dashboard` 可访问
 - 提交slot/lease时，tx成功返回，有txhash

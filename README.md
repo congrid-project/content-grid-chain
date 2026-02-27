@@ -188,7 +188,9 @@ Notes:
 - The CLI is a minimal skeleton pending full server/runtime wiring.
 
 ## Off-chain Components
+- `offchain/indexerd`: publisher homepage indexing + embeddings + similarity signatures (see `docs/indexerd.md`).
 - `offchain/verifierd`: chain-driven publisher verification agent (see `docs/verifierd.md`).
+- `offchain/drandrelayer`: drand beacon relay for randomness ingestion (see `docs/drand-relayer.md`).
 
 ## Project Status
 Phase 1 skeleton. The `app/` package provides module basics, encoding, and default genesis helpers for Cosmos SDK v0.53.

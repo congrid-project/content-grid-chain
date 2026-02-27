@@ -112,6 +112,8 @@ go run ./cmd/congrid-site \
   --keyring-backend os
 ```
 
+Optional: set `--keyring-dir` if the content-grid-d keyring lives outside the default location.
+
 Health check:
 - `/`, `/marketplace`, `/publisher/dashboard` are accessible
 - When submitting slot/lease, tx returns successfully and has txhash

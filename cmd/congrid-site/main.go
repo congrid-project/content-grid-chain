@@ -136,6 +136,7 @@ func main() {
 			Amount:        *amount,
 			FaucetKeyName: *faucetKeyName,
 			Keyring:       *keyringBackend,
+			KeyringDir:    strings.TrimSpace(*keyringDir),
 			Fees:          *fees,
 			GasPrices:     *gasPrices,
 			BaseURL:       *baseURL,

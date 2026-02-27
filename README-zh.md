@@ -188,7 +188,9 @@
 - CLI 是一个最小的框架，等待完整的服务器/运行时连接。
 
 ## 链下组件
+- `offchain/indexerd`：发布者主页索引 + 嵌入 + 相似性签名（请参阅`docs/indexerd.md`）。
 - `offchain/verifierd`：链驱动的发布者验证代理（请参阅`docs/verifierd.md`）。
+- `offchain/drandrelayer`：drand 信标中继用于随机数接入（请参阅`docs/drand-relayer.md`）。
 
 ## 项目状态
 第一阶段骨架。 `app/` 包为 Cosmos SDK v0.53 提供模块基础知识、编码和默认创世帮助程序。

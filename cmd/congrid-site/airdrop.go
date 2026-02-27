@@ -25,6 +25,7 @@ type airdropConfig struct {
 	Amount        string
 	FaucetKeyName string
 	Keyring       string
+	KeyringDir    string
 	Fees          string
 	GasPrices     string
 	BaseURL       string
@@ -169,6 +170,9 @@ func (a *airdropper) sendAirdrop(ctx context.Context, toAddr string) (string, er
 		"--gas-adjustment", "1.3",
 		"-y",
 		"--output", "json",
+	}
+	if strings.TrimSpace(a.cfg.KeyringDir) != "" {
+		args = append(args, "--keyring-dir", strings.TrimSpace(a.cfg.KeyringDir))
 	}
 	if strings.TrimSpace(a.cfg.Fees) != "" {
 		args = append(args, "--fees", strings.TrimSpace(a.cfg.Fees))
