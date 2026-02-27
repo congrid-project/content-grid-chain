@@ -8,27 +8,20 @@ import (
 
 // Params capture all configurable knobs for the Content Grid monetary policy.
 type Params struct {
-	Inflation    InflationParams  `json:"inflation"`
-	BlockRewards BlockRewardSplit `json:"block_rewards"`
-	FeeSplit     FeeSplit         `json:"fee_split"`
-	SlashSplit   SlashSplit       `json:"slash_split"`
+	Issuance   IssuanceParams `json:"issuance"`
+	FeeSplit   FeeSplit       `json:"fee_split"`
+	SlashSplit SlashSplit     `json:"slash_split"`
 }
 
 // DefaultParams returns the monetary policy described in the tokenomics plan.
 func DefaultParams() Params {
 	return Params{
-		Inflation: InflationParams{
-			BaseRate:         mustNewDec("0.07"),
-			MinRate:          mustNewDec("0.04"),
-			MaxRate:          mustNewDec("0.12"),
-			TargetBondedLow:  mustNewDec("0.50"),
-			TargetBondedHigh: mustNewDec("0.70"),
-			BlocksPerYear:    5_256_000, // 365 days * 24h * 60m * 60s / 6s block time
-		},
-		BlockRewards: BlockRewardSplit{
-			StakingRewards:   mustNewDec("0.25"),
-			PublisherRewards: mustNewDec("0.65"),
-			CommunityPool:    mustNewDec("0.10"),
+		Issuance: IssuanceParams{
+			EmissionTotalSupply:   sdkmath.NewInt(1_000_000_000_000000), // 1B CONGRID in ucongrid
+			OperatorReserveBps:    4000,
+			PublisherEmissionBps:  1000,
+			VerifierEmissionBps:   5000,
+			EmissionDurationHours: 100 * 365 * 24,
 		},
 		FeeSplit: FeeSplit{
 			ToCommunityPool: mustNewDec("0.80"),
@@ -44,11 +37,8 @@ func DefaultParams() Params {
 
 // Validate ensures all params are in range and self-consistent.
 func (p Params) Validate() error {
-	if err := p.Inflation.Validate(); err != nil {
-		return fmt.Errorf("invalid inflation params: %w", err)
-	}
-	if err := p.BlockRewards.Validate("block rewards"); err != nil {
-		return err
+	if err := p.Issuance.Validate(); err != nil {
+		return fmt.Errorf("invalid issuance params: %w", err)
 	}
 	if err := p.FeeSplit.Validate(); err != nil {
 		return err
@@ -59,60 +49,34 @@ func (p Params) Validate() error {
 	return nil
 }
 
-// InflationParams determine how annual inflation evolves with the bonded ratio.
-type InflationParams struct {
-	BaseRate         sdkmath.LegacyDec `json:"base_rate"`
-	MinRate          sdkmath.LegacyDec `json:"min_rate"`
-	MaxRate          sdkmath.LegacyDec `json:"max_rate"`
-	TargetBondedLow  sdkmath.LegacyDec `json:"target_bonded_low"`
-	TargetBondedHigh sdkmath.LegacyDec `json:"target_bonded_high"`
-	BlocksPerYear    uint64            `json:"blocks_per_year"`
+// IssuanceParams define fixed-supply linear release for operator/publisher/verifier buckets.
+type IssuanceParams struct {
+	EmissionTotalSupply   sdkmath.Int `json:"emission_total_supply"`
+	OperatorReserveBps    int64       `json:"operator_reserve_bps"`
+	PublisherEmissionBps  int64       `json:"publisher_emission_bps"`
+	VerifierEmissionBps   int64       `json:"verifier_emission_bps"`
+	EmissionDurationHours int64       `json:"emission_duration_hours"`
 }
 
-// Validate sanity checks the inflation configuration.
-func (ip InflationParams) Validate() error {
-	if err := ensureUnitInterval(ip.BaseRate, "base rate"); err != nil {
+// Validate sanity checks the fixed linear issuance configuration.
+func (ip IssuanceParams) Validate() error {
+	if !ip.EmissionTotalSupply.IsPositive() {
+		return fmt.Errorf("emission total supply must be positive")
+	}
+	if ip.EmissionDurationHours <= 0 {
+		return fmt.Errorf("emission duration hours must be positive")
+	}
+	if err := ensureBps(ip.OperatorReserveBps, "operator reserve bps"); err != nil {
 		return err
 	}
-	if err := ensureUnitInterval(ip.MinRate, "min rate"); err != nil {
+	if err := ensureBps(ip.PublisherEmissionBps, "publisher emission bps"); err != nil {
 		return err
 	}
-	if err := ensureUnitInterval(ip.MaxRate, "max rate"); err != nil {
+	if err := ensureBps(ip.VerifierEmissionBps, "verifier emission bps"); err != nil {
 		return err
 	}
-	if err := ensureUnitInterval(ip.TargetBondedLow, "target bonded low"); err != nil {
-		return err
-	}
-	if err := ensureUnitInterval(ip.TargetBondedHigh, "target bonded high"); err != nil {
-		return err
-	}
-	if !ip.MaxRate.GTE(ip.BaseRate) {
-		return fmt.Errorf("max rate %.4f must be >= base rate %.4f", ip.MaxRate, ip.BaseRate)
-	}
-	if !ip.BaseRate.GTE(ip.MinRate) {
-		return fmt.Errorf("base rate %.4f must be >= min rate %.4f", ip.BaseRate, ip.MinRate)
-	}
-	if !ip.TargetBondedHigh.GTE(ip.TargetBondedLow) {
-		return fmt.Errorf("target bonded high %.4f must be >= low %.4f", ip.TargetBondedHigh, ip.TargetBondedLow)
-	}
-	if ip.BlocksPerYear == 0 {
-		return fmt.Errorf("blocks per year must be positive")
-	}
-	return nil
-}
-
-// BlockRewardSplit represents how freshly minted tokens are routed each block.
-type BlockRewardSplit struct {
-	StakingRewards   sdkmath.LegacyDec `json:"staking_rewards"`
-	PublisherRewards sdkmath.LegacyDec `json:"publisher_rewards"`
-	CommunityPool    sdkmath.LegacyDec `json:"community_pool"`
-}
-
-// Validate ensures the split sums to 1.
-func (br BlockRewardSplit) Validate(name string) error {
-	shares := []sdkmath.LegacyDec{br.StakingRewards, br.PublisherRewards, br.CommunityPool}
-	if err := ensureSharesSumToOne(shares, name); err != nil {
-		return err
+	if ip.OperatorReserveBps+ip.PublisherEmissionBps+ip.VerifierEmissionBps != 10_000 {
+		return fmt.Errorf("issuance bps must sum to 10000")
 	}
 	return nil
 }
@@ -171,6 +135,13 @@ func ensureUnitInterval(dec sdkmath.LegacyDec, label string) error {
 	}
 	if dec.GT(sdkmath.LegacyOneDec()) {
 		return fmt.Errorf("%s must be <= 1", label)
+	}
+	return nil
+}
+
+func ensureBps(value int64, label string) error {
+	if value < 0 || value > 10_000 {
+		return fmt.Errorf("%s must be within [0,10000]", label)
 	}
 	return nil
 }

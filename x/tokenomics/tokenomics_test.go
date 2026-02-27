@@ -15,18 +15,13 @@ func TestDefaultParamsValidate(t *testing.T) {
 	require.NoError(t, params.Validate())
 }
 
-func TestInflationRate(t *testing.T) {
+func TestSplitIssuance(t *testing.T) {
 	params := tokenomics.DefaultParams()
-	ip := params.Inflation
-
-	high := ip.InflationRate(sdkmath.LegacyMustNewDecFromStr("0.45"))
-	require.True(t, high.Equal(ip.MaxRate))
-
-	low := ip.InflationRate(sdkmath.LegacyMustNewDecFromStr("0.80"))
-	require.True(t, low.Equal(ip.MinRate))
-
-	base := ip.InflationRate(sdkmath.LegacyMustNewDecFromStr("0.60"))
-	require.InDelta(t, 0.07, base.MustFloat64(), 0.0001)
+	issued := sdkmath.LegacyMustNewDecFromStr("1000")
+	split := params.SplitIssuance(issued)
+	require.InDelta(t, 400.0, split.OperatorReserve.MustFloat64(), 0.001)
+	require.InDelta(t, 100.0, split.Publishers.MustFloat64(), 0.001)
+	require.InDelta(t, 500.0, split.Verifiers.MustFloat64(), 0.001)
 }
 
 func TestAllocationBreakdown(t *testing.T) {
@@ -42,15 +37,6 @@ func TestAllocationBreakdown(t *testing.T) {
 	require.True(t, sum.Equal(sdkmath.LegacyNewDecFromInt(gs.InitialSupply)))
 }
 
-func TestBlockRewardSplit(t *testing.T) {
-	params := tokenomics.DefaultParams()
-	minted := sdkmath.LegacyMustNewDecFromStr("1000")
-	split := params.SplitBlockRewards(minted)
-	require.InDelta(t, 250.0, split.Staking.MustFloat64(), 0.001)
-	require.InDelta(t, 650.0, split.Publishers.MustFloat64(), 0.001)
-	require.InDelta(t, 100.0, split.Community.MustFloat64(), 0.001)
-}
-
 func TestSimulateYears(t *testing.T) {
 	gs := tokenomics.DefaultGenesisState()
 	cfg := tokenomics.DefaultSimulationConfig(gs)
@@ -60,5 +46,8 @@ func TestSimulateYears(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, projections, cfg.Years)
 
-	require.True(t, projections[len(projections)-1].EndSupply.GT(projections[0].StartSupply))
+	require.True(t, projections[0].PublisherIssued.IsPositive())
+	require.True(t, projections[0].VerifierIssued.IsPositive())
+	require.True(t, projections[0].CumulativeIssued.IsPositive())
+	require.True(t, projections[len(projections)-1].CumulativeIssued.GTE(projections[0].CumulativeIssued))
 }

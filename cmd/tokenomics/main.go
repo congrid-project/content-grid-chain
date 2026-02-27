@@ -34,7 +34,6 @@ func main() {
 func newSimulateCmd() *cobra.Command {
 	var (
 		years        int
-		bondedStr    string
 		supplyTokens float64
 		protocolFees float64
 		slashLoss    float64
@@ -43,24 +42,17 @@ func newSimulateCmd() *cobra.Command {
 
 	defaultGenesis := tokenomics.DefaultGenesisState()
 	supplyTokens = defaultGenesis.InitialSupply.ToLegacyDec().Quo(sdkmath.LegacyNewDec(1_000_000)).MustFloat64()
-	bondedStr = "0.60"
-	protocolFees = 15_000_000
-	slashLoss = 1_000_000
+	protocolFees = 1_500_000
+	slashLoss = 100_000
 	years = 5
 
 	cmd := &cobra.Command{
 		Use:   "simulate",
-		Short: "Simulate multi-year issuance with adjustable parameters",
+		Short: "Simulate multi-year linear issuance with adjustable burn assumptions",
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			bonded, err := sdkmath.LegacyNewDecFromStr(bondedStr)
-			if err != nil {
-				return fmt.Errorf("invalid bonded ratio: %w", err)
-			}
-
 			cfg := tokenomics.SimulationConfig{
 				Years:              years,
 				InitialSupply:      toMicroDec(supplyTokens),
-				BondedRatio:        bonded,
 				AnnualProtocolFees: toMicroDec(protocolFees),
 				AnnualSlashingLoss: toMicroDec(slashLoss),
 			}
@@ -77,15 +69,17 @@ func newSimulateCmd() *cobra.Command {
 			}
 
 			tw := tabwriter.NewWriter(os.Stdout, 2, 4, 2, ' ', 0)
-			fmt.Fprintln(tw, "YEAR\tSTART(M)\tINFL%\tMINTED(M)\tFEE BURN(M)\tSLASH BURN(M)\tNET(M)\tEND(M)")
+			fmt.Fprintln(tw, "YEAR\tSTART(M)\tPUB ISSUED(M)\tVER ISSUED(M)\tISSUED(M)\tISSUED CUM(M)\tFEE BURN(M)\tSLASH BURN(M)\tNET(M)\tEND(M)")
 			for _, proj := range projections {
 				fmt.Fprintf(
 					tw,
-					"%d\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\n",
+					"%d\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\n",
 					proj.Year,
 					decToMillions(proj.StartSupply),
-					proj.InflationRate.MulInt64(100).MustFloat64(),
-					decToMillions(proj.NewlyMinted),
+					decToMillions(proj.PublisherIssued),
+					decToMillions(proj.VerifierIssued),
+					decToMillions(proj.NewlyIssued),
+					decToMillions(proj.CumulativeIssued),
 					decToMillions(proj.FeeBurned),
 					decToMillions(proj.SlashBurned),
 					decToMillions(proj.NetIssuance),
@@ -97,7 +91,6 @@ func newSimulateCmd() *cobra.Command {
 	}
 
 	cmd.Flags().IntVar(&years, "years", years, "number of years to simulate")
-	cmd.Flags().StringVar(&bondedStr, "bonded", bondedStr, "target bonded ratio (0-1)")
 	cmd.Flags().Float64Var(&supplyTokens, "supply", supplyTokens, "initial supply in CONGRID tokens")
 	cmd.Flags().Float64Var(&protocolFees, "protocol-fees", protocolFees, "annual on-chain protocol fees in CONGRID")
 	cmd.Flags().Float64Var(&slashLoss, "slash-loss", slashLoss, "annual slashed stake in CONGRID")

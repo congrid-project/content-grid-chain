@@ -195,7 +195,7 @@ Notes:
 ## Project Status
 Phase 1 skeleton. The `app/` package provides module basics, encoding, and default genesis helpers for Cosmos SDK v0.53.
 - `x/registry`: Publisher registration and verification logic.
-- `x/tokenomics`: Economic parameters, inflation logic, and settlement keeper.
+- `x/tokenomics`: Issuance/funding helpers, fee/slash routing params, and settlement keeper.
 
 ## Roadmap (High Level)
 1) [x] Runtime wiring: depinject + `runtime.App`, keepers for auth/bank/staking, ABCI services

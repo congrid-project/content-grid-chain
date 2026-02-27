@@ -60,8 +60,8 @@ Where referral factor uses active referred publishers (minimum factor 1).
 
 ## Important Scope Notes
 
-- Tokenomics params for inflation/block splits/fee routing exist and are validated.
-- Some whitepaper-level flows (full consumer payment rail, full slash compensation rail, full block-level inflation router) are still partially modeled and not yet fully wired into end-to-end production settlement paths.
+- Tokenomics params for fixed issuance split (operator/publisher/verifier), fee routing, and slash routing exist and are validated.
+- Some whitepaper-level flows (full consumer payment rail, full slash compensation rail, and automated operator reserve distribution) are still partially modeled and not yet fully wired into end-to-end production settlement paths.
 
 See:
 - `x/registry/types.go`
