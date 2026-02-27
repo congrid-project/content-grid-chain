@@ -36,7 +36,7 @@ This site is intentionally served by Go so we can add first-party analytics, att
 - `/` — home
 - `/marketplace` — publisher slot marketplace
 - `/leases` — lease publish board (slot/lease IDs + embed snippets)
-- `/publishers` — publisher onboarding (badge snippet + registration steps)
+- `/publishers` — publisher onboarding (third-party wallet connect, domain+wallet form, generated badge snippet + registration command)
 - `/publisher/dashboard` — manage publisher slots (create, pause, unlist, publish lease snippets)
 - `/verifiers` — verifier onboarding
 - `/docs` — pointers to repository docs

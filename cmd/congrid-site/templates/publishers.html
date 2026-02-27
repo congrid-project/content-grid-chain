@@ -23,55 +23,131 @@
         <h2>What you need</h2>
         <ul>
           <li>A website with a public homepage at <code>/</code></li>
-          <li>A wallet address (bech32) that will own the publisher registration</li>
-          <li>Ability to add a tiny HTML snippet to your homepage template</li>
+          <li>A third-party Cosmos wallet (Keplr / Leap) with a <code>grid1...</code> address</li>
+          <li>Ability to paste a tiny HTML snippet into your homepage template</li>
         </ul>
       </div>
     </div>
 
-    <h2>Step 1 — Add the badge to your homepage</h2>
+    <h2>Step 1 — Use a third-party wallet and get your address</h2>
     <p>
-      Your homepage must include a link to the Congrid official website, and the link must wrap an image.
-      The image URL must point to <code>{{.BaseURL}}/badge.png</code> and include <code>publisher</code> and <code>wallet</code> parameters.
-      (These parameters bind the badge to your domain and wallet.)
+      We recommend a third-party wallet extension such as Keplr or Leap. Connect it here to read your owner address,
+      then use that same address for publisher registration.
     </p>
 
-    <div class="code">
-<pre><code>&lt;a href="{{.BaseURL}}"&gt;
-  &lt;img
-    alt="Verified by Congrid"
-    src="{{.BaseURL}}/badge.png?publisher=example.com&amp;wallet=&lt;your-bech32-owner-address&gt;"
-  /&gt;
-&lt;/a&gt;</code></pre>
+    <div class="callout">
+      <strong>Wallet:</strong> <span data-wallet-address>Not connected</span>
+      <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn btn-ghost" type="button" data-wallet-connect>Connect wallet</button>
+      </div>
+    </div>
+    <div class="callout" data-wallet-flash hidden></div>
+
+    <h2>Step 2 — Fill in your wallet + website to prepare registration</h2>
+    <p>
+      Enter your website domain and owner wallet address below. We’ll generate a ready-to-use registration command
+      and badge snippet for your site.
+    </p>
+
+    <form class="card" data-publisher-onboarding-form data-base-url="{{.BaseURL}}">
+      <label class="label" for="publisher-domain">Website domain</label>
+      <input class="input" id="publisher-domain" name="domain" placeholder="example.com" required />
+
+      <label class="label" for="publisher-wallet">Owner wallet address</label>
+      <input class="input" id="publisher-wallet" name="wallet" placeholder="grid1..." required />
+
+      <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn" type="submit">Generate registration details</button>
+        <button class="btn btn-outline" type="button" data-use-connected-wallet>Use connected wallet</button>
+      </div>
+    </form>
+
+    <div class="code" data-publisher-register-command-wrap hidden>
+<pre><code data-publisher-register-command></code></pre>
+    </div>
+
+    <div class="code" data-publisher-badge-snippet-wrap hidden>
+<pre><code data-publisher-badge-snippet></code></pre>
     </div>
 
     <p class="muted">
-      Note: the <code>href</code> must be exactly <code>{{.BaseURL}}</code> (no query string or fragment) to pass strict verification rules.
+      Note: the badge link <code>href</code> must be exactly <code>{{.BaseURL}}</code> (no query string or fragment) to pass strict verification rules.
     </p>
 
-    <h2>Step 2 — Register your domain</h2>
+    <h2>Step 3 — Update your website, then submit registration</h2>
     <p>
-      After the badge is live, broadcast the on-chain registration transaction.
-      The protocol locks your <em>primary domain</em> (e.g. <code>example.com</code>) to prevent subdomain squatting.
+      Paste the generated badge snippet into your homepage template, deploy your site, then run the generated
+      <code>publisher register</code> command.
     </p>
 
-    <div class="code">
-<pre><code>./content-grid-d publisher register example.com \
-  --from &lt;key-or-address&gt; \
-  --metadata-uri &lt;optional-link&gt;
-</code></pre>
-    </div>
-
-    <h2>Step 3 — Keep it verified</h2>
+    <h2>Step 4 — Wait for verifier checks</h2>
     <p>
       Verifiers periodically fetch your homepage and confirm the badge link is present and matches your registered owner wallet.
       Keep the badge intact and your site online to stay eligible.
     </p>
-
-    <div class="callout">
-      <strong>Want help onboarding?</strong>
-      If you share your domain and owner address, we can generate a ready-to-paste snippet customized for your site.
-    </div>
   </div>
 </section>
+
+<script>
+(() => {
+  const form = document.querySelector("[data-publisher-onboarding-form]");
+  if (!form) return;
+
+  const domainInput = form.querySelector("input[name='domain']");
+  const walletInput = form.querySelector("input[name='wallet']");
+  const useConnectedBtn = form.querySelector("[data-use-connected-wallet]");
+  const connectedWalletEl = document.querySelector("[data-wallet-address]");
+
+  const commandWrap = document.querySelector("[data-publisher-register-command-wrap]");
+  const commandCode = document.querySelector("[data-publisher-register-command]");
+  const snippetWrap = document.querySelector("[data-publisher-badge-snippet-wrap]");
+  const snippetCode = document.querySelector("[data-publisher-badge-snippet]");
+
+  const baseURL = (form.dataset.baseUrl || "https://congrid.net").replace(/\/$/, "");
+
+  function normalizeDomain(input) {
+    return String(input || "")
+      .trim()
+      .replace(/^https?:\/\//i, "")
+      .replace(/\/$/, "")
+      .split("/")[0]
+      .trim();
+  }
+
+  useConnectedBtn?.addEventListener("click", () => {
+    const addr = String(connectedWalletEl?.textContent || "").trim();
+    if (!addr || addr === "Not connected") {
+      alert("Please connect your wallet first.");
+      return;
+    }
+    walletInput.value = addr;
+  });
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    const domain = normalizeDomain(domainInput.value);
+    const wallet = String(walletInput.value || "").trim();
+
+    if (!domain) {
+      alert("Please enter a valid website domain.");
+      return;
+    }
+    if (!wallet) {
+      alert("Please enter a wallet address.");
+      return;
+    }
+
+    const registerCommand = `./content-grid-d publisher register ${domain} \\\n  --from ${wallet}`;
+
+    const badgeSrc = `${baseURL}/badge.png?publisher=${encodeURIComponent(domain)}&wallet=${encodeURIComponent(wallet)}`;
+    const badgeSnippet = `<a href="${baseURL}">\n  <img\n    alt="Verified by Congrid"\n    src="${badgeSrc}"\n  />\n</a>`;
+
+    commandCode.textContent = registerCommand;
+    snippetCode.textContent = badgeSnippet;
+    commandWrap.hidden = false;
+    snippetWrap.hidden = false;
+  });
+})();
+</script>
 {{end}}

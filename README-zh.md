@@ -141,6 +141,8 @@
 
 ### 出版商注册
 
+**官网引导（推荐第三方钱包用户）：** 打开 `https://congrid.net/publishers`，连接第三方钱包（Keplr/Leap）读取 bech32 地址，填写域名 + 钱包地址后可自动生成可粘贴的徽章代码片段和注册命令。
+
 1. **添加Congrid官方链接+归因图片（验证所需）**：您必须在要绑定的网站首页（`/`）添加Congrid官方网站的链接，并且该链接必须用归因图片（徽章）包裹。
 
 目前验证者判定规则参见`offchain/registry/verifier.go`：
@@ -160,7 +162,7 @@
    </a>
    ```
 
-2. **执行注册命令**：运行`./content-grid-d publisher register <domain> --from <key-or-address> [--metadata-uri <link>] [--referrer <address>]`。
+2. **执行注册命令**（或使用 `/publishers` 页面生成的命令）：运行`./content-grid-d publisher register <domain> --from <key-or-address> [--metadata-uri <link>] [--referrer <address>]`。
 - `--referrer`：可选，referrer地址（用于影响验证者的收益权重；publisher推荐publisher不生效）。
 - 系统会自动识别并锁定域名的**一级域名**（Primary Domain，如`example.com`）。
 - 同一一级域名下只能注册一个站点，防止他人抢注子域名。支持非默认端口（例如 `example.com:8080`）。

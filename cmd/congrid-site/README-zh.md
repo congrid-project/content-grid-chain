@@ -34,7 +34,8 @@ go run ./cmd/congrid-site \
 
 - `/` — 家
 - `/marketplace` — 发行商老虎机市场
-- `/publishers` — 发布商入职（徽章片段 + 注册步骤）
+- `/leases` — 租约发布板（slot/lease ID + 可复制嵌入片段）
+- `/publishers` — 发布商入职（第三方钱包连接、域名+钱包填写、自动生成徽章片段和注册命令）
 - `/publisher/dashboard` — 管理发布商位置（创建、暂停、取消列出）
 - `/verifiers` — 验证者加入
 - `/docs` — 指向存储库文档的指针

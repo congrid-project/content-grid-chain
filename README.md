@@ -141,6 +141,8 @@ The operator reserve portion is not yet distributed by on-chain logic in this re
 
 ### Publisher Registration
 
+**Website onboarding helper (recommended for third-party wallets):** Open `https://congrid.net/publishers`, connect a third-party wallet (Keplr/Leap) to read your bech32 address, then fill domain + wallet to generate a ready-to-paste badge snippet and registration command.
+
 1. **Add Congrid official link + attribution image (required for verification)**: You must add a link to the Congrid official website on the homepage (`/`) of the website you want to bind, and the link must be wrapped with an attribution image (badge).
 
 For the current verifier determination rules, see `offchain/registry/verifier.go`:
@@ -160,7 +162,7 @@ For the current verifier determination rules, see `offchain/registry/verifier.go
    </a>
    ```
 
-2. **Execute registration command**: Run `./content-grid-d publisher register <domain> --from <key-or-address> [--metadata-uri <link>] [--referrer <address>]`.
+2. **Execute registration command** (or use the command generated on `/publishers`): Run `./content-grid-d publisher register <domain> --from <key-or-address> [--metadata-uri <link>] [--referrer <address>]`.
 - `--referrer`: optional, referrer address (used to affect the revenue weight of verifier; publisher recommendation publisher does not take effect).
 - The system will automatically identify and lock the **first-level domain name** (Primary Domain, such as `example.com`) of the domain name.
 - Only one site can be registered under the same first-level domain name to prevent others from preemptively registering subdomain names. Supports non-default ports (such as `example.com:8080`).
