@@ -168,7 +168,7 @@
 - 同一一级域名下只能注册一个站点，防止他人抢注子域名。支持非默认端口（例如 `example.com:8080`）。
 3. **验证完成**：命令会访问`https://<domain>/`来验证是否包含congrid官方链接；链下验证节点也会定期抓取主页进行确认。
 - **无需押金/质押**：发布者注册本身不需要锁定或质押。
-- **仍然需要链上交易费（gas费）**：广播`publisher register`此类交易通常需要支付网络费用（除非链上参数允许0费用或使用`feegrant`）。
+- **手续费策略**：当交易只包含 `MsgRegisterPublisher` 时，可使用 0 手续费提交（例如 `--fees 0ucongrid`）。其他交易类型仍遵循验证人最小 gas price 策略，除非使用 `feegrant`。
 4. **查询状态**：注册成功后，可以通过gRPC查询或CLI `content-grid-d query registry publisher <domain>`查看。
 
 ### 验证者债券（普通地址+托管）

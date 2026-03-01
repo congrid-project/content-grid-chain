@@ -41,6 +41,22 @@
 ## 2.1 内容网格-d
 
 ### 启动（手动模式）
+
+启动前检查（必做）：`--home` 目录下必须已有 `config/genesis.json`。
+
+```bash
+ls -l /home/eking/.content-grid-d/config/genesis.json
+```
+
+如果文件不存在，先初始化（单节点本地基线）：
+
+```bash
+cd /home/eking/workspace/congrid.net
+./content-grid-d devnet --home /home/eking/.content-grid-d --chain-id content-grid-dev-1
+```
+
+再启动：
+
 ```bash
 cd /home/eking/workspace/congrid.net
 ./content-grid-d start --home /home/eking/.content-grid-d

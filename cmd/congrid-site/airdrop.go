@@ -68,7 +68,7 @@ func (a *airdropper) handleAirdropGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		a.srv.render(w, "airdrop.html", pageData{
 			Title:        "Airdrop — Congrid",
-			Description:  "Claim a one-time airdrop to cover publisher registration fees.",
+			Description:  "Claim a one-time optional starter airdrop for on-chain actions.",
 			BaseURL:      a.cfg.BaseURL,
 			Path:         r.URL.Path,
 			NowYear:      time.Now().Year(),
@@ -143,7 +143,7 @@ func (a *airdropper) handleAirdropPost() http.HandlerFunc {
 func (a *airdropper) renderFlash(w http.ResponseWriter, r *http.Request, msg string) {
 	a.srv.render(w, "airdrop.html", pageData{
 		Title:        "Airdrop — Congrid",
-		Description:  "Claim a one-time airdrop to cover publisher registration fees.",
+		Description:  "Claim a one-time optional starter airdrop for on-chain actions.",
 		BaseURL:      a.cfg.BaseURL,
 		Path:         r.URL.Path,
 		NowYear:      time.Now().Year(),

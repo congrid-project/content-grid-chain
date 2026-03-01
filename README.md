@@ -168,7 +168,7 @@ For the current verifier determination rules, see `offchain/registry/verifier.go
 - Only one site can be registered under the same first-level domain name to prevent others from preemptively registering subdomain names. Supports non-default ports (such as `example.com:8080`).
 3. **Verification completed**: The command will access `https://<domain>/` to verify whether it contains the congrid official link; the off-chain verification node will also regularly crawl the homepage for confirmation.
 - **No deposit/pledge required**: Publisher registration itself does not require locking or staking.
-- **On-chain transaction fee (gas fee) is still required**: Broadcasting `publisher register` Such transactions usually require payment of network fees (unless the chain parameters allow 0 fee or use `feegrant`).
+- **Fee policy**: a transaction containing only `MsgRegisterPublisher` can be submitted with zero fee (e.g. `--fees 0ucongrid`). Other transaction types still follow validator min-gas-price policy unless covered by `feegrant`.
 4. **Query status**: After successful registration, it can be viewed through gRPC query or CLI `content-grid-d query registry publisher <domain>`.
 
 ### Verifier Bond (normal address + escrow)

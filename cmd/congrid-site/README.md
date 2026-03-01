@@ -36,10 +36,20 @@ This site is intentionally served by Go so we can add first-party analytics, att
 - `/` — home
 - `/marketplace` — publisher slot marketplace
 - `/leases` — lease publish board (slot/lease IDs + embed snippets)
-- `/publishers` — publisher onboarding (third-party wallet connect, domain+wallet form, generated badge snippet + registration command)
+- `/publishers` — publisher onboarding (wallet connect OR manual address, generated badge snippet, CLI command, and optional server-side registration button)
 - `/publisher/dashboard` — manage publisher slots (create, pause, unlist, publish lease snippets)
 - `/verifiers` — verifier onboarding
 - `/docs` — pointers to repository docs
-- `/airdrop` — verify homepage badge and send a one-time fee airdrop per primary domain (when enabled)
+- `/airdrop` — verify homepage badge and send an optional one-time starter airdrop per primary domain (when enabled)
 - `/badge.png` — embeddable verification badge (query params preserved for future attribution)
 - `/static/*` — CSS + assets
+
+### Publisher registration from web UI
+
+`/publishers` supports direct wallet signing for registration (no local CLI required when wallet is connected).
+
+- User fills `domain` + `wallet` (wallet from Keplr/Leap or manual paste).
+- User clicks `Register with connected wallet` and approves tx in wallet.
+- Frontend broadcasts `MsgRegisterPublisher` directly to chain.
+
+CLI registration remains available as a fallback path.

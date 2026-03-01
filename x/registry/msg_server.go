@@ -43,9 +43,36 @@ func (m msgServer) RegisterPublisher(ctx context.Context, msg *typespb.MsgRegist
 		Referrer:    strings.TrimSpace(msg.GetReferrer()),
 	}
 
-	registered, err := m.keeper.RegisterWebsite(sdkCtx, website)
-	if err != nil {
-		return nil, err
+	var (
+		registered Website
+		err        error
+	)
+
+	if existing, found := m.keeper.GetWebsite(sdkCtx, website.Domain); found {
+		// Allow re-registration for anti-squatting recovery only when a publisher is still
+		// pending and has already failed at least one finalized verification round.
+		if existing.Status != StatusPending {
+			return nil, fmt.Errorf("%w: %s", ErrWebsiteExists, website.Domain)
+		}
+		if m.keeper.GetPublisherFailureStreak(sdkCtx, website.Domain) < 1 {
+			return nil, fmt.Errorf("pending publisher %s is not yet eligible for re-registration", website.Domain)
+		}
+		website.RegisteredAtHeight = sdkCtx.BlockHeight()
+		website.CooldownCount = 0
+		website.CooldownUntilUnix = 0
+		if err := ValidateWebsite(website); err != nil {
+			return nil, err
+		}
+		if err := m.keeper.UpsertWebsite(sdkCtx, website); err != nil {
+			return nil, err
+		}
+		m.keeper.ClearPublisherFailureStreak(sdkCtx, website.Domain)
+		registered = website
+	} else {
+		registered, err = m.keeper.RegisterWebsite(sdkCtx, website)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	sdkCtx.EventManager().EmitEvents(sdk.Events{

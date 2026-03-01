@@ -260,17 +260,19 @@ func (k Keeper) finalizeAssignments(ctx sdk.Context) error {
 					),
 				)
 			} else if hasQuorum {
-				if website.Status == StatusVerified {
+				if website.Status == StatusVerified || website.Status == StatusPending {
 					failCount := k.IncrementPublisherFailureStreak(ctx, website.Domain)
-					revokeThreshold := params.EffectivePublisherRevokeFailureThreshold()
-					if failCount >= revokeThreshold {
-						website.Status = StatusRevoked
-					} else {
-						website.Status = StatusPending
-					}
-					if err := k.UpsertWebsite(ctx, website); err != nil {
-						errOut = err
-						return true
+					if website.Status == StatusVerified {
+						revokeThreshold := params.EffectivePublisherRevokeFailureThreshold()
+						if failCount >= revokeThreshold {
+							website.Status = StatusRevoked
+						} else {
+							website.Status = StatusPending
+						}
+						if err := k.UpsertWebsite(ctx, website); err != nil {
+							errOut = err
+							return true
+						}
 					}
 				}
 				if len(k.activeLeasesForDomain(ctx, website.Domain, nowUnix)) > 0 {

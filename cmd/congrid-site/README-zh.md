@@ -39,6 +39,6 @@ go run ./cmd/congrid-site \
 - `/publisher/dashboard` — 管理发布商位置（创建、暂停、取消列出）
 - `/verifiers` — 验证者加入
 - `/docs` — 指向存储库文档的指针
-- `/airdrop` — 验证主页徽章并为每个主域发送一次性费用空投（启用时）
+- `/airdrop` — 验证主页徽章并为每个主域发送一次性可选启动空投（启用时）
 - `/badge.png` — 可嵌入验证徽章（保留查询参数以供将来归因）
 - `/static/*` — CSS + 资源

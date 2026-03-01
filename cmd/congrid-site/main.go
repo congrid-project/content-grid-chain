@@ -31,6 +31,7 @@ type server struct {
 	static    http.Handler
 	slotStore SlotStore
 	walletCfg WalletConfig
+	regCfg    PublisherRegisterConfig
 }
 
 func main() {
@@ -103,17 +104,28 @@ func main() {
 		log.Fatalf("chain-id and node (rpc) required for wallet signing")
 	}
 
+	regCfg := PublisherRegisterConfig{
+		ChainID:        strings.TrimSpace(*chainID),
+		NodeRPC:        strings.TrimSpace(*nodeRPC),
+		KeyringBackend: strings.TrimSpace(*keyringBackend),
+		KeyringDir:     strings.TrimSpace(*keyringDir),
+		Fees:           strings.TrimSpace(*fees),
+		GasPrices:      strings.TrimSpace(*gasPrices),
+	}
+
 	s := &server{
 		templates: templates,
 		static:    http.FileServer(http.FS(subStatic)),
 		slotStore: slotStore,
 		walletCfg: walletCfg,
+		regCfg:    regCfg,
 	}
 
 	mux := http.NewServeMux()
 	mux.Handle("GET /static/", http.StripPrefix("/static/", s.static))
 	mux.HandleFunc("GET /", s.handleHome(*baseURL))
 	mux.HandleFunc("GET /publishers", s.handlePublishers(*baseURL))
+	mux.HandleFunc("POST /publishers/register", s.handlePublisherRegister(*baseURL))
 	mux.HandleFunc("GET /verifiers", s.handleVerifiers(*baseURL))
 	mux.HandleFunc("GET /docs", s.handleDocs(*baseURL))
 	mux.HandleFunc("GET /marketplace", s.handleMarketplace(*baseURL))
@@ -294,6 +306,15 @@ type pageData struct {
 	NowYear      int
 	Flash        string
 	WalletConfig WalletConfig
+}
+
+type PublisherRegisterConfig struct {
+	ChainID        string
+	NodeRPC        string
+	KeyringBackend string
+	KeyringDir     string
+	Fees           string
+	GasPrices      string
 }
 
 type WalletConfig struct {

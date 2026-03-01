@@ -288,5 +288,5 @@ var (
 )
 
 func MinGasPrice() string {
-	return "0ucongrid"
+	return "0.001ucongrid"
 }

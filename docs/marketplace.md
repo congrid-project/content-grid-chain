@@ -65,6 +65,16 @@ Useful queries:
 ./content-grid-d query registry leases --slot-id slot-000123
 ```
 
+## Publisher re-registration safeguard (pending anti-squatting)
+
+To reduce domain squatting risk:
+
+- A publisher in `PENDING` that fails at least one finalized verification round becomes eligible for re-registration.
+- Re-registration overwrites the pending record with the new owner address and resets cooldown counters.
+- `VERIFIED` / `REVOKED` records are not re-registrable via this path.
+
+This keeps first-time failed pending registrations from blocking rightful owners forever, while preserving stricter handling for already-verified publishers.
+
 ## Verification link requirements
 
 When a lease is active, publishers must include markup like:

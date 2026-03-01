@@ -41,6 +41,22 @@ Person in charge (currently interim):
 ## 2.1 content-grid-d
 
 ### Start (manual mode)
+
+Pre-check (required): `--home` must already contain `config/genesis.json`.
+
+```bash
+ls -l /home/eking/.content-grid-d/config/genesis.json
+```
+
+If the file is missing, initialize first (single-node local baseline):
+
+```bash
+cd /home/eking/workspace/congrid.net
+./content-grid-d devnet --home /home/eking/.content-grid-d --chain-id content-grid-dev-1
+```
+
+Then start:
+
 ```bash
 cd /home/eking/workspace/congrid.net
 ./content-grid-d start --home /home/eking/.content-grid-d

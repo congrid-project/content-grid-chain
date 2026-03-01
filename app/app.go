@@ -24,6 +24,7 @@ import (
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 
 	"content-grid-chain/x/nodes"
 	"content-grid-chain/x/registry"
@@ -65,6 +66,8 @@ type App struct {
 	interfaceRegistry codectypes.InterfaceRegistry
 	basicManager      module.BasicManager
 	BankKeeper        bankkeeper.Keeper
+	AccountKeeper     authante.AccountKeeper
+	FeeGrantKeeper    authante.FeegrantKeeper
 
 	RegistryKeeper   registry.Keeper
 	TokenomicsKeeper tokenomics.Keeper
@@ -106,12 +109,18 @@ func NewApp(
 		&application.interfaceRegistry,
 		&basicMgr,
 		&application.BankKeeper,
+		&application.AccountKeeper,
+		&application.FeeGrantKeeper,
 	); err != nil {
 		panic(err)
 	}
 	application.basicManager = basicMgr
 
 	application.App = appBuilder.Build(db, traceStore, baseAppOptions...)
+
+	if err := setCustomAnteHandler(application); err != nil {
+		panic(err)
+	}
 
 	registerCustomModules(application)
 	registerCustomModuleOrders(application)

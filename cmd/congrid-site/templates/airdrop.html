@@ -3,15 +3,20 @@
 {{define "main"}}
 <section class="section">
   <div class="container">
-    <h1>Claim Publisher Registration Airdrop</h1>
+    <h1>Claim Optional Starter Airdrop</h1>
     <p class="lead">
-      This airdrop sends a small amount of tokens to cover <em>one</em> publisher registration transaction fee.
+      This airdrop sends a small amount of tokens as optional starter balance (for example, marketplace / slot transactions).
       Each <strong>primary domain</strong> can claim once.
     </p>
 
     {{if .Flash}}
       <div class="callout">{{.Flash}}</div>
     {{end}}
+
+    <div class="callout">
+      <strong>Note:</strong> publisher registration can be submitted with zero fee when the transaction only contains the registration message.
+      Airdrop is optional and does not block registration.
+    </div>
 
     <div class="grid two">
       <div class="card">

@@ -148,6 +148,42 @@ const MsgLeaseSlot = {
   },
 };
 
+const MsgRegisterPublisher = {
+  encode(message, writer = _m0.Writer.create()) {
+    if (message.owner !== "") {
+      writer.uint32(10).string(message.owner);
+    }
+    if (message.domain !== "") {
+      writer.uint32(18).string(message.domain);
+    }
+    if (message.metadataUri !== "") {
+      writer.uint32(26).string(message.metadataUri);
+    }
+    if (message.verifier !== "") {
+      writer.uint32(34).string(message.verifier);
+    }
+    if (message.referrer !== "") {
+      writer.uint32(42).string(message.referrer);
+    }
+    return writer;
+  },
+  fromPartial(object) {
+    const message = {
+      owner: "",
+      domain: "",
+      metadataUri: "",
+      verifier: "",
+      referrer: "",
+    };
+    message.owner = object.owner ?? "";
+    message.domain = object.domain ?? "";
+    message.metadataUri = object.metadataUri ?? "";
+    message.verifier = object.verifier ?? "";
+    message.referrer = object.referrer ?? "";
+    return message;
+  },
+};
+
 const SlotStatus = {
   LISTED: 1,
   PAUSED: 2,
@@ -158,6 +194,7 @@ const registry = new Registry(defaultRegistryTypes);
 registry.register("/contentgrid.registry.v1.MsgCreateSlot", MsgCreateSlot);
 registry.register("/contentgrid.registry.v1.MsgUpdateSlotStatus", MsgUpdateSlotStatus);
 registry.register("/contentgrid.registry.v1.MsgLeaseSlot", MsgLeaseSlot);
+registry.register("/contentgrid.registry.v1.MsgRegisterPublisher", MsgRegisterPublisher);
 
 const state = {
   signer: null,
@@ -184,14 +221,77 @@ function updateWalletAddress(address) {
   });
 }
 
-function getWalletProvider() {
-  if (window.keplr) {
-    return window.keplr;
+function getWalletProviders() {
+  const providers = [];
+  if (window.keplr) providers.push({ name: "Keplr", provider: window.keplr });
+  if (window.leap) providers.push({ name: "Leap", provider: window.leap });
+  return providers;
+}
+
+function toHttpRPC(rpc) {
+  const raw = String(rpc || "").trim();
+  if (!raw) return "";
+  if (raw.startsWith("tcp://")) {
+    return "http://" + raw.slice("tcp://".length);
   }
-  if (window.leap) {
-    return window.leap;
+  return raw;
+}
+
+function defaultRestFromRPC(rpc) {
+  try {
+    const url = new URL(toHttpRPC(rpc));
+    if (url.port === "26657") {
+      url.port = "1317";
+    }
+    return url.toString().replace(/\/$/, "");
+  } catch (_err) {
+    return "http://127.0.0.1:1317";
   }
-  return null;
+}
+
+async function suggestChainIfSupported(provider) {
+  if (!provider || typeof provider.experimentalSuggestChain !== "function") {
+    return;
+  }
+  const chainId = String(config.chain_id || "").trim();
+  if (!chainId) return;
+  const feeDenom = String(config.fee_denom || "ucongrid").trim() || "ucongrid";
+  const rpc = toHttpRPC(config.rpc || "");
+  const rest = defaultRestFromRPC(config.rpc || "");
+
+  const chainInfo = {
+    chainId,
+    chainName: `Congrid (${chainId})`,
+    rpc,
+    rest,
+    bip44: { coinType: 118 },
+    bech32Config: {
+      bech32PrefixAccAddr: "grid",
+      bech32PrefixAccPub: "gridpub",
+      bech32PrefixValAddr: "gridvaloper",
+      bech32PrefixValPub: "gridvaloperpub",
+      bech32PrefixConsAddr: "gridvalcons",
+      bech32PrefixConsPub: "gridvalconspub",
+    },
+    stakeCurrency: {
+      coinDenom: "CONGRID",
+      coinMinimalDenom: feeDenom,
+      coinDecimals: 6,
+    },
+    currencies: [{
+      coinDenom: "CONGRID",
+      coinMinimalDenom: feeDenom,
+      coinDecimals: 6,
+    }],
+    feeCurrencies: [{
+      coinDenom: "CONGRID",
+      coinMinimalDenom: feeDenom,
+      coinDecimals: 6,
+      gasPriceStep: { low: 0.001, average: 0.0025, high: 0.004 },
+    }],
+  };
+
+  await provider.experimentalSuggestChain(chainInfo);
 }
 
 async function ensureWalletConnected() {
@@ -201,25 +301,37 @@ async function ensureWalletConnected() {
   if (state.signer && state.address) {
     return state;
   }
-  const provider = getWalletProvider();
-  if (!provider) {
+  const providers = getWalletProviders();
+  if (providers.length === 0) {
     throw new Error("Wallet extension not detected (Keplr/Leap).");
   }
   if (!config.chain_id || !config.rpc) {
     throw new Error("Missing chain configuration.");
   }
-  await provider.enable(config.chain_id);
-  const signer = provider.getOfflineSigner
-    ? provider.getOfflineSigner(config.chain_id)
-    : await provider.getOfflineSignerAuto(config.chain_id);
-  const accounts = await signer.getAccounts();
-  if (!accounts || accounts.length === 0) {
-    throw new Error("No wallet accounts available.");
+
+  let lastErr = null;
+  for (const item of providers) {
+    const provider = item.provider;
+    try {
+      await suggestChainIfSupported(provider);
+      await provider.enable(config.chain_id);
+      const signer = provider.getOfflineSigner
+        ? provider.getOfflineSigner(config.chain_id)
+        : await provider.getOfflineSignerAuto(config.chain_id);
+      const accounts = await signer.getAccounts();
+      if (!accounts || accounts.length === 0) {
+        throw new Error(`No wallet accounts available in ${item.name}.`);
+      }
+      state.signer = signer;
+      state.address = accounts[0].address;
+      updateWalletAddress(state.address);
+      return state;
+    } catch (err) {
+      lastErr = err;
+    }
   }
-  state.signer = signer;
-  state.address = accounts[0].address;
-  updateWalletAddress(state.address);
-  return state;
+
+  throw new Error(lastErr?.message || "Wallet connect failed. Please add Congrid chain to Keplr/Leap and retry.");
 }
 
 async function getClient() {
@@ -423,6 +535,44 @@ function bindLeaseForms() {
   });
 }
 
+function bindPublisherRegisterForms() {
+  document.querySelectorAll("form[data-wallet-publisher-register]").forEach((form) => {
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      try {
+        await ensureWalletConnected();
+        const data = new FormData(form);
+        const domain = String(data.get("domain") || "").trim().toLowerCase();
+        const wallet = String(data.get("wallet") || "").trim();
+        if (!domain) {
+          throw new Error("Please generate registration details first (missing domain).");
+        }
+        if (!wallet) {
+          throw new Error("Please generate registration details first (missing wallet).");
+        }
+        if (wallet !== state.address) {
+          throw new Error(`Connected wallet mismatch. connected=${state.address} form=${wallet}`);
+        }
+
+        const msg = {
+          typeUrl: "/contentgrid.registry.v1.MsgRegisterPublisher",
+          value: {
+            owner: state.address,
+            domain,
+            metadataUri: "",
+            verifier: "",
+            referrer: "",
+          },
+        };
+        const txHash = await submitTx([msg], 220000);
+        showFlash(`Publisher registered. Tx: ${txHash}`);
+      } catch (err) {
+        showFlash(err.message || String(err), true);
+      }
+    });
+  });
+}
+
 function initWalletUI() {
   if (!enabled) {
     return;
@@ -432,6 +582,7 @@ function initWalletUI() {
   bindCreateSlotForms();
   bindSlotStatusForms();
   bindLeaseForms();
+  bindPublisherRegisterForms();
 }
 
 initWalletUI();
