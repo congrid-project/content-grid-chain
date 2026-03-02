@@ -36,7 +36,7 @@ cp offchain/verifierd/config.example.json offchain/verifierd/config.json
 
 领域：
 - `grpc_addr`：链 gRPC 端点（默认 `127.0.0.1:9090`）
-- `verifier_address`：验证器 bech32 (`grid1...`)
+- `verifier_address`：验证器 bech32 (`congrid1...`)
 - `poll_interval_seconds`：分配轮询间隔
 - `verify_scheme`：`https`（默认）或 `http` 对于本地开发
 - `commit_window_seconds`：verifierd调度使用的本地提交窗口（必须与链上参数对齐）

@@ -37,7 +37,7 @@ cp offchain/verifierd/config.example.json offchain/verifierd/config.json
 
 Fields:
 - `grpc_addr`: chain gRPC endpoint (default `127.0.0.1:9090`)
-- `verifier_address`: verifier bech32 (`grid1...`)
+- `verifier_address`: verifier bech32 (`congrid1...`)
 - `poll_interval_seconds`: assignment poll interval
 - `verify_scheme`: `https` (default) or `http` for local dev
 - `commit_window_seconds`: local commit window used by verifierd scheduling (must be aligned with on-chain params)

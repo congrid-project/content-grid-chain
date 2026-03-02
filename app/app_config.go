@@ -64,7 +64,7 @@ import (
 )
 
 // DefaultChainIDPrefix defines the human readable prefix for Bech32 encodings.
-const DefaultChainIDPrefix = "grid"
+const DefaultChainIDPrefix = "congrid"
 
 var (
 	moduleAccPerms = []*authmodulev1.ModuleAccountPermission{

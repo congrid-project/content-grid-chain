@@ -25,7 +25,7 @@
         <h2>What you need</h2>
         <ul>
           <li>A website with a public homepage at <code>/</code></li>
-          <li>A wallet address in Congrid format (<code>grid1...</code>)</li>
+          <li>A wallet address in Congrid format (<code>congrid1...</code>)</li>
           <li>Ability to paste a tiny HTML snippet into your homepage template</li>
         </ul>
       </div>
@@ -51,7 +51,7 @@
       <div class="card">
         <h3>Option B — Paste address manually</h3>
         <p class="muted">
-          If you prefer not to connect any extension, you can paste your <code>grid1...</code> address directly in Step 2.
+          If you prefer not to connect any extension, you can paste your <code>congrid1...</code> address directly in Step 2.
         </p>
       </div>
     </div>
@@ -72,7 +72,7 @@
         <li><strong>Base denom:</strong> <code>{{if .WalletConfig.FeeDenom}}{{.WalletConfig.FeeDenom}}{{else}}ucongrid{{end}}</code></li>
         <li><strong>Display denom:</strong> <code>CONGRID</code> (6 decimals)</li>
       </ul>
-      <p class="muted">After adding the network, create/import account in Keplr and copy its <code>grid1...</code> address.</p>
+      <p class="muted">After adding the network, create/import account in Keplr and copy its <code>congrid1...</code> address.</p>
     </div>
 
     <h2>Step 2 — Fill in your wallet + website to prepare registration</h2>
@@ -86,7 +86,7 @@
       <input class="input" id="publisher-domain" name="domain" placeholder="example.com" required />
 
       <label class="label" for="publisher-wallet">Owner wallet address</label>
-      <input class="input" id="publisher-wallet" name="wallet" placeholder="grid1..." required />
+      <input class="input" id="publisher-wallet" name="wallet" placeholder="congrid1..." required />
 
       <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
         <button class="btn" type="submit">Generate registration details</button>
@@ -172,7 +172,7 @@
     const value = String(addr || "").trim();
     if (!value) return false;
     // Basic bech32-like validation (human-friendly guardrail; chain does final validation).
-    if (!/^grid1[0-9a-z]+$/.test(value)) return false;
+    if (!/^congrid1[0-9a-z]+$/.test(value)) return false;
     if (value.length < 20 || value.length > 90) return false;
     return true;
   }
@@ -201,7 +201,7 @@
       return;
     }
     if (!isLikelyGridAddress(wallet)) {
-      alert("Wallet address format looks invalid. Please use a Congrid address starting with grid1...");
+      alert("Wallet address format looks invalid. Please use a Congrid address starting with congrid1...");
       return;
     }
 

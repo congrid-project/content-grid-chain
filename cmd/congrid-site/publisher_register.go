@@ -32,8 +32,8 @@ func (s *server) handlePublisherRegister(baseURL string) http.HandlerFunc {
 			s.renderPublishersFlash(w, r, baseURL, "Invalid domain format.")
 			return
 		}
-		if _, err := sdk.AccAddressFromBech32(wallet); err != nil || !strings.HasPrefix(wallet, "grid1") {
-			s.renderPublishersFlash(w, r, baseURL, "Invalid wallet address. Use a grid1... address.")
+		if _, err := sdk.AccAddressFromBech32(wallet); err != nil || !strings.HasPrefix(wallet, "congrid1") {
+			s.renderPublishersFlash(w, r, baseURL, "Invalid wallet address. Use a congrid1... address.")
 			return
 		}
 		if fromKey == "" {

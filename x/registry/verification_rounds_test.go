@@ -9,13 +9,13 @@ import (
 )
 
 func TestSelectDeterministicWeighted_DeterministicAndUnique(t *testing.T) {
-	candidates := []string{"grid1a", "grid1b", "grid1c", "grid1d", "grid1e"}
+	candidates := []string{"congrid1a", "congrid1b", "congrid1c", "congrid1d", "congrid1e"}
 	weights := map[string]sdkmath.Int{
-		"grid1a": sdkmath.NewInt(5),
-		"grid1b": sdkmath.NewInt(10),
-		"grid1c": sdkmath.NewInt(15),
-		"grid1d": sdkmath.NewInt(20),
-		"grid1e": sdkmath.NewInt(25),
+		"congrid1a": sdkmath.NewInt(5),
+		"congrid1b": sdkmath.NewInt(10),
+		"congrid1c": sdkmath.NewInt(15),
+		"congrid1d": sdkmath.NewInt(20),
+		"congrid1e": sdkmath.NewInt(25),
 	}
 	seed := []byte("round-seed-example")
 
@@ -36,11 +36,11 @@ func TestSelectDeterministicWeighted_DeterministicAndUnique(t *testing.T) {
 }
 
 func TestSelectDeterministicWeighted_PrefersHigherStake(t *testing.T) {
-	candidates := []string{"grid1smalla", "grid1smallb", "grid1whale"}
+	candidates := []string{"congrid1smalla", "congrid1smallb", "congrid1whale"}
 	weights := map[string]sdkmath.Int{
-		"grid1smalla": sdkmath.NewInt(1),
-		"grid1smallb": sdkmath.NewInt(1),
-		"grid1whale":  sdkmath.NewInt(1000),
+		"congrid1smalla": sdkmath.NewInt(1),
+		"congrid1smallb": sdkmath.NewInt(1),
+		"congrid1whale":  sdkmath.NewInt(1000),
 	}
 
 	hits := map[string]int{}
@@ -53,30 +53,30 @@ func TestSelectDeterministicWeighted_PrefersHigherStake(t *testing.T) {
 
 	// With 1000 stake vs 1+1, expected hit rate is ~99.8% for whale.
 	// Use a loose lower bound to avoid test fragility while still proving weighting behavior.
-	require.GreaterOrEqual(t, hits["grid1whale"], 280)
+	require.GreaterOrEqual(t, hits["congrid1whale"], 280)
 }
 
 func TestSplitVerifierAssignmentRewards_BasePlusWeighted(t *testing.T) {
-	successful := []string{"grid1a", "grid1b", "grid1c"}
+	successful := []string{"congrid1a", "congrid1b", "congrid1c"}
 	weights := map[string]sdkmath.Int{
-		"grid1a": sdkmath.NewInt(10),
-		"grid1b": sdkmath.NewInt(30),
-		"grid1c": sdkmath.NewInt(60),
+		"congrid1a": sdkmath.NewInt(10),
+		"congrid1b": sdkmath.NewInt(30),
+		"congrid1c": sdkmath.NewInt(60),
 	}
 
 	payouts, remaining := splitVerifierAssignmentRewards(sdkmath.NewInt(1000), successful, weights, 4000)
 	require.True(t, remaining.IsZero())
-	require.Equal(t, sdkmath.NewInt(193), payouts["grid1a"])
-	require.Equal(t, sdkmath.NewInt(313), payouts["grid1b"])
-	require.Equal(t, sdkmath.NewInt(494), payouts["grid1c"])
+	require.Equal(t, sdkmath.NewInt(193), payouts["congrid1a"])
+	require.Equal(t, sdkmath.NewInt(313), payouts["congrid1b"])
+	require.Equal(t, sdkmath.NewInt(494), payouts["congrid1c"])
 }
 
 func TestSplitVerifierAssignmentRewards_WeightedBurnWhenNoWeights(t *testing.T) {
-	successful := []string{"grid1a", "grid1b"}
+	successful := []string{"congrid1a", "congrid1b"}
 	weights := map[string]sdkmath.Int{}
 
 	payouts, remaining := splitVerifierAssignmentRewards(sdkmath.NewInt(1000), successful, weights, 4000)
-	require.Equal(t, sdkmath.NewInt(200), payouts["grid1a"])
-	require.Equal(t, sdkmath.NewInt(200), payouts["grid1b"])
+	require.Equal(t, sdkmath.NewInt(200), payouts["congrid1a"])
+	require.Equal(t, sdkmath.NewInt(200), payouts["congrid1b"])
 	require.Equal(t, sdkmath.NewInt(600), remaining)
 }

@@ -24,7 +24,7 @@ func (m mockFeeTx) GetGas() uint64 { return m.gas }
 
 func (m mockFeeTx) GetFee() sdk.Coins { return m.fee }
 
-func (m mockFeeTx) FeePayer() []byte { return []byte("grid1payer") }
+func (m mockFeeTx) FeePayer() []byte { return []byte("congrid1payer") }
 
 func (m mockFeeTx) FeeGranter() []byte { return nil }
 
@@ -37,7 +37,7 @@ func TestPublisherScopedTxFeeChecker_RegisterOnlyIsFeeFree(t *testing.T) {
 		WithMinGasPrices(minGasPrices)
 
 	tx := mockFeeTx{
-		msgs: []sdk.Msg{&registrytypespb.MsgRegisterPublisher{Owner: "grid1owner", Domain: "example.com"}},
+		msgs: []sdk.Msg{&registrytypespb.MsgRegisterPublisher{Owner: "congrid1owner", Domain: "example.com"}},
 		fee:  sdk.NewCoins(sdk.NewInt64Coin("ucongrid", 9999)),
 		gas:  200000,
 	}
@@ -56,7 +56,7 @@ func TestPublisherScopedTxFeeChecker_NonRegisterStillRequiresFee(t *testing.T) {
 		WithMinGasPrices(minGasPrices)
 
 	tx := mockFeeTx{
-		msgs: []sdk.Msg{&registrytypespb.MsgCreateSlot{Publisher: "grid1owner", Domain: "example.com", Label: "main", RateDenom: "ucongrid", RateAmount: "1", UnitSeconds: 1, MinDurationSeconds: 1, MaxDurationSeconds: 1}},
+		msgs: []sdk.Msg{&registrytypespb.MsgCreateSlot{Publisher: "congrid1owner", Domain: "example.com", Label: "main", RateDenom: "ucongrid", RateAmount: "1", UnitSeconds: 1, MinDurationSeconds: 1, MaxDurationSeconds: 1}},
 		fee:  sdk.NewCoins(),
 		gas:  200000,
 	}
@@ -76,8 +76,8 @@ func TestPublisherScopedTxFeeChecker_MixedMsgsNotFeeFree(t *testing.T) {
 
 	tx := mockFeeTx{
 		msgs: []sdk.Msg{
-			&registrytypespb.MsgRegisterPublisher{Owner: "grid1owner", Domain: "example.com"},
-			&registrytypespb.MsgCreateSlot{Publisher: "grid1owner", Domain: "example.com", Label: "main", RateDenom: "ucongrid", RateAmount: "1", UnitSeconds: 1, MinDurationSeconds: 1, MaxDurationSeconds: 1},
+			&registrytypespb.MsgRegisterPublisher{Owner: "congrid1owner", Domain: "example.com"},
+			&registrytypespb.MsgCreateSlot{Publisher: "congrid1owner", Domain: "example.com", Label: "main", RateDenom: "ucongrid", RateAmount: "1", UnitSeconds: 1, MinDurationSeconds: 1, MaxDurationSeconds: 1},
 		},
 		fee: sdk.NewCoins(),
 		gas: 200000,

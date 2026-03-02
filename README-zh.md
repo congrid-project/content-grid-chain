@@ -173,7 +173,7 @@
 
 ### 验证者债券（普通地址+托管）
 
-验证者以普通账户地址（`grid1...`）参与验证网络，首先将代币绑定到模块托管账户**（escrow）后才被认为符合资格。
+验证者以普通账户地址（`congrid1...`）参与验证网络，首先将代币绑定到模块托管账户**（escrow）后才被认为符合资格。
 
 - 债券：`./content-grid-d verifier bond <amount> --denom ucongrid --from <key>`
 - 解绑：`./content-grid-d verifier unbond <amount> --denom ucongrid --from <key>`

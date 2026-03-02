@@ -173,7 +173,7 @@ For the current verifier determination rules, see `offchain/registry/verifier.go
 
 ### Verifier Bond (normal address + escrow)
 
-Verifier participates in the verification network with a normal account address (`grid1...`), and first bonds the token to the module escrow account** (escrow) before it is considered eligible.
+Verifier participates in the verification network with a normal account address (`congrid1...`), and first bonds the token to the module escrow account** (escrow) before it is considered eligible.
 
 - Bond：`./content-grid-d verifier bond <amount> --denom ucongrid --from <key>`
 - Unbond：`./content-grid-d verifier unbond <amount> --denom ucongrid --from <key>`

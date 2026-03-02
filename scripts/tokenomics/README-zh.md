@@ -15,9 +15,9 @@ go run ./cmd/tokenomics simulate --years 5 --bonded 0.6
 
 ```
 go run ./cmd/tokenomics genesis-template \
-  --foundation grid1... \
-  --team grid1... \
-  --verifiers grid1...
+  --foundation congrid1... \
+  --team congrid1... \
+  --verifiers congrid1...
 ```
 
 使用提供的地址替换每个分配桶写入经济默认值。
@@ -28,8 +28,8 @@ go run ./cmd/tokenomics genesis-template \
 
 ```
 address,weight
-grid1exampleaddressaaa,1
-grid1exampleaddressbbb,2
+congrid1exampleaddressaaa,1
+congrid1exampleaddressbbb,2
 ```
 
 然后运行：

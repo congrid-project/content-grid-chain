@@ -143,7 +143,7 @@ func TestSplitPublisherRewards(t *testing.T) {
 	}
 	reports := []VerifierReport{
 		{
-			Worker:            "grid1verifiera",
+			Worker:            "congrid1verifiera",
 			Checks:            50,
 			Matches:           48,
 			ExpectedChecks:    50,
@@ -152,7 +152,7 @@ func TestSplitPublisherRewards(t *testing.T) {
 			SubmittedAtHeight: 1_480,
 		},
 		{
-			Worker:            "grid1verifierb",
+			Worker:            "congrid1verifierb",
 			Checks:            45,
 			Matches:           40,
 			ExpectedChecks:    50,
@@ -161,7 +161,7 @@ func TestSplitPublisherRewards(t *testing.T) {
 			SubmittedAtHeight: 1_495,
 		},
 		{
-			Worker:            "grid1verifierc",
+			Worker:            "congrid1verifierc",
 			Checks:            30,
 			Matches:           27,
 			ExpectedChecks:    40,
@@ -191,7 +191,7 @@ func TestSplitPublisherRewardsZeroCongridLinks(t *testing.T) {
 		VerificationTTL:      params.VerificationTTL,
 		VerifiedCongridLinks: 0,
 	}
-	reports := []VerifierReport{{Worker: "grid1verifier", Checks: 10, Matches: 10, ExpectedChecks: 10, MedianLatencyMs: 4_000, TargetLatencyMs: 5_000, SubmittedAtHeight: 5}}
+	reports := []VerifierReport{{Worker: "congrid1verifier", Checks: 10, Matches: 10, ExpectedChecks: 10, MedianLatencyMs: 4_000, TargetLatencyMs: 5_000, SubmittedAtHeight: 5}}
 
 	outcome, err := SplitPublisherRewards(total, snapshot, reports, params)
 	require.NoError(t, err)
@@ -217,7 +217,7 @@ func TestSplitPublisherRewardsOneCongridLink(t *testing.T) {
 	}
 	reports := []VerifierReport{
 		{
-			Worker:            "grid1verifiera",
+			Worker:            "congrid1verifiera",
 			Checks:            50,
 			Matches:           48,
 			ExpectedChecks:    50,
@@ -226,7 +226,7 @@ func TestSplitPublisherRewardsOneCongridLink(t *testing.T) {
 			SubmittedAtHeight: 1_480,
 		},
 		{
-			Worker:            "grid1verifierb",
+			Worker:            "congrid1verifierb",
 			Checks:            45,
 			Matches:           40,
 			ExpectedChecks:    50,

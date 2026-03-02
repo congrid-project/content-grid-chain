@@ -266,12 +266,12 @@ async function suggestChainIfSupported(provider) {
     rest,
     bip44: { coinType: 118 },
     bech32Config: {
-      bech32PrefixAccAddr: "grid",
-      bech32PrefixAccPub: "gridpub",
-      bech32PrefixValAddr: "gridvaloper",
-      bech32PrefixValPub: "gridvaloperpub",
-      bech32PrefixConsAddr: "gridvalcons",
-      bech32PrefixConsPub: "gridvalconspub",
+      bech32PrefixAccAddr: "congrid",
+      bech32PrefixAccPub: "congridpub",
+      bech32PrefixValAddr: "congridvaloper",
+      bech32PrefixValPub: "congridvaloperpub",
+      bech32PrefixConsAddr: "congridvalcons",
+      bech32PrefixConsPub: "congridvalconspub",
     },
     stakeCurrency: {
       coinDenom: "CONGRID",

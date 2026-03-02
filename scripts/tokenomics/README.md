@@ -15,9 +15,9 @@ go run ./cmd/tokenomics simulate --years 5 --bonded 0.6
 
 ```
 go run ./cmd/tokenomics genesis-template \
-  --foundation grid1... \
-  --team grid1... \
-  --verifiers grid1...
+  --foundation congrid1... \
+  --team congrid1... \
+  --verifiers congrid1...
 ```
 
 Writes the economic defaults with provided addresses substituted for each allocation bucket.
@@ -28,8 +28,8 @@ Create a CSV `recipients.csv` with header:
 
 ```
 address,weight
-grid1exampleaddressaaa,1
-grid1exampleaddressbbb,2
+congrid1exampleaddressaaa,1
+congrid1exampleaddressbbb,2
 ```
 
 Then run:

@@ -64,7 +64,7 @@ func DefaultGenesisState() GenesisState {
 			{
 				Category: "foundation_reserve",
 				Percent:  mustNewDec("0.25"),
-				Address:  "grid1foundationplaceholder0000000000000000000000",
+				Address:  "congrid1foundationplaceholder0000000000000000000000",
 				Notes:    "4-year linear release via multisig treasury",
 				Vesting: VestingSchedule{
 					CliffMonths:   0,
@@ -74,7 +74,7 @@ func DefaultGenesisState() GenesisState {
 			{
 				Category: "team_and_advisors",
 				Percent:  mustNewDec("0.20"),
-				Address:  "grid1teamplaceholder000000000000000000000000",
+				Address:  "congrid1teamplaceholder000000000000000000000000",
 				Notes:    "12-month cliff, 36-month vesting",
 				Vesting: VestingSchedule{
 					CliffMonths:   12,
@@ -84,7 +84,7 @@ func DefaultGenesisState() GenesisState {
 			{
 				Category: "verifier_bootstrap_pool",
 				Percent:  mustNewDec("0.20"),
-				Address:  "grid1verifierbootstrap000000000000000000",
+				Address:  "congrid1verifierbootstrap000000000000000000",
 				Notes:    "delegated incentives for early verifier operators",
 				Vesting: VestingSchedule{
 					CliffMonths:   0,
@@ -94,7 +94,7 @@ func DefaultGenesisState() GenesisState {
 			{
 				Category: "publisher_growth_fund",
 				Percent:  mustNewDec("0.15"),
-				Address:  "grid1publisherfund0000000000000000000000",
+				Address:  "congrid1publisherfund0000000000000000000000",
 				Notes:    "milestone-based rebates for verified sites",
 				Vesting: VestingSchedule{
 					CliffMonths:   0,
@@ -104,7 +104,7 @@ func DefaultGenesisState() GenesisState {
 			{
 				Category: "public_sale_and_liquidity",
 				Percent:  mustNewDec("0.10"),
-				Address:  "grid1liquiditypool000000000000000000000",
+				Address:  "congrid1liquiditypool000000000000000000000",
 				Notes:    "market making and launch pool",
 				Vesting: VestingSchedule{
 					CliffMonths:   0,
@@ -114,7 +114,7 @@ func DefaultGenesisState() GenesisState {
 			{
 				Category: "community_treasury",
 				Percent:  mustNewDec("0.10"),
-				Address:  "grid1communitydao000000000000000000000",
+				Address:  "congrid1communitydao000000000000000000000",
 				Notes:    "DAO-controlled discretionary budget",
 				Vesting: VestingSchedule{
 					CliffMonths:   0,

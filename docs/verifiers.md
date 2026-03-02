@@ -1,6 +1,6 @@
 # Verifiers (bond, assignment, reward)
 
-Verifiers are normal account addresses (`grid1...`) that bond into escrow.
+Verifiers are normal account addresses (`congrid1...`) that bond into escrow.
 
 ## Bond / Unbond
 

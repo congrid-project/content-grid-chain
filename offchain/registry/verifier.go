@@ -328,7 +328,7 @@ func extractPublisherInfoFromBadgeImageSrc(raw string) (publisher string, wallet
 		if publisher == "" && strings.Contains(sl, ".") {
 			publisher = sl
 		}
-		if wallet == "" && strings.HasPrefix(strings.TrimSpace(s), "grid1") {
+		if wallet == "" && strings.HasPrefix(strings.TrimSpace(s), "congrid1") {
 			wallet = strings.TrimSpace(s)
 		}
 	}

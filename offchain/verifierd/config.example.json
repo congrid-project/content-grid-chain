@@ -1,6 +1,6 @@
 {
   "grpc_addr": "127.0.0.1:9090",
-  "verifier_address": "grid1verifieraaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "verifier_address": "congrid1verifieraaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "poll_interval_seconds": 15,
   "verify_scheme": "https",
   "commit_window_seconds": 300,
