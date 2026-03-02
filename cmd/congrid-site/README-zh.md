@@ -8,7 +8,7 @@ Congrid（内容网格协议）官方网站的小型 Go Web 服务器。
 go run ./cmd/congrid-site --addr :8080 --base-url http://localhost:8080
 ```
 
-### 链支持的老虎机市场（钱包签名）
+### 链支持的slot市场（钱包签名）
 
 插槽和租约直接从链上读取，插槽创建、状态更新和租约下单由浏览器钱包签名（Keplr/Leap）。
 
@@ -33,7 +33,7 @@ go run ./cmd/congrid-site \
 ## 路线
 
 - `/` — 家
-- `/marketplace` — 发行商老虎机市场
+- `/marketplace` — 发行商slot市场
 - `/leases` — 租约发布板（slot/lease ID + 可复制嵌入片段）
 - `/publishers` — 发布商入职（第三方钱包连接、域名+钱包填写、自动生成徽章片段和注册命令）
 - `/publisher/dashboard` — 管理发布商位置（创建、暂停、取消列出）
