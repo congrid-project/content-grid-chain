@@ -107,6 +107,8 @@
 
 本仓库尚未提供一键主网上线脚本，主网上线请使用官方发布包（binary + genesis + peers）。运维基线见 `docs/runbook-zh.md` 与 `docs/launch-checklist-zh.md`。
 
+若当前阶段尚无官方发布包，请按 `docs/gentx-zh.md` 的“无发布包场景”流程生成并冻结 final genesis。
+
 1. 构建或下载固定版本的发布包，并确认 `./content-grid-d version`。
 2. 初始化节点主目录，用官方主网 `genesis.json` 替换 `config/genesis.json`。
 3. 配置 `config/config.toml`（`seeds`/`persistent_peers`、p2p/rpc 端口）与 `config/app.toml`（api/grpc、`minimum-gas-prices`）。
