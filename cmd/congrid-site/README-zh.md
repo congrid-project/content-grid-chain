@@ -33,7 +33,7 @@ go run ./cmd/congrid-site \
 ## 路线
 
 - `/` — 家
-- `/marketplace` — 发行商slot市场
+- `/marketplace` — 发布者slot市场
 - `/leases` — 租约发布板（slot/lease ID + 可复制嵌入片段）
 - `/publishers` — 发布商入职（第三方钱包连接、域名+钱包填写、自动生成徽章片段和注册命令）
 - `/publisher/dashboard` — 管理发布商位置（创建、暂停、取消列出）
