@@ -139,8 +139,11 @@ func ProvideClientContext(
 }
 
 func initRootCmd(rootCmd *cobra.Command, txConfig client.TxConfig, basicManager module.BasicManager) {
+	initCmd := genutilcli.InitCmd(basicManager, app.DefaultNodeHome)
+	wrapInitCommandWithDenomPatch(initCmd)
+
 	rootCmd.AddCommand(
-		genutilcli.InitCmd(basicManager, app.DefaultNodeHome),
+		initCmd,
 		debug.Cmd(),
 		pruning.Cmd(newApp, app.DefaultNodeHome),
 		snapshot.Cmd(newApp),
@@ -172,6 +175,35 @@ func initRootCmd(rootCmd *cobra.Command, txConfig client.TxConfig, basicManager 
 		txCommand(),
 		keys.Commands(),
 	)
+}
+
+func wrapInitCommandWithDenomPatch(initCmd *cobra.Command) {
+	if initCmd == nil {
+		return
+	}
+	origRunE := initCmd.RunE
+	origRun := initCmd.Run
+
+	initCmd.Run = nil
+	initCmd.RunE = func(cmd *cobra.Command, args []string) error {
+		if origRunE != nil {
+			if err := origRunE(cmd, args); err != nil {
+				return err
+			}
+		} else if origRun != nil {
+			origRun(cmd, args)
+		}
+
+		home, err := cmd.Flags().GetString(flags.FlagHome)
+		if err != nil {
+			return err
+		}
+		if home == "" {
+			home = app.DefaultNodeHome
+		}
+		genesisPath := filepath.Join(home, "config", "genesis.json")
+		return patchGenesisDenoms(genesisPath, tokenomics.DefaultDenom)
+	}
 }
 
 func genesisCommand(txConfig client.TxConfig, basicManager module.BasicManager, cmds ...*cobra.Command) *cobra.Command {

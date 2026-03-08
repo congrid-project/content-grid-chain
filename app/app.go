@@ -296,5 +296,71 @@ func DefaultGenesis() map[string]json.RawMessage {
 		panic(err)
 	}
 
-	return appBuilder.DefaultGenesis()
+	genesis := appBuilder.DefaultGenesis()
+	patchDefaultDenoms(genesis, tokenomics.DefaultDenom)
+	return genesis
+}
+
+// patchDefaultDenoms normalizes SDK default staking/mint/gov denoms so `init`
+// emits a genesis aligned with chain tokenomics defaults.
+func patchDefaultDenoms(genesis map[string]json.RawMessage, denom string) {
+	if len(genesis) == 0 || denom == "" {
+		return
+	}
+
+	patchModule := func(moduleName string, patch func(map[string]any)) {
+		raw, ok := genesis[moduleName]
+		if !ok || len(raw) == 0 {
+			return
+		}
+		var state map[string]any
+		if err := json.Unmarshal(raw, &state); err != nil {
+			return
+		}
+		patch(state)
+		updated, err := json.Marshal(state)
+		if err != nil {
+			return
+		}
+		genesis[moduleName] = updated
+	}
+
+	patchCoins := func(v any) {
+		coins, ok := v.([]any)
+		if !ok {
+			return
+		}
+		for _, item := range coins {
+			coin, ok := item.(map[string]any)
+			if !ok {
+				continue
+			}
+			coin["denom"] = denom
+		}
+	}
+
+	patchModule("staking", func(state map[string]any) {
+		params, _ := state["params"].(map[string]any)
+		if params == nil {
+			return
+		}
+		params["bond_denom"] = denom
+	})
+
+	patchModule("mint", func(state map[string]any) {
+		params, _ := state["params"].(map[string]any)
+		if params == nil {
+			return
+		}
+		params["mint_denom"] = denom
+	})
+
+	patchModule("gov", func(state map[string]any) {
+		params, _ := state["params"].(map[string]any)
+		if params == nil {
+			return
+		}
+		patchCoins(params["min_deposit"])
+		patchCoins(params["expedited_min_deposit"])
+	})
 }
