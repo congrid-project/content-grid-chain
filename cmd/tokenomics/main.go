@@ -69,13 +69,14 @@ func newSimulateCmd() *cobra.Command {
 			}
 
 			tw := tabwriter.NewWriter(os.Stdout, 2, 4, 2, ' ', 0)
-			fmt.Fprintln(tw, "YEAR\tSTART(M)\tPUB ISSUED(M)\tVER ISSUED(M)\tISSUED(M)\tISSUED CUM(M)\tFEE BURN(M)\tSLASH BURN(M)\tNET(M)\tEND(M)")
+			fmt.Fprintln(tw, "YEAR\tSTART(M)\tOPS ISSUED(M)\tPUB ISSUED(M)\tVER ISSUED(M)\tISSUED(M)\tISSUED CUM(M)\tFEE BURN(M)\tSLASH BURN(M)\tNET(M)\tEND(M)")
 			for _, proj := range projections {
 				fmt.Fprintf(
 					tw,
-					"%d\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\n",
+					"%d\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\n",
 					proj.Year,
 					decToMillions(proj.StartSupply),
+					decToMillions(proj.OperatorIssued),
 					decToMillions(proj.PublisherIssued),
 					decToMillions(proj.VerifierIssued),
 					decToMillions(proj.NewlyIssued),

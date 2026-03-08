@@ -46,6 +46,7 @@ func TestSimulateYears(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, projections, cfg.Years)
 
+	require.True(t, projections[0].OperatorIssued.IsPositive())
 	require.True(t, projections[0].PublisherIssued.IsPositive())
 	require.True(t, projections[0].VerifierIssued.IsPositive())
 	require.True(t, projections[0].CumulativeIssued.IsPositive())

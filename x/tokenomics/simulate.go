@@ -35,6 +35,7 @@ func DefaultSimulationConfig(gs GenesisState) SimulationConfig {
 type YearProjection struct {
 	Year             int               `json:"year"`
 	StartSupply      sdkmath.LegacyDec `json:"start_supply"`
+	OperatorIssued   sdkmath.LegacyDec `json:"operator_issued"`
 	PublisherIssued  sdkmath.LegacyDec `json:"publisher_issued"`
 	VerifierIssued   sdkmath.LegacyDec `json:"verifier_issued"`
 	NewlyIssued      sdkmath.LegacyDec `json:"newly_issued"`
@@ -77,16 +78,18 @@ func SimulateYears(params Params, cfg SimulationConfig) ([]YearProjection, error
 		if remainingHours < yearHours {
 			yearHours = remainingHours
 		}
+		operatorIssued := sdkmath.LegacyZeroDec()
 		publisherIssued := sdkmath.LegacyZeroDec()
 		verifierIssued := sdkmath.LegacyZeroDec()
 		if yearHours > 0 {
 			yearHoursDec := sdkmath.LegacyNewDec(yearHours)
+			operatorIssued = totalSupply.MulInt64(params.Issuance.OperatorReserveBps).Mul(yearHoursDec).Quo(durationDec)
 			publisherIssued = totalSupply.MulInt64(params.Issuance.PublisherEmissionBps).Mul(yearHoursDec).Quo(durationDec)
 			verifierIssued = totalSupply.MulInt64(params.Issuance.VerifierEmissionBps).Mul(yearHoursDec).Quo(durationDec)
 			remainingHours -= yearHours
 		}
 
-		newlyIssued := publisherIssued.Add(verifierIssued)
+		newlyIssued := operatorIssued.Add(publisherIssued).Add(verifierIssued)
 		cumulativeIssued = cumulativeIssued.Add(newlyIssued)
 		feeBurn := cfg.AnnualProtocolFees.Mul(feeBurnPercent)
 		slashBurn := cfg.AnnualSlashingLoss.Mul(slashBurnPercent)
@@ -96,6 +99,7 @@ func SimulateYears(params Params, cfg SimulationConfig) ([]YearProjection, error
 		projections = append(projections, YearProjection{
 			Year:             year,
 			StartSupply:      supply,
+			OperatorIssued:   operatorIssued,
 			PublisherIssued:  publisherIssued,
 			VerifierIssued:   verifierIssued,
 			NewlyIssued:      newlyIssued,
@@ -114,12 +118,13 @@ func SimulateYears(params Params, cfg SimulationConfig) ([]YearProjection, error
 // ProjectionTable renders the simulation into a human readable table-ready structure.
 func ProjectionTable(projections []YearProjection) [][]string {
 	rows := make([][]string, 0, len(projections)+1)
-	header := []string{"Year", "Start Supply", "Publisher Issued", "Verifier Issued", "Issued", "Issued (cum)", "Burn (fees)", "Burn (slash)", "Net", "End Supply"}
+	header := []string{"Year", "Start Supply", "Operator Issued", "Publisher Issued", "Verifier Issued", "Issued", "Issued (cum)", "Burn (fees)", "Burn (slash)", "Net", "End Supply"}
 	rows = append(rows, header)
 	for _, proj := range projections {
 		rows = append(rows, []string{
 			fmt.Sprintf("%d", proj.Year),
 			formatDec(proj.StartSupply),
+			formatDec(proj.OperatorIssued),
 			formatDec(proj.PublisherIssued),
 			formatDec(proj.VerifierIssued),
 			formatDec(proj.NewlyIssued),
