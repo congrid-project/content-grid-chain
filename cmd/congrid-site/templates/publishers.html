@@ -3,85 +3,57 @@
 {{define "main"}}
 <section class="section">
   <div class="container">
-    <h1>Become a Publisher</h1>
+    <h1>Publishers</h1>
     <p class="lead">
-      Publishers are the heartbeat of Congrid. You register your site and prove ownership by placing a simple badge link on your homepage.
-      In return, you help build an open discovery graph — and you can earn protocol rewards.
+      Register your domain on Congrid, place the verification badge on your homepage, and keep your listing healthy for discovery + reward eligibility.
     </p>
 
     {{if .Flash}}<div class="callout">{{.Flash}}</div>{{end}}
 
     <div class="grid two">
       <div class="card">
-        <h2>Why join?</h2>
+        <h2>Network (current chain config)</h2>
         <ul>
-          <li><strong>Fair discovery:</strong> your content gets found based on meaning, not opaque ad-driven ranking.</li>
-          <li><strong>Referral traffic:</strong> your URL can appear on similar sites’ Congrid blocks.</li>
-          <li><strong>Rewards:</strong> availability + verification consistency can qualify for payouts.</li>
-          <li><strong>Ownership:</strong> you keep your site — you’re not uploading into a walled garden.</li>
+          <li><strong>Chain ID:</strong> <code>{{.WalletConfig.ChainID}}</code></li>
+          <li><strong>RPC:</strong> <code>{{.WalletConfig.RPC}}</code></li>
+          <li><strong>Bech32 prefix:</strong> <code>congrid</code> (address starts with <code>congrid1...</code>)</li>
+          <li><strong>Fee denom:</strong> <code>{{if .WalletConfig.FeeDenom}}{{.WalletConfig.FeeDenom}}{{else}}ucongrid{{end}}</code></li>
+          <li><strong>Suggested gas price:</strong> <code>{{if .WalletConfig.GasPrice}}{{.WalletConfig.GasPrice}}{{else}}0.001ucongrid{{end}}</code></li>
         </ul>
       </div>
       <div class="card">
-        <h2>What you need</h2>
+        <h2>Before you start</h2>
         <ul>
-          <li>A website with a public homepage at <code>/</code></li>
-          <li>A wallet address in Congrid format (<code>congrid1...</code>)</li>
-          <li>Ability to paste a tiny HTML snippet into your homepage template</li>
+          <li>You can edit your homepage template and deploy changes.</li>
+          <li>You have a Congrid wallet address (<code>congrid1...</code>).</li>
+          <li>Your homepage is publicly reachable and stable.</li>
         </ul>
       </div>
     </div>
 
-    <h2>Step 1 — Choose how to provide your wallet address</h2>
-    <p>
-      You can either connect Keplr/Leap <strong>or</strong> paste an address manually. Both paths are supported.
-    </p>
-
-    <div class="grid two">
-      <div class="card">
-        <h3>Option A — Connect wallet (recommended)</h3>
-        <p class="muted">Connect to auto-fill your address from Keplr/Leap.</p>
-        <div class="callout" style="margin-top:10px;">
-          <strong>Wallet:</strong> <span data-wallet-address>Not connected</span>
-          <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
-            <button class="btn btn-ghost" type="button" data-wallet-connect>Connect wallet</button>
-          </div>
+    <h2>Step 1 — Connect wallet (optional but recommended)</h2>
+    <div class="card">
+      <p class="muted">Connect Keplr/Leap to auto-fill your owner address and register on-chain directly in browser.</p>
+      <div class="callout" style="margin-top:10px;">
+        <strong>Wallet:</strong> <span data-wallet-address>Not connected</span>
+        <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn btn-ghost" type="button" data-wallet-connect>Connect wallet</button>
         </div>
-        <div class="callout" data-wallet-flash hidden></div>
       </div>
-      <div class="card">
-        <h3>Option B — Paste address manually</h3>
-        <p class="muted">
-          If you prefer not to connect any extension, you can paste your <code>congrid1...</code> address directly in Step 2.
-        </p>
-      </div>
+      <div class="callout" data-wallet-flash hidden></div>
     </div>
 
-    <div class="card" style="margin-top:18px;">
-      <h3>Keplr setup guide (manual chain add)</h3>
-      <ol>
-        <li>Install/open Keplr browser extension.</li>
-        <li>Open this page and click <strong>Connect wallet</strong>. Congrid will try to auto-suggest chain config.</li>
-        <li>If Keplr asks for approval, approve chain + account access.</li>
-        <li>If auto-suggest is blocked, add network manually in Keplr using:</li>
-      </ol>
-      <ul>
-        <li><strong>Chain ID:</strong> <code>{{.WalletConfig.ChainID}}</code></li>
-        <li><strong>RPC:</strong> <code>{{.WalletConfig.RPC}}</code></li>
-        <li><strong>REST:</strong> <code>http://127.0.0.1:1317</code> (adjust to your node REST endpoint)</li>
-        <li><strong>Address prefix:</strong> <code>grid</code></li>
-        <li><strong>Base denom:</strong> <code>{{if .WalletConfig.FeeDenom}}{{.WalletConfig.FeeDenom}}{{else}}ucongrid{{end}}</code></li>
-        <li><strong>Display denom:</strong> <code>CONGRID</code> (6 decimals)</li>
-      </ul>
-      <p class="muted">After adding the network, create/import account in Keplr and copy its <code>congrid1...</code> address.</p>
-    </div>
-
-    <h2>Step 2 — Fill in your wallet + website to prepare registration</h2>
+    <h2>Step 2 — Enter domain + owner wallet</h2>
     <p>
-      Enter your website domain and owner wallet address below. We’ll generate a ready-to-use registration command
-      and badge snippet for your site.
+      We will generate: (1) a CLI register command and (2) an exact badge snippet.
     </p>
 
-    <form class="card" data-publisher-onboarding-form data-base-url="{{.BaseURL}}">
+    <form class="card"
+      data-publisher-onboarding-form
+      data-base-url="{{.BaseURL}}"
+      data-chain-id="{{.WalletConfig.ChainID}}"
+      data-rpc="{{.WalletConfig.RPC}}"
+      data-gas-price="{{if .WalletConfig.GasPrice}}{{.WalletConfig.GasPrice}}{{else}}0.001ucongrid{{end}}">
       <label class="label" for="publisher-domain">Website domain</label>
       <input class="input" id="publisher-domain" name="domain" placeholder="example.com" required />
 
@@ -89,7 +61,7 @@
       <input class="input" id="publisher-wallet" name="wallet" placeholder="congrid1..." required />
 
       <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
-        <button class="btn" type="submit">Generate registration details</button>
+        <button class="btn" type="submit">Generate command + badge snippet</button>
         <button class="btn btn-outline" type="button" data-use-connected-wallet>Use connected wallet</button>
       </div>
     </form>
@@ -103,39 +75,29 @@
     </div>
 
     <p class="muted">
-      Note: the badge link <code>href</code> must be exactly <code>{{.BaseURL}}</code> (no query string or fragment) to pass strict verification rules.
+      Verification is strict: badge link <code>href</code> must be exactly <code>{{.BaseURL}}</code>.
+      Keep the badge on homepage <code>/</code> and do not change the owner wallet without re-registration.
     </p>
 
-    <h2>Step 3 — Update your website, then submit registration</h2>
-    <p>
-      Paste the generated badge snippet into your homepage template and deploy your site.
-      If you connected Keplr/Leap, you can register directly in-browser (no local CLI needed).
-    </p>
-
-    <form class="card" data-wallet-publisher-register>
-      <input type="hidden" name="domain" value="" data-wallet-register-domain />
-      <input type="hidden" name="wallet" value="" data-wallet-register-wallet />
+    <h2>Step 3 — Register on-chain</h2>
+    <div class="card">
       <p class="muted" style="margin-top:8px;">
-        Wallet mode: click the button below and approve the transaction in your wallet extension.
-        The connected wallet address must match the owner wallet from Step 2.
+        Browser wallet mode (recommended): click button below and approve transaction in Keplr/Leap.
       </p>
-      <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+      <form data-wallet-publisher-register>
+        <input type="hidden" name="domain" value="" data-wallet-register-domain />
+        <input type="hidden" name="wallet" value="" data-wallet-register-wallet />
         <button class="btn" type="submit">Register with connected wallet</button>
-      </div>
-    </form>
+      </form>
+      <p class="muted" style="margin-top:10px;">
+        CLI mode: use generated command and replace <code>&lt;local-key-name&gt;</code> with your local key alias.
+      </p>
+    </div>
 
-    <p class="muted" style="margin-top:10px;">
-      Prefer CLI? You can still run the generated command manually as fallback.
-    </p>
-
-    <h2>Step 4 — Wait for verifier checks</h2>
-    <p class="muted">
-      Airdrop remains available as an optional starter balance for other on-chain actions (for example marketplace and slot operations),
-      but it is not required for publisher registration itself.
-    </p>
+    <h2>Step 4 — Stay healthy</h2>
     <p>
-      Verifiers periodically fetch your homepage and confirm the badge link is present and matches your registered owner wallet.
-      Keep the badge intact and your site online to stay eligible.
+      Verifiers continuously check your homepage badge and owner wallet binding.
+      Keep your site online and the badge intact to remain eligible for network programs.
     </p>
   </div>
 </section>
@@ -158,6 +120,9 @@
   const walletRegisterWalletInput = document.querySelector("[data-wallet-register-wallet]");
 
   const baseURL = (form.dataset.baseUrl || "https://congrid.net").replace(/\/$/, "");
+  const chainID = String(form.dataset.chainId || "").trim();
+  const rpc = String(form.dataset.rpc || "").trim();
+  const gasPrice = String(form.dataset.gasPrice || "0.001ucongrid").trim();
 
   function normalizeDomain(input) {
     return String(input || "")
@@ -171,7 +136,6 @@
   function isLikelyGridAddress(addr) {
     const value = String(addr || "").trim();
     if (!value) return false;
-    // Basic bech32-like validation (human-friendly guardrail; chain does final validation).
     if (!/^congrid1[0-9a-z]+$/.test(value)) return false;
     if (value.length < 20 || value.length > 90) return false;
     return true;
@@ -201,11 +165,20 @@
       return;
     }
     if (!isLikelyGridAddress(wallet)) {
-      alert("Wallet address format looks invalid. Please use a Congrid address starting with congrid1...");
+      alert("Wallet address format looks invalid. Use congrid1... address.");
       return;
     }
 
-    const registerCommand = `./content-grid-d publisher register ${domain} --from ${wallet} --fees 0ucongrid`;
+    const parts = [
+      `./content-grid-d publisher register ${domain}`,
+      `  --from <local-key-name>`,
+      chainID ? `  --chain-id ${chainID}` : "",
+      rpc ? `  --node ${rpc}` : "",
+      gasPrice ? `  --gas-prices ${gasPrice}` : "",
+      "  --gas auto --gas-adjustment 1.3",
+      "  -y"
+    ].filter(Boolean);
+    const registerCommand = parts.join(" \\\n");
 
     const badgeSrc = `${baseURL}/badge.png?publisher=${encodeURIComponent(domain)}&wallet=${encodeURIComponent(wallet)}`;
     const badgeSnippet = `<a href="${baseURL}">\n  <img\n    alt="Verified by Congrid"\n    src="${badgeSrc}"\n  />\n</a>`;

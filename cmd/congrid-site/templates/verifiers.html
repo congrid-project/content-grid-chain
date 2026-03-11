@@ -3,56 +3,89 @@
 {{define "main"}}
 <section class="section">
   <div class="container">
-    <h1>Become a Verifier</h1>
+    <h1>Verifiers</h1>
     <p class="lead">
-      Verifiers protect the publisher registry by independently confirming that a site really placed the Congrid badge.
-      Accurate and timely verifiers earn a share of rewards.
+      Verifiers secure publisher quality by checking homepage badge ownership against on-chain records.
+      Good verifier performance improves registry trust and can qualify for rewards.
     </p>
 
     <div class="grid two">
       <div class="card">
-        <h2>Why run a verifier?</h2>
+        <h2>Current network config</h2>
         <ul>
-          <li><strong>Earn rewards:</strong> paid for accuracy, coverage, latency, and freshness.</li>
-          <li><strong>Strengthen the network:</strong> keep the registry honest and resistant to spam.</li>
-          <li><strong>Low overhead:</strong> verification is lightweight compared to full crawling/indexing.</li>
+          <li><strong>Chain ID:</strong> <code>{{.WalletConfig.ChainID}}</code></li>
+          <li><strong>RPC:</strong> <code>{{.WalletConfig.RPC}}</code></li>
+          <li><strong>gRPC (example):</strong> <code>127.0.0.1:9090</code></li>
+          <li><strong>Fee denom:</strong> <code>{{if .WalletConfig.FeeDenom}}{{.WalletConfig.FeeDenom}}{{else}}ucongrid{{end}}</code></li>
+          <li><strong>Suggested gas price:</strong> <code>{{if .WalletConfig.GasPrice}}{{.WalletConfig.GasPrice}}{{else}}0.001ucongrid{{end}}</code></li>
         </ul>
       </div>
       <div class="card">
-        <h2>How it works</h2>
+        <h2>What verifiers do</h2>
         <ul>
-          <li>Bond tokens to become eligible (escrow).</li>
-          <li>Run a verifier agent that follows on-chain assignments.</li>
-          <li>Fetch publisher homepages and validate the badge.</li>
+          <li>Pull on-chain verification assignments.</li>
+          <li>Fetch publisher homepages and inspect Congrid badge link.</li>
+          <li>Submit accurate results in time windows.</li>
+          <li>Maintain high availability and consistent response latency.</li>
         </ul>
       </div>
     </div>
 
-    <h2>Bonding (escrow)</h2>
+    <h2>Step 1 — Prepare wallet + stake</h2>
     <p>
-      Verifiers participate with a normal account address. To be considered eligible, you bond tokens into the verifier escrow.
+      Use a dedicated verifier account. Keep enough balance for bonding and tx fees.
     </p>
 
     <div class="code">
-<pre><code>./content-grid-d verifier bond 1000000 \
-  --denom ucongrid \
-  --from &lt;key&gt;
+<pre><code># Bond (example amount)
+./content-grid-d verifier bond 1000000 \
+  --denom {{if .WalletConfig.FeeDenom}}{{.WalletConfig.FeeDenom}}{{else}}ucongrid{{end}} \
+  --from &lt;local-key-name&gt; \
+  --chain-id {{.WalletConfig.ChainID}} \
+  --node {{.WalletConfig.RPC}} \
+  --gas-prices {{if .WalletConfig.GasPrice}}{{.WalletConfig.GasPrice}}{{else}}0.001ucongrid{{end}} \
+  -y
 
-# Later
+# Optional unbond later
 ./content-grid-d verifier unbond 1000000 \
-  --denom ucongrid \
-  --from &lt;key&gt;</code></pre>
+  --denom {{if .WalletConfig.FeeDenom}}{{.WalletConfig.FeeDenom}}{{else}}ucongrid{{end}} \
+  --from &lt;local-key-name&gt; \
+  --chain-id {{.WalletConfig.ChainID}} \
+  --node {{.WalletConfig.RPC}} \
+  --gas-prices {{if .WalletConfig.GasPrice}}{{.WalletConfig.GasPrice}}{{else}}0.001ucongrid{{end}} \
+  -y</code></pre>
     </div>
 
-    <h2>Run the verifier daemon</h2>
+    <h2>Step 2 — Run verifier daemon</h2>
     <p>
-      The repository includes a chain-driven publisher verification agent (<code>offchain/verifierd</code>).
-      Expect this to evolve quickly as testnet infrastructure lands.
+      Use <code>offchain/verifierd</code> from this repository for chain-driven assignments.
+      Run it as a persistent service (systemd recommended) and monitor logs.
     </p>
 
+    <div class="code">
+<pre><code># Example status checks
+./content-grid-d verifier assignments &lt;verifier-address&gt; \
+  --node {{.WalletConfig.RPC}} \
+  --grpc-addr 127.0.0.1:9090 \
+  --grpc-insecure -o json
+
+./content-grid-d query registry publisher --domain &lt;domain&gt; \
+  --node {{.WalletConfig.RPC}} \
+  --grpc-addr 127.0.0.1:9090 \
+  --grpc-insecure -o json</code></pre>
+    </div>
+
+    <h2>Step 3 — Operate for reliability</h2>
+    <ul>
+      <li>Use stable DNS/network; avoid frequent IP rotations.</li>
+      <li>Track failed checks and homepage fetch latency.</li>
+      <li>Alert on process exit, RPC disconnect, and backlog growth.</li>
+      <li>Keep software updated with protocol changes.</li>
+    </ul>
+
     <div class="callout">
-      <strong>Early operators wanted:</strong>
-      If you can run always-on infrastructure and provide feedback, you’ll help shape verifier incentives and APIs.
+      <strong>Operator tip:</strong>
+      Treat verifier infra like production workload (health checks, restart policy, metrics, and log retention).
     </div>
   </div>
 </section>

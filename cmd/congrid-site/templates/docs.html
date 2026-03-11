@@ -4,39 +4,58 @@
 <section class="section">
   <div class="container">
     <h1>Docs</h1>
-    <p class="lead">Start here if you want the protocol design, economics, or to contribute code.</p>
+    <p class="lead">Reference docs, runbooks, and operator guides for the current chain deployment.</p>
 
     <div class="grid two">
       <div class="card">
-        <h2>Protocol</h2>
+        <h2>Current chain parameters</h2>
         <ul>
-          <li><strong>Whitepaper:</strong> <code>whitepaper.md</code> (in the repository)</li>
-          <li><strong>Tokenomics:</strong> <code>docs/tokenomics.md</code></li>
-          <li><strong>Governance:</strong> <code>docs/governance.md</code></li>
+          <li><strong>Chain ID:</strong> <code>{{.WalletConfig.ChainID}}</code></li>
+          <li><strong>RPC:</strong> <code>{{.WalletConfig.RPC}}</code></li>
+          <li><strong>Fee denom:</strong> <code>{{if .WalletConfig.FeeDenom}}{{.WalletConfig.FeeDenom}}{{else}}ucongrid{{end}}</code></li>
+          <li><strong>Suggested gas price:</strong> <code>{{if .WalletConfig.GasPrice}}{{.WalletConfig.GasPrice}}{{else}}0.001ucongrid{{end}}</code></li>
         </ul>
-        <p class="muted">The canonical docs live in the repo.</p>
+        <p class="muted">Use these values when wallet/network config is required.</p>
       </div>
 
       <div class="card">
-        <h2>Repository</h2>
+        <h2>Start here</h2>
+        <ol>
+          <li><code>README.md</code> — build + local run</li>
+          <li><code>docs/runbook.md</code> — deployment and operations</li>
+          <li><code>docs/verifierd.md</code> — verifier daemon details</li>
+          <li><code>docs/marketplace.md</code> — slots and leases model</li>
+        </ol>
+      </div>
+    </div>
+
+    <h2>Protocol and economics</h2>
+    <div class="grid two">
+      <div class="card">
         <ul>
-          <li><code>README.md</code> — build/run notes</li>
-          <li><code>docs/tokenomics.md</code> — economic blueprint</li>
-          <li><code>docs/verifiers.md</code> — verifier participation</li>
-          <li><code>docs/marketplace.md</code> — slots + leases marketplace</li>
-          <li><code>docs/indexerd.md</code> — off-chain indexing cache</li>
+          <li><code>whitepaper.md</code></li>
+          <li><code>docs/tokenomics.md</code></li>
+          <li><code>docs/governance.md</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <ul>
+          <li><code>docs/verifiers.md</code></li>
+          <li><code>docs/indexerd.md</code></li>
+          <li><code>docs/launch-checklist.md</code></li>
         </ul>
       </div>
     </div>
 
-    <h2>Contribution</h2>
+    <h2>Operator-focused guidance</h2>
     <p>
-      Contributions are welcome: protocol, off-chain services, docs, or design.
-      If you’re a publisher or verifier operator, the fastest way to help is to run software on devnet and report issues.
+      If you are running publisher/verifier infra in production, prioritize: deterministic config, persistent process supervision,
+      endpoint monitoring, and explicit rollout/rollback procedures.
     </p>
 
     <div class="callout">
-      <strong>Tip:</strong> publishers can start today — you don’t need to stake or lock tokens just to register.
+      <strong>Consistency rule:</strong>
+      Keep user-facing commands aligned with actual chain config. If chain-id/RPC changes, update site flags and docs together.
     </div>
   </div>
 </section>

@@ -4,43 +4,43 @@
 <section class="hero">
   <div class="container">
     <div class="pill">Decentralized content + search protocol</div>
-    <h1>Search and discovery, owned by the open web.</h1>
+    <h1>Congrid: publisher identity and verification for the open web</h1>
     <p class="lead">
-      Congrid (Content Grid) coordinates a publisher registry and verifier network that confirm badges
-      and reward accurate verification — keeping the registry trustworthy and community-owned.
+      Congrid keeps discovery infrastructure transparent by pairing a publisher registry with verifier checks.
+      Domain ownership is proven by homepage badge + wallet binding, then continuously verified on-chain.
     </p>
 
     <div class="hero-actions">
-      <a class="btn" href="/publishers">Become a Publisher</a>
-      <a class="btn btn-outline" href="/verifiers">Become a Verifier</a>
-      <a class="btn btn-ghost" href="/airdrop">Optional airdrop</a>
-      <a class="btn btn-ghost" href="/docs">Read the docs</a>
+      <a class="btn" href="/publishers">Publishers</a>
+      <a class="btn btn-outline" href="/verifiers">Verifiers</a>
+      <a class="btn btn-ghost" href="/marketplace">Backlink marketplace</a>
+      <a class="btn btn-ghost" href="/docs">Docs</a>
     </div>
 
     <div class="grid cards">
       <div class="card">
-        <h3>For publishers</h3>
+        <h3>Publishers</h3>
         <p>
-          Register your primary domain and add the Congrid badge to your homepage.
-          Earn availability rewards and receive high-quality referral traffic from similar sites.
+          Register a domain, place the Congrid badge on homepage, and keep verification healthy.
+          This anchors attribution and eligibility for ecosystem programs.
         </p>
-        <a href="/publishers">How to join →</a>
+        <a href="/publishers">Publisher onboarding →</a>
       </div>
       <div class="card">
-        <h3>For verifiers</h3>
+        <h3>Verifiers</h3>
         <p>
-          Run verifier software that checks publisher badges and reports results.
-          Get rewarded for accuracy, coverage, and freshness.
+          Bond and run verifier infrastructure to validate publisher badge ownership.
+          Performance depends on accuracy, latency, and reliability.
         </p>
-        <a href="/verifiers">Run a verifier →</a>
+        <a href="/verifiers">Verifier onboarding →</a>
       </div>
       <div class="card">
-        <h3>Verification integrity</h3>
+        <h3>Marketplace</h3>
         <p>
-          Verification rounds keep the publisher registry accurate. Rewards track real, timely confirmations,
-          not speculative activity.
+          Discover and lease publisher slots with wallet-signed transactions.
+          Read-only state comes from chain queries, not centralized listings.
         </p>
-        <a href="/docs">Protocol overview →</a>
+        <a href="/marketplace">Explore marketplace →</a>
       </div>
     </div>
   </div>
@@ -48,32 +48,24 @@
 
 <section class="section">
   <div class="container">
-    <h2>What Congrid does</h2>
+    <h2>Current network config</h2>
     <div class="grid two">
-      <div>
-        <h3>Publisher registry</h3>
-        <p>
-          Publishers register a primary domain and anchor ownership by hosting the Congrid badge.
-          This registry powers trusted attribution and discovery.
-        </p>
+      <div class="card">
+        <ul>
+          <li><strong>Chain ID:</strong> <code>{{.WalletConfig.ChainID}}</code></li>
+          <li><strong>RPC:</strong> <code>{{.WalletConfig.RPC}}</code></li>
+          <li><strong>Bech32 prefix:</strong> <code>congrid</code> (<code>congrid1...</code>)</li>
+          <li><strong>Fee denom:</strong> <code>{{if .WalletConfig.FeeDenom}}{{.WalletConfig.FeeDenom}}{{else}}ucongrid{{end}}</code></li>
+          <li><strong>Suggested gas price:</strong> <code>{{if .WalletConfig.GasPrice}}{{.WalletConfig.GasPrice}}{{else}}0.001ucongrid{{end}}</code></li>
+        </ul>
       </div>
-      <div>
-        <h3>Verifier assignment</h3>
-        <p>
-          Bonded verifiers receive assignment windows and submit commit/reveal results to keep the registry accurate.
-        </p>
-      </div>
-      <div>
-        <h3>On-chain incentives</h3>
-        <p>
-          The chain routes rewards to participants who keep the network healthy: publishers, verifiers, and community.
-        </p>
-      </div>
-      <div>
-        <h3>Open participation</h3>
-        <p>
-          Anyone can publish. Anyone can verify. The goal is a durable, community-owned index that resists capture and censorship.
-        </p>
+      <div class="card">
+        <h3>Fast start</h3>
+        <ol>
+          <li>Publishers: go to <a href="/publishers">/publishers</a>, generate badge snippet and register domain.</li>
+          <li>Verifiers: go to <a href="/verifiers">/verifiers</a>, bond and run verifier daemon.</li>
+          <li>Operators: use <a href="/docs">/docs</a> runbook + verifier docs for production setup.</li>
+        </ol>
       </div>
     </div>
   </div>
@@ -81,25 +73,31 @@
 
 <section class="section alt">
   <div class="container">
-    <h2>Get involved</h2>
+    <h2>How trust is maintained</h2>
     <div class="grid two">
-      <div class="card">
-        <h3>Publish your site</h3>
-        <ol>
-          <li>Add the Congrid badge to your homepage.</li>
-          <li>Register your domain on-chain (registration-only tx can be zero-fee).</li>
-          <li>Stay online and keep the badge intact.</li>
-        </ol>
-        <a class="btn" href="/publishers">Publisher onboarding</a>
+      <div>
+        <h3>Publisher registry</h3>
+        <p>
+          A publisher registers a normalized domain and owner wallet. Badge placement on homepage is then externally verifiable.
+        </p>
       </div>
-      <div class="card">
-        <h3>Verify publishers</h3>
-        <ol>
-          <li>Bond tokens to become eligible.</li>
-          <li>Run verifier software (daemon/agent).</li>
-          <li>Earn for accurate, timely verification.</li>
-        </ol>
-        <a class="btn btn-outline" href="/verifiers">Verifier onboarding</a>
+      <div>
+        <h3>Verifier assignments</h3>
+        <p>
+          Verifiers execute assignment windows and submit results. Registry health comes from repeated independent checks.
+        </p>
+      </div>
+      <div>
+        <h3>On-chain incentives</h3>
+        <p>
+          Reward logic favors measurable, timely contribution over opaque platform-side scoring.
+        </p>
+      </div>
+      <div>
+        <h3>Open participation</h3>
+        <p>
+          Any site can onboard as publisher. Any operator can join verification by following chain rules.
+        </p>
       </div>
     </div>
   </div>
