@@ -3,12 +3,34 @@
 {{define "main"}}
 <section class="section">
   <div class="container">
-    <h1>Marketplace</h1>
+    <h1>Backlink Marketplace</h1>
     <p class="lead">
-      Browse publisher link slots across the network. Search, compare, and request leases for high-intent placements.
+      Discover publisher slots, compare terms, and create lease transactions with your wallet.
+      Slot state and lease availability are loaded from chain data.
     </p>
+
+    <div class="grid two">
+      <div class="card">
+        <h2>Current chain config</h2>
+        <ul>
+          <li><strong>Chain ID:</strong> <code>{{.WalletConfig.ChainID}}</code></li>
+          <li><strong>RPC:</strong> <code>{{.WalletConfig.RPC}}</code></li>
+          <li><strong>Fee denom:</strong> <code>{{if .WalletConfig.FeeDenom}}{{.WalletConfig.FeeDenom}}{{else}}ucongrid{{end}}</code></li>
+          <li><strong>Gas price:</strong> <code>{{if .WalletConfig.GasPrice}}{{.WalletConfig.GasPrice}}{{else}}0.001ucongrid{{end}}</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>Before leasing</h2>
+        <ul>
+          <li>Connect a wallet that has enough balance for lease + tx fee.</li>
+          <li>Prepare a valid landing URL (<code>https://...</code>) as lease target.</li>
+          <li>Pick term carefully: minimum/maximum duration is enforced by chain rules.</li>
+        </ul>
+      </div>
+    </div>
+
     <div class="callout">
-      <strong>Wallet required:</strong> connect a wallet to sign on-chain lease transactions.
+      <strong>Wallet required:</strong> connect Keplr/Leap to sign lease tx.
       <div class="muted">Wallet: <span data-wallet-address>Not connected</span></div>
       <button class="btn btn-ghost" type="button" data-wallet-connect>Connect wallet</button>
       <a href="/leases">View lease publish board →</a>
@@ -16,10 +38,11 @@
     <div class="callout" data-wallet-flash hidden></div>
 
     <div class="card">
+      <h3>Filter slots</h3>
       <form class="filters" method="get" action="/marketplace">
         <div class="grid two">
           <div>
-            <label class="label" for="marketplace-search">Search slots</label>
+            <label class="label" for="marketplace-search">Search</label>
             <input class="input" id="marketplace-search" name="q" type="search" placeholder="domain, category, placement" value="{{.Query}}" />
           </div>
           <div>
@@ -34,7 +57,7 @@
           </div>
         </div>
         <div class="filters-actions">
-          <button class="btn" type="submit">Apply filters</button>
+          <button class="btn" type="submit">Apply</button>
           <a class="btn btn-ghost" href="/marketplace">Reset</a>
         </div>
       </form>
@@ -61,6 +84,7 @@
                 {{range .Tags}}<span class="tag">{{.}}</span>{{end}}
               </div>
             {{end}}
+
             <div class="slot-meta">
               <div>
                 <span class="slot-meta-label">Placement</span>
@@ -89,20 +113,23 @@
                 <strong>{{formatDate .UpdatedAt}}</strong>
               </div>
             </div>
+
             {{if .Lease}}
               <div class="callout">
-                <strong>Lease:</strong> {{.Lease.Lessee}} until {{formatDate .Lease.EndsAt}}.<br />
+                <strong>Active lease:</strong> {{.Lease.Lessee}} until {{formatDate .Lease.EndsAt}}.<br />
                 <span class="muted">slot_id={{.Lease.SlotID}} · lease_id={{.Lease.LeaseID}}</span>
               </div>
             {{end}}
+
             {{if .MinDurationSeconds}}
               <div class="muted">Minimum term: {{(index (slotDurationOptions .) 0).Label}}</div>
             {{end}}
+
             <div class="slot-actions">
               <a class="btn btn-outline" href="/publisher/dashboard?publisher={{.Publisher}}">View publisher</a>
               {{if slotIsAvailable .}}
                 <details class="lease-form">
-                  <summary class="btn btn-ghost">Request lease</summary>
+                  <summary class="btn btn-ghost">Lease this slot</summary>
                   <form method="post" action="/marketplace/lease" class="lease-grid" data-wallet-lease>
                     <input type="hidden" name="slot_id" value="{{.ID}}" />
                     <label class="label">Target URL
@@ -119,7 +146,7 @@
                         {{end}}
                       </select>
                     </label>
-                    <button class="btn" type="submit">Confirm lease</button>
+                    <button class="btn" type="submit">Sign lease transaction</button>
                   </form>
                 </details>
               {{else}}

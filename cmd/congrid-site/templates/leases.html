@@ -4,10 +4,33 @@
 <section class="section">
   <div class="container">
     <h1>Lease Publish Board</h1>
-    <p class="lead">Public lease information and copy-ready HTML snippets. No login is required to browse.</p>
+    <p class="lead">
+      Public lease ledger for publishers and advertisers. Use this board to copy verified embed snippets and audit lease state.
+    </p>
+
+    <div class="grid two">
+      <div class="card">
+        <h2>Usage checklist</h2>
+        <ol>
+          <li>Find your active lease row by <code>slot_id</code> / <code>lease_id</code>.</li>
+          <li>Copy the generated embed snippet exactly.</li>
+          <li>Publish snippet to the agreed placement on your page.</li>
+          <li>Keep attributes unchanged during lease term.</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h2>Integrity requirements</h2>
+        <ul>
+          <li>Wrapper must include <code>data-congrid-slot-id</code> = <code>slot_id</code>.</li>
+          <li>Wrapper must include <code>data-congrid-lease</code> = <code>lease_id</code>.</li>
+          <li>Target URL must match lease contract.</li>
+          <li>Do not mutate IDs or remove tracking attributes.</li>
+        </ul>
+      </div>
+    </div>
 
     <div class="callout">
-      <strong>Verification rule:</strong> keep <code>slot_id</code> on the wrapper element as <code>data-congrid-slot-id</code>, and keep <code>lease_id</code> as <code>data-congrid-lease</code>.
+      <strong>Tip:</strong> use this board as canonical source for currently active embed metadata.
     </div>
 
     {{if .Items}}
@@ -50,7 +73,7 @@
     {{else}}
       <div class="card">
         <h3>No leases published yet</h3>
-        <p class="muted">Once a slot is leased, it will appear here with slot and lease IDs.</p>
+        <p class="muted">Once a slot is leased, it appears here with slot/lease IDs and copy-ready snippet.</p>
       </div>
     {{end}}
   </div>
