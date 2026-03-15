@@ -336,7 +336,7 @@ func (s *server) handleHome(baseURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.render(w, "home.html", pageData{
 			Title:        "Congrid — Content Grid Protocol",
-			Description:  "A decentralized content network and search protocol. Become a Publisher or a Verifier to help build an open, community-owned discovery engine.",
+			Description:  "A decentralized similar-site interconnection protocol where publishers get free backlinks and ongoing Congrid token rewards, while verifiers earn more by validating publisher status.",
 			BaseURL:      baseURL,
 			Path:         r.URL.Path,
 			NowYear:      time.Now().Year(),
