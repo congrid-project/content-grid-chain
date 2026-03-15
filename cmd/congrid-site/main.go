@@ -374,8 +374,8 @@ func (s *server) handleVerifiers(baseURL string) http.HandlerFunc {
 func (s *server) handleDocs(baseURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.render(w, "docs.html", pageData{
-			Title:        "Docs — Congrid",
-			Description:  "Whitepaper, protocol overview, and contribution links.",
+			Title:        "Guides — Congrid",
+			Description:  "Publisher and verifier guides for joining Congrid, including badge setup, registration, bonding, and verifier workflow.",
 			BaseURL:      baseURL,
 			Path:         r.URL.Path,
 			NowYear:      time.Now().Year(),

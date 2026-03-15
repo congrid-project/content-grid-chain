@@ -11,7 +11,7 @@
 
     <div class="grid two">
       <div class="card">
-        <h2>Current network config</h2>
+        <h2>Network values you'll use</h2>
         <ul>
           <li><strong>Chain ID:</strong> <code>{{.WalletConfig.ChainID}}</code></li>
           <li><strong>RPC:</strong> <code>{{.WalletConfig.RPC}}</code></li>
@@ -59,7 +59,7 @@
     <h2>Step 2 — Run verifier daemon</h2>
     <p>
       Use <code>offchain/verifierd</code> from this repository for chain-driven assignments.
-      Run it as a persistent service (systemd recommended) and monitor logs.
+      Run it continuously and monitor logs so you can submit checks inside each assignment window.
     </p>
 
     <div class="code">
@@ -75,7 +75,7 @@
   --grpc-insecure -o json</code></pre>
     </div>
 
-    <h2>Step 3 — Operate for reliability</h2>
+    <h2>Step 3 — Keep your verifier reliable</h2>
     <ul>
       <li>Use stable DNS/network; avoid frequent IP rotations.</li>
       <li>Track failed checks and homepage fetch latency.</li>
@@ -84,8 +84,8 @@
     </ul>
 
     <div class="callout">
-      <strong>Operator tip:</strong>
-      Treat verifier infra like production workload (health checks, restart policy, metrics, and log retention).
+      <strong>Verifier tip:</strong>
+      Reliability matters because missed or inaccurate checks reduce your reward potential.
     </div>
   </div>
 </section>

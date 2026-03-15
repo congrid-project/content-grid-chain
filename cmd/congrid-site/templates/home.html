@@ -14,7 +14,7 @@
       <a class="btn" href="/publishers">Publishers</a>
       <a class="btn btn-outline" href="/verifiers">Verifiers</a>
       <a class="btn btn-ghost" href="/marketplace">Backlink marketplace</a>
-      <a class="btn btn-ghost" href="/docs">Docs</a>
+      <a class="btn btn-ghost" href="/docs">Guides</a>
     </div>
 
     <div class="grid cards">
@@ -48,24 +48,31 @@
 
 <section class="section">
   <div class="container">
-    <h2>Current network config</h2>
+    <h2>Why Congrid matters</h2>
     <div class="grid two">
       <div class="card">
-        <ul>
-          <li><strong>Chain ID:</strong> <code>{{.WalletConfig.ChainID}}</code></li>
-          <li><strong>RPC:</strong> <code>{{.WalletConfig.RPC}}</code></li>
-          <li><strong>Bech32 prefix:</strong> <code>congrid</code> (<code>congrid1...</code>)</li>
-          <li><strong>Fee denom:</strong> <code>{{if .WalletConfig.FeeDenom}}{{.WalletConfig.FeeDenom}}{{else}}ucongrid{{end}}</code></li>
-          <li><strong>Suggested gas price:</strong> <code>{{if .WalletConfig.GasPrice}}{{.WalletConfig.GasPrice}}{{else}}0.001ucongrid{{end}}</code></li>
-        </ul>
+        <h3>Free backlinks from similar websites</h3>
+        <p>
+          Congrid helps traffic-focused websites earn backlinks from related publishers in the network instead of relying only on paid distribution or manual outreach.
+        </p>
       </div>
       <div class="card">
-        <h3>Fast start</h3>
-        <ol>
-          <li>Publishers: go to <a href="/publishers">/publishers</a>, generate badge snippet and register domain.</li>
-          <li>Verifiers: go to <a href="/verifiers">/verifiers</a>, bond and run verifier daemon.</li>
-          <li>Operators: use <a href="/docs">/docs</a> runbook + verifier docs for production setup.</li>
-        </ol>
+        <h3>Ongoing rewards for verified publishers</h3>
+        <p>
+          Publishers keep earning Congrid tokens while their homepage badge and wallet binding remain healthy and verifiable.
+        </p>
+      </div>
+      <div class="card">
+        <h3>More rewards for verifiers</h3>
+        <p>
+          Verifiers confirm publisher status and earn a larger share of Congrid token rewards by submitting accurate, timely checks.
+        </p>
+      </div>
+      <div class="card">
+        <h3>One protocol for discovery + trust</h3>
+        <p>
+          Congrid combines similar-site interconnection, publisher verification, and on-chain incentives in one open network.
+        </p>
       </div>
     </div>
   </div>
@@ -96,7 +103,7 @@
       <div>
         <h3>Open participation</h3>
         <p>
-          Any site can onboard as publisher. Any operator can join verification by following chain rules.
+          Any site can onboard as publisher. Any participant can join as a verifier by following chain rules.
         </p>
       </div>
     </div>
