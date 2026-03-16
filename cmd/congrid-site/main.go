@@ -14,7 +14,9 @@ import (
 	"image/png"
 	"io/fs"
 	"log"
+	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"path"
@@ -44,6 +46,8 @@ func main() {
 		airdropDB      = flag.String("airdrop-db", "./congrid-airdrop.db", "path to airdrop claim database")
 		chainID        = flag.String("chain-id", "", "chain id")
 		nodeRPC        = flag.String("node", "", "rpc endpoint (e.g. tcp://127.0.0.1:26657)")
+		walletRPC      = flag.String("wallet-rpc", "", "public rpc endpoint used by browser wallets (defaults to base-url host on port 26657)")
+		walletREST     = flag.String("wallet-rest", "", "public rest endpoint used by browser wallets (defaults to base-url host on port 1317)")
 		denom          = flag.String("denom", "ucongrid", "fee token denom")
 		amount         = flag.String("airdrop-amount", "25000", "amount (in denom base units) to send per domain")
 		faucetKeyName  = flag.String("faucet-key", "faucet", "local keyring key name used by content-grid-d")
@@ -83,10 +87,16 @@ func main() {
 	var slotStore SlotStore = chainStore
 	var slotCloser interface{ Close() error } = chainStore
 
+	publicWalletRPC, publicWalletREST, err := resolveWalletEndpoints(*baseURL, *nodeRPC, *walletRPC, *walletREST)
+	if err != nil {
+		log.Fatalf("wallet endpoint resolve: %v", err)
+	}
+
 	walletCfg := WalletConfig{
 		Enabled:                true,
 		ChainID:                strings.TrimSpace(*chainID),
-		RPC:                    strings.TrimSpace(*nodeRPC),
+		RPC:                    publicWalletRPC,
+		REST:                   publicWalletREST,
 		FeeDenom:               strings.TrimSpace(*denom),
 		GasPrice:               strings.TrimSpace(*gasPrices),
 		SlotRateDenom:          strings.TrimSpace(*slotsRateDenom),
@@ -100,8 +110,8 @@ func main() {
 	if walletCfg.GasPrice == "" {
 		walletCfg.GasPrice = "0.001ucongrid"
 	}
-	if walletCfg.ChainID == "" || walletCfg.RPC == "" {
-		log.Fatalf("chain-id and node (rpc) required for wallet signing")
+	if walletCfg.ChainID == "" || walletCfg.RPC == "" || walletCfg.REST == "" {
+		log.Fatalf("chain-id, wallet rpc, and wallet rest are required for wallet signing")
 	}
 
 	regCfg := PublisherRegisterConfig{
@@ -321,6 +331,7 @@ type WalletConfig struct {
 	Enabled                bool   `json:"enabled"`
 	ChainID                string `json:"chain_id"`
 	RPC                    string `json:"rpc"`
+	REST                   string `json:"rest"`
 	FeeDenom               string `json:"fee_denom"`
 	GasPrice               string `json:"gas_price"`
 	SlotRateDenom          string `json:"slot_rate_denom"`
@@ -330,6 +341,141 @@ type WalletConfig struct {
 	GasCreateSlot          int64  `json:"gas_create_slot"`
 	GasUpdateSlot          int64  `json:"gas_update_slot"`
 	GasLeaseSlot           int64  `json:"gas_lease_slot"`
+}
+
+func resolveWalletEndpoints(baseURL, nodeRPC, walletRPC, walletREST string) (string, string, error) {
+	rpc := strings.TrimSpace(walletRPC)
+	if rpc != "" {
+		rpc = normalizeWalletEndpoint(rpc, "http")
+	} else {
+		rpc = deriveWalletRPCEndpoint(baseURL, nodeRPC)
+	}
+	if rpc == "" {
+		return "", "", fmt.Errorf("wallet rpc endpoint required")
+	}
+
+	rest := strings.TrimSpace(walletREST)
+	if rest != "" {
+		rest = normalizeWalletEndpoint(rest, "http")
+	} else {
+		rest = deriveWalletRESTEndpoint(baseURL, rpc)
+	}
+	if rest == "" {
+		return "", "", fmt.Errorf("wallet rest endpoint required")
+	}
+
+	return rpc, rest, nil
+}
+
+func deriveWalletRPCEndpoint(baseURL, nodeRPC string) string {
+	return rewriteEndpointHost(baseURL, nodeRPC, "http")
+}
+
+func deriveWalletRESTEndpoint(baseURL, walletRPC string) string {
+	rest := rewriteEndpointHost(baseURL, walletRPC, "http")
+	if rest == "" {
+		host := baseURLHostname(baseURL)
+		if host == "" {
+			return ""
+		}
+		return "http://" + net.JoinHostPort(host, "1317")
+	}
+
+	parsed, err := url.Parse(rest)
+	if err != nil || parsed.Host == "" {
+		return ""
+	}
+	setURLPort(parsed, "1317")
+	return parsed.String()
+}
+
+func normalizeWalletEndpoint(raw, defaultScheme string) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return ""
+	}
+	if strings.HasPrefix(raw, "tcp://") {
+		raw = "http://" + strings.TrimPrefix(raw, "tcp://")
+	}
+	if !strings.Contains(raw, "://") {
+		raw = defaultScheme + "://" + raw
+	}
+	parsed, err := url.Parse(raw)
+	if err != nil || parsed.Host == "" {
+		return ""
+	}
+	if parsed.Scheme == "" {
+		parsed.Scheme = defaultScheme
+	}
+	return parsed.String()
+}
+
+func rewriteEndpointHost(baseURL, raw, defaultScheme string) string {
+	normalized := normalizeWalletEndpoint(raw, defaultScheme)
+	if normalized == "" {
+		return ""
+	}
+
+	parsed, err := url.Parse(normalized)
+	if err != nil || parsed.Host == "" {
+		return ""
+	}
+
+	publicHost := baseURLHostname(baseURL)
+	if publicHost != "" && isLocalHost(parsed.Hostname()) {
+		setURLHost(parsed, publicHost)
+	}
+	return parsed.String()
+}
+
+func baseURLHostname(raw string) string {
+	parsed, err := url.Parse(strings.TrimSpace(raw))
+	if err != nil {
+		return ""
+	}
+	return parsed.Hostname()
+}
+
+func isLocalHost(host string) bool {
+	host = strings.TrimSpace(strings.Trim(host, "[]"))
+	if host == "" {
+		return false
+	}
+	if strings.EqualFold(host, "localhost") {
+		return true
+	}
+	ip := net.ParseIP(host)
+	if ip == nil {
+		return false
+	}
+	return ip.IsLoopback() || ip.IsUnspecified()
+}
+
+func setURLHost(u *url.URL, host string) {
+	if u == nil {
+		return
+	}
+	port := u.Port()
+	if port == "" {
+		u.Host = host
+		return
+	}
+	u.Host = net.JoinHostPort(host, port)
+}
+
+func setURLPort(u *url.URL, port string) {
+	if u == nil {
+		return
+	}
+	host := u.Hostname()
+	if host == "" {
+		return
+	}
+	if port == "" {
+		u.Host = host
+		return
+	}
+	u.Host = net.JoinHostPort(host, port)
 }
 
 func (s *server) handleHome(baseURL string) http.HandlerFunc {

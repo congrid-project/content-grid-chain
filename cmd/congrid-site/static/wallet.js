@@ -316,7 +316,7 @@ async function suggestChainIfSupported(provider) {
   if (!chainId) return;
   const feeDenom = String(config.fee_denom || "ucongrid").trim() || "ucongrid";
   const rpc = toHttpRPC(config.rpc || "");
-  const rest = defaultRestFromRPC(config.rpc || "");
+  const rest = String(config.rest || defaultRestFromRPC(config.rpc || "")).trim();
 
   const chainInfo = {
     chainId,
