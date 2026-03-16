@@ -1,206 +1,265 @@
-import { SigningStargateClient, GasPrice, calculateFee, defaultRegistryTypes } from "https://cdn.jsdelivr.net/npm/@cosmjs/stargate@0.32.3/+esm";
-import { Registry } from "https://cdn.jsdelivr.net/npm/@cosmjs/proto-signing@0.32.3/+esm";
-import Long from "https://cdn.jsdelivr.net/npm/long@5.2.3/+esm";
-import * as _m0 from "https://cdn.jsdelivr.net/npm/protobufjs@7.2.5/minimal?module";
-
-if (_m0.util.Long !== Long) {
-  _m0.util.Long = Long;
-  _m0.configure();
-}
-
 const config = window.CongridConfig || {};
 const enabled = Boolean(config.enabled);
 
-const MsgCreateSlot = {
-  encode(message, writer = _m0.Writer.create()) {
-    if (message.publisher !== "") {
-      writer.uint32(10).string(message.publisher);
-    }
-    if (message.domain !== "") {
-      writer.uint32(18).string(message.domain);
-    }
-    if (message.label !== "") {
-      writer.uint32(26).string(message.label);
-    }
-    if (message.summary !== "") {
-      writer.uint32(34).string(message.summary);
-    }
-    if (message.category !== "") {
-      writer.uint32(42).string(message.category);
-    }
-    if (message.placement !== "") {
-      writer.uint32(50).string(message.placement);
-    }
-    if (message.size !== "") {
-      writer.uint32(58).string(message.size);
-    }
-    if (message.rateDenom !== "") {
-      writer.uint32(66).string(message.rateDenom);
-    }
-    if (message.rateAmount !== "") {
-      writer.uint32(74).string(message.rateAmount);
-    }
-    if (!message.unitSeconds.isZero()) {
-      writer.uint32(80).int64(message.unitSeconds);
-    }
-    if (!message.minDurationSeconds.isZero()) {
-      writer.uint32(88).int64(message.minDurationSeconds);
-    }
-    if (!message.maxDurationSeconds.isZero()) {
-      writer.uint32(96).int64(message.maxDurationSeconds);
-    }
-    for (const v of message.tags) {
-      writer.uint32(106).string(v);
-    }
-    return writer;
-  },
-  fromPartial(object) {
-    const message = {
-      publisher: "",
-      domain: "",
-      label: "",
-      summary: "",
-      category: "",
-      placement: "",
-      size: "",
-      rateDenom: "",
-      rateAmount: "",
-      unitSeconds: Long.ZERO,
-      minDurationSeconds: Long.ZERO,
-      maxDurationSeconds: Long.ZERO,
-      tags: [],
-    };
-    message.publisher = object.publisher ?? "";
-    message.domain = object.domain ?? "";
-    message.label = object.label ?? "";
-    message.summary = object.summary ?? "";
-    message.category = object.category ?? "";
-    message.placement = object.placement ?? "";
-    message.size = object.size ?? "";
-    message.rateDenom = object.rateDenom ?? "";
-    message.rateAmount = object.rateAmount ?? "";
-    message.unitSeconds = object.unitSeconds !== undefined && object.unitSeconds !== null ? Long.fromValue(object.unitSeconds) : Long.ZERO;
-    message.minDurationSeconds =
-      object.minDurationSeconds !== undefined && object.minDurationSeconds !== null ? Long.fromValue(object.minDurationSeconds) : Long.ZERO;
-    message.maxDurationSeconds =
-      object.maxDurationSeconds !== undefined && object.maxDurationSeconds !== null ? Long.fromValue(object.maxDurationSeconds) : Long.ZERO;
-    message.tags = object.tags?.map((e) => e) || [];
-    return message;
-  },
-};
-
-const MsgUpdateSlotStatus = {
-  encode(message, writer = _m0.Writer.create()) {
-    if (message.publisher !== "") {
-      writer.uint32(10).string(message.publisher);
-    }
-    if (message.slotId !== "") {
-      writer.uint32(18).string(message.slotId);
-    }
-    if (message.status !== 0) {
-      writer.uint32(24).int32(message.status);
-    }
-    return writer;
-  },
-  fromPartial(object) {
-    const message = { publisher: "", slotId: "", status: 0 };
-    message.publisher = object.publisher ?? "";
-    message.slotId = object.slotId ?? "";
-    message.status = object.status ?? 0;
-    return message;
-  },
-};
-
-const MsgLeaseSlot = {
-  encode(message, writer = _m0.Writer.create()) {
-    if (message.lessee !== "") {
-      writer.uint32(10).string(message.lessee);
-    }
-    if (message.slotId !== "") {
-      writer.uint32(18).string(message.slotId);
-    }
-    if (message.targetUrl !== "") {
-      writer.uint32(26).string(message.targetUrl);
-    }
-    if (!message.startsAtUnix.isZero()) {
-      writer.uint32(32).int64(message.startsAtUnix);
-    }
-    if (!message.durationSeconds.isZero()) {
-      writer.uint32(40).int64(message.durationSeconds);
-    }
-    return writer;
-  },
-  fromPartial(object) {
-    const message = {
-      lessee: "",
-      slotId: "",
-      targetUrl: "",
-      startsAtUnix: Long.ZERO,
-      durationSeconds: Long.ZERO,
-    };
-    message.lessee = object.lessee ?? "";
-    message.slotId = object.slotId ?? "";
-    message.targetUrl = object.targetUrl ?? "";
-    message.startsAtUnix = object.startsAtUnix !== undefined && object.startsAtUnix !== null ? Long.fromValue(object.startsAtUnix) : Long.ZERO;
-    message.durationSeconds =
-      object.durationSeconds !== undefined && object.durationSeconds !== null ? Long.fromValue(object.durationSeconds) : Long.ZERO;
-    return message;
-  },
-};
-
-const MsgRegisterPublisher = {
-  encode(message, writer = _m0.Writer.create()) {
-    if (message.owner !== "") {
-      writer.uint32(10).string(message.owner);
-    }
-    if (message.domain !== "") {
-      writer.uint32(18).string(message.domain);
-    }
-    if (message.metadataUri !== "") {
-      writer.uint32(26).string(message.metadataUri);
-    }
-    if (message.verifier !== "") {
-      writer.uint32(34).string(message.verifier);
-    }
-    if (message.referrer !== "") {
-      writer.uint32(42).string(message.referrer);
-    }
-    return writer;
-  },
-  fromPartial(object) {
-    const message = {
-      owner: "",
-      domain: "",
-      metadataUri: "",
-      verifier: "",
-      referrer: "",
-    };
-    message.owner = object.owner ?? "";
-    message.domain = object.domain ?? "";
-    message.metadataUri = object.metadataUri ?? "";
-    message.verifier = object.verifier ?? "";
-    message.referrer = object.referrer ?? "";
-    return message;
-  },
-};
-
-const SlotStatus = {
+const slotStatus = {
   LISTED: 1,
   PAUSED: 2,
   UNLISTED: 3,
 };
 
-const registry = new Registry(defaultRegistryTypes);
-registry.register("/contentgrid.registry.v1.MsgCreateSlot", MsgCreateSlot);
-registry.register("/contentgrid.registry.v1.MsgUpdateSlotStatus", MsgUpdateSlotStatus);
-registry.register("/contentgrid.registry.v1.MsgLeaseSlot", MsgLeaseSlot);
-registry.register("/contentgrid.registry.v1.MsgRegisterPublisher", MsgRegisterPublisher);
+const dependencyURLs = {
+  stargate: "https://cdn.jsdelivr.net/npm/@cosmjs/stargate@0.32.3/+esm",
+  protoSigning: "https://cdn.jsdelivr.net/npm/@cosmjs/proto-signing@0.32.3/+esm",
+  long: "https://cdn.jsdelivr.net/npm/long@5.2.3/+esm",
+  protobufjs: "https://cdn.jsdelivr.net/npm/protobufjs@7.2.5/minimal.js/+esm",
+};
+
+let walletDepsPromise = null;
 
 const state = {
   signer: null,
   address: "",
   client: null,
 };
+
+function makeMsgCreateSlot(_m0, Long) {
+  return {
+    encode(message, writer = _m0.Writer.create()) {
+      if (message.publisher !== "") {
+        writer.uint32(10).string(message.publisher);
+      }
+      if (message.domain !== "") {
+        writer.uint32(18).string(message.domain);
+      }
+      if (message.label !== "") {
+        writer.uint32(26).string(message.label);
+      }
+      if (message.summary !== "") {
+        writer.uint32(34).string(message.summary);
+      }
+      if (message.category !== "") {
+        writer.uint32(42).string(message.category);
+      }
+      if (message.placement !== "") {
+        writer.uint32(50).string(message.placement);
+      }
+      if (message.size !== "") {
+        writer.uint32(58).string(message.size);
+      }
+      if (message.rateDenom !== "") {
+        writer.uint32(66).string(message.rateDenom);
+      }
+      if (message.rateAmount !== "") {
+        writer.uint32(74).string(message.rateAmount);
+      }
+      if (!message.unitSeconds.isZero()) {
+        writer.uint32(80).int64(message.unitSeconds);
+      }
+      if (!message.minDurationSeconds.isZero()) {
+        writer.uint32(88).int64(message.minDurationSeconds);
+      }
+      if (!message.maxDurationSeconds.isZero()) {
+        writer.uint32(96).int64(message.maxDurationSeconds);
+      }
+      for (const v of message.tags) {
+        writer.uint32(106).string(v);
+      }
+      return writer;
+    },
+    fromPartial(object) {
+      const message = {
+        publisher: "",
+        domain: "",
+        label: "",
+        summary: "",
+        category: "",
+        placement: "",
+        size: "",
+        rateDenom: "",
+        rateAmount: "",
+        unitSeconds: Long.ZERO,
+        minDurationSeconds: Long.ZERO,
+        maxDurationSeconds: Long.ZERO,
+        tags: [],
+      };
+      message.publisher = object.publisher ?? "";
+      message.domain = object.domain ?? "";
+      message.label = object.label ?? "";
+      message.summary = object.summary ?? "";
+      message.category = object.category ?? "";
+      message.placement = object.placement ?? "";
+      message.size = object.size ?? "";
+      message.rateDenom = object.rateDenom ?? "";
+      message.rateAmount = object.rateAmount ?? "";
+      message.unitSeconds = object.unitSeconds !== undefined && object.unitSeconds !== null ? Long.fromValue(object.unitSeconds) : Long.ZERO;
+      message.minDurationSeconds =
+        object.minDurationSeconds !== undefined && object.minDurationSeconds !== null ? Long.fromValue(object.minDurationSeconds) : Long.ZERO;
+      message.maxDurationSeconds =
+        object.maxDurationSeconds !== undefined && object.maxDurationSeconds !== null ? Long.fromValue(object.maxDurationSeconds) : Long.ZERO;
+      message.tags = object.tags?.map((e) => e) || [];
+      return message;
+    },
+  };
+}
+
+function makeMsgUpdateSlotStatus(_m0) {
+  return {
+    encode(message, writer = _m0.Writer.create()) {
+      if (message.publisher !== "") {
+        writer.uint32(10).string(message.publisher);
+      }
+      if (message.slotId !== "") {
+        writer.uint32(18).string(message.slotId);
+      }
+      if (message.status !== 0) {
+        writer.uint32(24).int32(message.status);
+      }
+      return writer;
+    },
+    fromPartial(object) {
+      const message = { publisher: "", slotId: "", status: 0 };
+      message.publisher = object.publisher ?? "";
+      message.slotId = object.slotId ?? "";
+      message.status = object.status ?? 0;
+      return message;
+    },
+  };
+}
+
+function makeMsgLeaseSlot(_m0, Long) {
+  return {
+    encode(message, writer = _m0.Writer.create()) {
+      if (message.lessee !== "") {
+        writer.uint32(10).string(message.lessee);
+      }
+      if (message.slotId !== "") {
+        writer.uint32(18).string(message.slotId);
+      }
+      if (message.targetUrl !== "") {
+        writer.uint32(26).string(message.targetUrl);
+      }
+      if (!message.startsAtUnix.isZero()) {
+        writer.uint32(32).int64(message.startsAtUnix);
+      }
+      if (!message.durationSeconds.isZero()) {
+        writer.uint32(40).int64(message.durationSeconds);
+      }
+      return writer;
+    },
+    fromPartial(object) {
+      const message = {
+        lessee: "",
+        slotId: "",
+        targetUrl: "",
+        startsAtUnix: Long.ZERO,
+        durationSeconds: Long.ZERO,
+      };
+      message.lessee = object.lessee ?? "";
+      message.slotId = object.slotId ?? "";
+      message.targetUrl = object.targetUrl ?? "";
+      message.startsAtUnix = object.startsAtUnix !== undefined && object.startsAtUnix !== null ? Long.fromValue(object.startsAtUnix) : Long.ZERO;
+      message.durationSeconds =
+        object.durationSeconds !== undefined && object.durationSeconds !== null ? Long.fromValue(object.durationSeconds) : Long.ZERO;
+      return message;
+    },
+  };
+}
+
+function makeMsgRegisterPublisher(_m0) {
+  return {
+    encode(message, writer = _m0.Writer.create()) {
+      if (message.owner !== "") {
+        writer.uint32(10).string(message.owner);
+      }
+      if (message.domain !== "") {
+        writer.uint32(18).string(message.domain);
+      }
+      if (message.metadataUri !== "") {
+        writer.uint32(26).string(message.metadataUri);
+      }
+      if (message.verifier !== "") {
+        writer.uint32(34).string(message.verifier);
+      }
+      if (message.referrer !== "") {
+        writer.uint32(42).string(message.referrer);
+      }
+      return writer;
+    },
+    fromPartial(object) {
+      const message = {
+        owner: "",
+        domain: "",
+        metadataUri: "",
+        verifier: "",
+        referrer: "",
+      };
+      message.owner = object.owner ?? "";
+      message.domain = object.domain ?? "";
+      message.metadataUri = object.metadataUri ?? "";
+      message.verifier = object.verifier ?? "";
+      message.referrer = object.referrer ?? "";
+      return message;
+    },
+  };
+}
+
+function dependencyLoadMessage(err) {
+  const message = err?.message || String(err);
+  const lowered = message.toLowerCase();
+  if (
+    lowered.includes("failed to fetch dynamically imported module") ||
+    lowered.includes("error loading dynamically imported module") ||
+    lowered.includes("importing a module script failed")
+  ) {
+    return "Wallet transaction support failed to load. Check your network, disable blocking extensions for this site, and retry.";
+  }
+  return message;
+}
+
+async function loadWalletDeps() {
+  if (walletDepsPromise) {
+    return walletDepsPromise;
+  }
+
+  walletDepsPromise = (async () => {
+    const [stargate, protoSigning, longMod, protobufMod] = await Promise.all([
+      import(dependencyURLs.stargate),
+      import(dependencyURLs.protoSigning),
+      import(dependencyURLs.long),
+      import(dependencyURLs.protobufjs),
+    ]);
+    const _m0 = protobufMod.default || protobufMod;
+
+    const Long = longMod.default;
+    if (!Long) {
+      throw new Error("Failed to load Long dependency.");
+    }
+
+    if (_m0.util.Long !== Long) {
+      _m0.util.Long = Long;
+      _m0.configure();
+    }
+
+    const registry = new protoSigning.Registry(stargate.defaultRegistryTypes);
+    registry.register("/contentgrid.registry.v1.MsgCreateSlot", makeMsgCreateSlot(_m0, Long));
+    registry.register("/contentgrid.registry.v1.MsgUpdateSlotStatus", makeMsgUpdateSlotStatus(_m0));
+    registry.register("/contentgrid.registry.v1.MsgLeaseSlot", makeMsgLeaseSlot(_m0, Long));
+    registry.register("/contentgrid.registry.v1.MsgRegisterPublisher", makeMsgRegisterPublisher(_m0));
+
+    return {
+      SigningStargateClient: stargate.SigningStargateClient,
+      GasPrice: stargate.GasPrice,
+      calculateFee: stargate.calculateFee,
+      Long,
+      registry,
+    };
+  })().catch((err) => {
+    walletDepsPromise = null;
+    throw new Error(dependencyLoadMessage(err));
+  });
+
+  return walletDepsPromise;
+}
 
 function showFlash(message, isError = false) {
   const flash = document.querySelector("[data-wallet-flash]");
@@ -339,8 +398,15 @@ async function getClient() {
   if (state.client) {
     return state.client;
   }
+
+  const rpc = toHttpRPC(config.rpc || "");
+  if (!rpc) {
+    throw new Error("Missing RPC endpoint.");
+  }
+
+  const { SigningStargateClient, GasPrice, registry } = await loadWalletDeps();
   const gasPrice = GasPrice.fromString(config.gas_price || "0.001ucongrid");
-  state.client = await SigningStargateClient.connectWithSigner(config.rpc, state.signer, {
+  state.client = await SigningStargateClient.connectWithSigner(rpc, state.signer, {
     registry,
     gasPrice,
   });
@@ -375,6 +441,7 @@ function parseStartDate(value) {
 
 async function submitTx(msgs, gasLimit) {
   const client = await getClient();
+  const { GasPrice, calculateFee } = await loadWalletDeps();
   const gasPrice = GasPrice.fromString(config.gas_price || "0.001ucongrid");
   const fee = calculateFee(gasLimit, gasPrice);
   const result = await client.signAndBroadcast(state.address, msgs, fee, "");
@@ -403,6 +470,7 @@ function bindCreateSlotForms() {
       event.preventDefault();
       try {
         await ensureWalletConnected();
+        const { Long } = await loadWalletDeps();
         const data = new FormData(form);
         const domain = String(data.get("publisher") || "").trim();
         const label = String(data.get("label") || "").trim();
@@ -467,13 +535,13 @@ function bindSlotStatusForms() {
         let status = 0;
         switch (action) {
           case "activate":
-            status = SlotStatus.LISTED;
+            status = slotStatus.LISTED;
             break;
           case "pause":
-            status = SlotStatus.PAUSED;
+            status = slotStatus.PAUSED;
             break;
           case "unlist":
-            status = SlotStatus.UNLISTED;
+            status = slotStatus.UNLISTED;
             break;
           default:
             throw new Error("Unknown slot action.");
@@ -502,6 +570,7 @@ function bindLeaseForms() {
       event.preventDefault();
       try {
         await ensureWalletConnected();
+        const { Long } = await loadWalletDeps();
         const data = new FormData(form);
         const slotId = String(data.get("slot_id") || "").trim();
         const targetUrl = String(data.get("target_url") || "").trim();
@@ -583,6 +652,7 @@ function initWalletUI() {
   bindSlotStatusForms();
   bindLeaseForms();
   bindPublisherRegisterForms();
+  window.CongridWalletUIReady = true;
 }
 
 initWalletUI();
