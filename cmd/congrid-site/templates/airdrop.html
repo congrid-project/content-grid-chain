@@ -9,10 +9,6 @@
       Each <strong>primary domain</strong> can claim once.
     </p>
 
-    {{if .Flash}}
-      <div class="callout">{{.Flash}}</div>
-    {{end}}
-
     <div class="callout">
       <strong>Note:</strong> publisher registration can be submitted with zero fee when the transaction only contains the registration message.
       Airdrop is optional and does not block registration.
@@ -47,9 +43,14 @@
           <li>The <code>wallet</code> parameter must match the address you enter below.</li>
         </ul>
       </div>
-      <div class="card">
+      <div class="card" id="claim-form">
         <h2>Claim</h2>
-        <form method="POST" action="/airdrop">
+        {{if .Flash}}
+          <div class="callout" style="margin-bottom: 15px; border-color: rgba(96, 165, 250, 0.6); background: rgba(96, 165, 250, 0.15)">
+            <strong>{{.Flash}}</strong>
+          </div>
+        {{end}}
+        <form method="POST" action="/airdrop#claim-form">
           <label class="label">Website domain</label>
           <input class="input" name="domain" placeholder="example.com" required />
 
