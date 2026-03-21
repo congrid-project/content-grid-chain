@@ -23,10 +23,8 @@ type Config struct {
 
 	ListenAddr string `json:"listen_addr"`
 
-	EmbedderBaseURL     string `json:"embedder_base_url"`
-	NormalizeEmbeddings bool   `json:"normalize_embeddings"`
-
-	// Optional: Chroma vector DB endpoint used for persistent storage + similarity search.
+	// Chroma vector DB endpoint used for persistent storage + similarity search.
+	// Required for embedding generation and storage.
 	// Example: "http://127.0.0.1:8000".
 	ChromaBaseURL string `json:"chroma_base_url"`
 	// Chroma collection name (default: "publishers").
@@ -61,7 +59,6 @@ func (c *Config) normalize() {
 	}
 	c.ChainGRPCAddr = strings.TrimSpace(c.ChainGRPCAddr)
 	c.ListenAddr = strings.TrimSpace(c.ListenAddr)
-	c.EmbedderBaseURL = strings.TrimSpace(c.EmbedderBaseURL)
 	c.ChromaBaseURL = strings.TrimSpace(c.ChromaBaseURL)
 	c.ChromaCollection = strings.TrimSpace(c.ChromaCollection)
 }
@@ -69,9 +66,6 @@ func (c *Config) normalize() {
 func (c *Config) applyDefaults() {
 	if c.ListenAddr == "" {
 		c.ListenAddr = "127.0.0.1:9100"
-	}
-	if c.EmbedderBaseURL == "" {
-		c.EmbedderBaseURL = "http://127.0.0.1:9000"
 	}
 	if c.FetchTimeoutSeconds <= 0 {
 		c.FetchTimeoutSeconds = 10
@@ -103,12 +97,11 @@ func (c Config) Validate() error {
 	if c.ListenAddr == "" {
 		return fmt.Errorf("listen_addr required")
 	}
-	if c.EmbedderBaseURL == "" {
-		return fmt.Errorf("embedder_base_url required")
+	if c.ChromaBaseURL == "" {
+		return fmt.Errorf("chroma_base_url required")
 	}
-	// chroma_base_url is optional
-	if c.ChromaBaseURL != "" && c.ChromaCollection == "" {
-		return fmt.Errorf("chroma_collection required when chroma_base_url is set")
+	if c.ChromaCollection == "" {
+		return fmt.Errorf("chroma_collection required")
 	}
 	if c.FetchTimeoutSeconds <= 0 {
 		return fmt.Errorf("fetch_timeout_seconds must be positive")

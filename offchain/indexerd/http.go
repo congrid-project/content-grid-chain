@@ -13,17 +13,7 @@ type Server struct {
 	Cfg     Config
 	Store   *Store
 	Indexer *Indexer
-	Embed   *EmbedQuery
 	Chroma  *ChromaClient
-}
-
-type EmbedQuery struct {
-	Embedder *EmbedderClient
-	Store    *Store
-}
-
-type EmbedderClient interface {
-	Embed(ctx interface{ Done() <-chan struct{} }, content []byte) ([]float64, error)
 }
 
 func (s *Server) routes() http.Handler {
@@ -123,11 +113,17 @@ func (s *Server) handleQuery(w http.ResponseWriter, r *http.Request) {
 		limit = 10
 	}
 
-	// embed query using the same sentence-transformer service
-	vec, err := s.Indexer.Embed.Embed(r.Context(), []byte(req.Text))
+	if s.Chroma == nil {
+		w.WriteHeader(http.StatusBadGateway)
+		writeJSON(w, map[string]any{"error": "chroma not configured"})
+		return
+	}
+
+	// embed query using chroma
+	vec, err := s.Chroma.Embed(r.Context(), req.Text)
 	if err != nil {
 		w.WriteHeader(http.StatusBadGateway)
-		writeJSON(w, map[string]any{"error": err.Error()})
+		writeJSON(w, map[string]any{"error": "chroma embed failed: " + err.Error()})
 		return
 	}
 

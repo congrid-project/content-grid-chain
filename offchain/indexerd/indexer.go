@@ -20,7 +20,6 @@ type Indexer struct {
 	Cfg     Config
 	Store   *Store
 	Fetcher *executor.HTTPFetcher
-	Embed   *executor.SentenceTransformerClient
 	Chain   *ChainClient
 	Chroma  *ChromaClient
 }
@@ -110,26 +109,25 @@ func (i *Indexer) IndexOnce(ctx context.Context, domain string) PublisherDoc {
 	if len(embedInput) == 0 {
 		embedInput = embedRaw
 	}
-	vec, err := i.Embed.Embed(ctx, embedInput)
-	if err != nil {
+
+	if i.Chroma == nil || i.Cfg.ChromaBaseURL == "" {
 		doc.Status = "error"
-		doc.Error = err.Error()
+		doc.Error = "chroma not configured: required for embeddings"
 		return doc
 	}
-	doc.EmbeddingDim = len(vec)
-	doc.EmbeddingNormalized = i.Cfg.NormalizeEmbeddings
 
-	// Persist embedding to Chroma (if configured) for scalable similarity search.
-	if i.Chroma != nil && i.Cfg.ChromaBaseURL != "" {
-		meta := map[string]string{"source_url": doc.SourceURL}
-		_ = i.Chroma.Upsert(ctx, doc.Domain, vec, meta)
-		// Avoid keeping large embeddings in memory by default when Chroma is enabled.
-		doc.Embedding = nil
-		doc.EmbeddingExternal = true
-	} else {
-		doc.Embedding = vec
-		doc.EmbeddingExternal = false
+	meta := map[string]string{"source_url": doc.SourceURL}
+	vec, err := i.Chroma.Upsert(ctx, doc.Domain, string(embedInput), meta)
+	if err != nil {
+		doc.Status = "error"
+		doc.Error = "chroma upsert failed: " + err.Error()
+		return doc
 	}
+
+	doc.EmbeddingDim = len(vec)
+	doc.EmbeddingNormalized = true
+	doc.Embedding = nil
+	doc.EmbeddingExternal = true
 
 	sigHex, algo := signatureHex(vec, i.Cfg.SignatureBits)
 	doc.Signature = sigHex

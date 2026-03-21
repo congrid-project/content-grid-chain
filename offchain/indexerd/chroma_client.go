@@ -20,8 +20,21 @@ type ChromaClient struct {
 type chromaUpsertReq struct {
 	Collection string            `json:"collection"`
 	ID         string            `json:"id"`
-	Embedding  []float64         `json:"embedding"`
+	Text       string            `json:"text"`
 	Metadata   map[string]string `json:"metadata,omitempty"`
+}
+
+type chromaUpsertResp struct {
+	Status    string    `json:"status"`
+	Embedding []float64 `json:"embedding"`
+}
+
+type chromaEmbedReq struct {
+	Text string `json:"text"`
+}
+
+type chromaEmbedResp struct {
+	Embedding []float64 `json:"embedding"`
 }
 
 type chromaDeleteReq struct {
@@ -54,19 +67,38 @@ func NewChromaClient(baseURL, collection string) *ChromaClient {
 	}
 }
 
-func (c *ChromaClient) Upsert(ctx context.Context, id string, embedding []float64, metadata map[string]string) error {
+func (c *ChromaClient) Upsert(ctx context.Context, id string, text string, metadata map[string]string) ([]float64, error) {
 	if c == nil || c.BaseURL == "" {
-		return fmt.Errorf("chroma not configured")
+		return nil, fmt.Errorf("chroma not configured")
 	}
 	id = strings.TrimSpace(strings.ToLower(id))
 	if id == "" {
-		return fmt.Errorf("id required")
+		return nil, fmt.Errorf("id required")
 	}
-	if len(embedding) == 0 {
-		return fmt.Errorf("embedding required")
+	if text == "" {
+		return nil, fmt.Errorf("text required")
 	}
-	req := chromaUpsertReq{Collection: c.Collection, ID: id, Embedding: embedding, Metadata: metadata}
-	return c.post(ctx, "/v1/upsert", req, nil)
+	req := chromaUpsertReq{Collection: c.Collection, ID: id, Text: text, Metadata: metadata}
+	var resp chromaUpsertResp
+	if err := c.post(ctx, "/v1/upsert", req, &resp); err != nil {
+		return nil, err
+	}
+	return resp.Embedding, nil
+}
+
+func (c *ChromaClient) Embed(ctx context.Context, text string) ([]float64, error) {
+	if c == nil || c.BaseURL == "" {
+		return nil, fmt.Errorf("chroma not configured")
+	}
+	if text == "" {
+		return nil, fmt.Errorf("text required")
+	}
+	req := chromaEmbedReq{Text: text}
+	var resp chromaEmbedResp
+	if err := c.post(ctx, "/v1/embed", req, &resp); err != nil {
+		return nil, err
+	}
+	return resp.Embedding, nil
 }
 
 func (c *ChromaClient) Delete(ctx context.Context, id string) error {

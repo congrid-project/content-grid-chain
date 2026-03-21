@@ -5,6 +5,7 @@ import chromadb
 from chromadb.config import Settings
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from chromadb.utils import embedding_functions
 
 
 CHROMA_PATH = os.environ.get("CHROMA_PATH", "./offchain/chromad/data")
@@ -24,12 +25,21 @@ def get_collection(name: str):
     # Chroma uses cosine by default for HNSW in many configs; we treat it as cosine.
     return client.get_or_create_collection(name=name, metadata={"hnsw:space": "cosine"})
 
+# We define a global default embedding function for generic text-to-vector queries
+default_ef = embedding_functions.DefaultEmbeddingFunction()
+
 
 class UpsertReq(BaseModel):
     collection: str
     id: str
-    embedding: List[float]
+    text: str
     metadata: Optional[Dict[str, str]] = None
+
+class EmbedReq(BaseModel):
+    text: str
+
+class EmbedResp(BaseModel):
+    embedding: List[float]
 
 
 class DeleteReq(BaseModel):
@@ -65,16 +75,25 @@ def upsert(req: UpsertReq):
     cid = req.id.strip().lower()
     if not cid:
         raise HTTPException(status_code=400, detail="id required")
-    if not req.embedding:
-        raise HTTPException(status_code=400, detail="embedding required")
+    if not req.text.strip():
+        raise HTTPException(status_code=400, detail="text required")
 
     col = get_collection(req.collection)
     col.upsert(
         ids=[cid],
-        embeddings=[req.embedding],
+        documents=[req.text],
         metadatas=[req.metadata or {}],
     )
-    return {"status": "ok"}
+    got = col.get(ids=[cid], include=["embeddings"])
+    emb = got["embeddings"][0] if got and got.get("embeddings") else []
+    return {"status": "ok", "embedding": emb}
+
+@app.post("/v1/embed", response_model=EmbedResp)
+def embed(req: EmbedReq):
+    if not req.text.strip():
+        raise HTTPException(status_code=400, detail="text required")
+    emb = default_ef([req.text])[0]
+    return EmbedResp(embedding=emb)
 
 
 @app.post("/v1/delete")

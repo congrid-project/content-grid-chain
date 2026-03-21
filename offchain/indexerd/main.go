@@ -28,14 +28,6 @@ func main() {
 	}
 
 	fetcher := executor.NewHTTPFetcher(cfg.FetchTimeout())
-	embedder, err := executor.NewSentenceTransformerClient(executor.SentenceTransformerConfig{
-		BaseURL:   cfg.EmbedderBaseURL,
-		Normalize: cfg.NormalizeEmbeddings,
-		Timeout:   15 * time.Second,
-	})
-	if err != nil {
-		log.Fatalf("failed to init embedder: %v", err)
-	}
 
 	var chain *ChainClient
 	if cfg.ChainGRPCAddr != "" {
@@ -50,12 +42,9 @@ func main() {
 	}
 
 	store := NewStore()
-	var chroma *ChromaClient
-	if cfg.ChromaBaseURL != "" {
-		chroma = NewChromaClient(cfg.ChromaBaseURL, cfg.ChromaCollection)
-		log.Printf("chroma enabled: base_url=%s collection=%s", cfg.ChromaBaseURL, cfg.ChromaCollection)
-	}
-	indexer := &Indexer{Cfg: cfg, Store: store, Fetcher: fetcher, Embed: embedder, Chain: chain, Chroma: chroma}
+	chroma := NewChromaClient(cfg.ChromaBaseURL, cfg.ChromaCollection)
+	log.Printf("chroma enabled: base_url=%s collection=%s", cfg.ChromaBaseURL, cfg.ChromaCollection)
+	indexer := &Indexer{Cfg: cfg, Store: store, Fetcher: fetcher, Chain: chain, Chroma: chroma}
 
 	ctx := context.Background()
 	if once {
