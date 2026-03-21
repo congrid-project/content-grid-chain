@@ -68,10 +68,17 @@ func NewRootCmd() *cobra.Command {
 	// The depinject-provided basic manager only includes modules declared in AppConfig.
 	// Our chain wires several custom modules manually; they still need to be present here
 	// so `init`/`devnet` genesis includes their state (params, etc.).
-	moduleBasicManager[nodes.ModuleName] = nodes.AppModuleBasic{}
-	moduleBasicManager[registry.ModuleName] = registry.AppModuleBasic{}
-	moduleBasicManager[verifiers.ModuleName] = verifiers.AppModuleBasic{}
-	moduleBasicManager[tokenomics.ModuleName] = tokenomics.AppModuleBasic{}
+	customBasics := []module.AppModuleBasic{
+		nodes.AppModuleBasic{},
+		registry.AppModuleBasic{},
+		verifiers.AppModuleBasic{},
+		tokenomics.AppModuleBasic{},
+	}
+	for _, b := range customBasics {
+		moduleBasicManager[b.Name()] = b
+		b.RegisterInterfaces(clientCtx.InterfaceRegistry)
+		b.RegisterLegacyAminoCodec(clientCtx.LegacyAmino)
+	}
 
 	autoCliOpts.ClientCtx = clientCtx
 	rootCmd := &cobra.Command{
