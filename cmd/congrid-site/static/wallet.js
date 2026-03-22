@@ -222,12 +222,10 @@ async function loadWalletDeps() {
   }
 
   walletDepsPromise = (async () => {
-    const [stargate, protoSigning, longMod, protobufMod] = await Promise.all([
-      import(dependencyURLs.stargate),
-      import(dependencyURLs.protoSigning),
-      import(dependencyURLs.long),
-      import(dependencyURLs.protobufjs),
-    ]);
+    const stargate = await import(dependencyURLs.stargate);
+    const protoSigning = await import(dependencyURLs.protoSigning);
+    const longMod = await import(dependencyURLs.long);
+    const protobufMod = await import(dependencyURLs.protobufjs);
     const _m0 = protobufMod.default || protobufMod;
 
     const Long = longMod.default;
