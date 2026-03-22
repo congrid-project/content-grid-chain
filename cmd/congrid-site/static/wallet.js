@@ -8,10 +8,10 @@ const slotStatus = {
 };
 
 const dependencyURLs = {
-  stargate: "https://cdn.skypack.dev/@cosmjs/stargate@0.32.4",
-  protoSigning: "https://cdn.skypack.dev/@cosmjs/proto-signing@0.32.4",
-  long: "https://cdn.skypack.dev/long@5.2.3",
-  protobufjs: "https://cdn.skypack.dev/protobufjs@7.3.0/minimal.js",
+  stargate: "https://esm.sh/@cosmjs/stargate@0.32.4?bundle",
+  protoSigning: "https://esm.sh/@cosmjs/proto-signing@0.32.4?bundle",
+  long: "https://esm.sh/long@5.2.3?bundle",
+  protobufjs: "https://esm.sh/protobufjs@7.3.0/minimal.js?bundle",
 };
 
 let walletDepsPromise = null;
