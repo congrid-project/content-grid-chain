@@ -14,10 +14,10 @@ func TestResolveWalletEndpointsRewritesLocalNodeToBaseURLHost(t *testing.T) {
 	if err != nil {
 		t.Fatalf("resolveWalletEndpoints returned error: %v", err)
 	}
-	if rpc != "https://congrid.net:26657" {
+	if rpc != "https://congrid.net/rpc" {
 		t.Fatalf("unexpected rpc: %s", rpc)
 	}
-	if rest != "https://congrid.net:1317" {
+	if rest != "https://congrid.net/rest" {
 		t.Fatalf("unexpected rest: %s", rest)
 	}
 }
@@ -74,10 +74,10 @@ func TestResolveWalletEndpointsRewritesLocalhostName(t *testing.T) {
 	if err != nil {
 		t.Fatalf("resolveWalletEndpoints returned error: %v", err)
 	}
-	if rpc != "https://congrid.net:26657" {
+	if rpc != "https://congrid.net/rpc" {
 		t.Fatalf("unexpected rpc: %s", rpc)
 	}
-	if rest != "https://congrid.net:1317" {
+	if rest != "https://congrid.net/rest" {
 		t.Fatalf("unexpected rest: %s", rest)
 	}
 }
@@ -94,10 +94,44 @@ func TestResolveWalletEndpointsKeepsHTTPForHTTPBaseURL(t *testing.T) {
 	if err != nil {
 		t.Fatalf("resolveWalletEndpoints returned error: %v", err)
 	}
-	if rpc != "http://localhost:26657" {
+	if rpc != "http://localhost:8080/rpc" {
 		t.Fatalf("unexpected rpc: %s", rpc)
 	}
-	if rest != "http://localhost:1317" {
+	if rest != "http://localhost:8080/rest" {
+		t.Fatalf("unexpected rest: %s", rest)
+	}
+}
+
+func TestResolveWalletEndpointsRequiresExplicitEndpointWithoutNodeRPC(t *testing.T) {
+	t.Parallel()
+
+	_, _, err := resolveWalletEndpoints(
+		"https://congrid.net",
+		"",
+		"",
+		"",
+	)
+	if err == nil {
+		t.Fatal("expected error for missing node rpc and wallet endpoints")
+	}
+}
+
+func TestResolveWalletEndpointsAllowsExplicitEndpointsWithoutNodeRPC(t *testing.T) {
+	t.Parallel()
+
+	rpc, rest, err := resolveWalletEndpoints(
+		"https://congrid.net",
+		"",
+		"https://rpc.congrid.net:26657",
+		"",
+	)
+	if err != nil {
+		t.Fatalf("resolveWalletEndpoints returned error: %v", err)
+	}
+	if rpc != "https://rpc.congrid.net:26657" {
+		t.Fatalf("unexpected rpc: %s", rpc)
+	}
+	if rest != "https://rpc.congrid.net:1317" {
 		t.Fatalf("unexpected rest: %s", rest)
 	}
 }

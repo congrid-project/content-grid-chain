@@ -46,8 +46,8 @@ func main() {
 		airdropDB      = flag.String("airdrop-db", "./congrid-airdrop.db", "path to airdrop claim database")
 		chainID        = flag.String("chain-id", "", "chain id")
 		nodeRPC        = flag.String("node", "", "rpc endpoint (e.g. tcp://127.0.0.1:26657)")
-		walletRPC      = flag.String("wallet-rpc", "", "public rpc endpoint used by browser wallets (defaults to base-url scheme + host on port 26657)")
-		walletREST     = flag.String("wallet-rest", "", "public rest endpoint used by browser wallets (defaults to base-url scheme + host on port 1317)")
+		walletRPC      = flag.String("wallet-rpc", "", "public rpc endpoint used by browser wallets (defaults to base-url /rpc reverse proxy)")
+		walletREST     = flag.String("wallet-rest", "", "public rest endpoint used by browser wallets (defaults to base-url /rest reverse proxy)")
 		denom          = flag.String("denom", "ucongrid", "fee token denom")
 		amount         = flag.String("airdrop-amount", "25000", "amount (in denom base units) to send per domain")
 		faucetKeyName  = flag.String("faucet-key", "faucet", "local keyring key name used by content-grid-d")
@@ -91,6 +91,24 @@ func main() {
 	if err != nil {
 		log.Fatalf("wallet endpoint resolve: %v", err)
 	}
+	publicWalletRPCDefault := deriveWalletProxyEndpoint(*baseURL, walletRPCProxyPath)
+	publicWalletRESTDefault := deriveWalletProxyEndpoint(*baseURL, walletRESTProxyPath)
+
+	var walletRPCProxy http.Handler
+	if publicWalletRPC == publicWalletRPCDefault {
+		walletRPCProxy, err = newWalletRPCProxy(*nodeRPC)
+		if err != nil {
+			log.Fatalf("wallet rpc proxy init: %v", err)
+		}
+	}
+
+	var walletRESTProxy http.Handler
+	if publicWalletREST == publicWalletRESTDefault {
+		walletRESTProxy, err = newWalletRESTProxy(*nodeRPC)
+		if err != nil {
+			log.Fatalf("wallet rest proxy init: %v", err)
+		}
+	}
 
 	walletCfg := WalletConfig{
 		Enabled:                true,
@@ -133,6 +151,14 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.Handle("GET /static/", http.StripPrefix("/static/", s.static))
+	if walletRPCProxy != nil {
+		mux.Handle(walletRPCProxyPath, walletRPCProxy)
+		mux.Handle(walletRPCProxyPath+"/", walletRPCProxy)
+	}
+	if walletRESTProxy != nil {
+		mux.Handle(walletRESTProxyPath, walletRESTProxy)
+		mux.Handle(walletRESTProxyPath+"/", walletRESTProxy)
+	}
 	mux.HandleFunc("GET /", s.handleHome(*baseURL))
 	mux.HandleFunc("GET /publishers", s.handlePublishers(*baseURL))
 	mux.HandleFunc("POST /publishers/register", s.handlePublisherRegister(*baseURL))
@@ -370,24 +396,33 @@ func resolveWalletEndpoints(baseURL, nodeRPC, walletRPC, walletREST string) (str
 }
 
 func deriveWalletRPCEndpoint(baseURL, nodeRPC string) string {
-	return rewriteEndpointHost(baseURL, nodeRPC, walletEndpointDefaultScheme(baseURL))
+	if strings.TrimSpace(nodeRPC) == "" {
+		return ""
+	}
+	return deriveWalletProxyEndpoint(baseURL, walletRPCProxyPath)
 }
 
 func deriveWalletRESTEndpoint(baseURL, walletRPC string) string {
-	defaultScheme := walletEndpointDefaultScheme(baseURL)
-	rest := rewriteEndpointHost(baseURL, walletRPC, defaultScheme)
-	if rest == "" {
-		host := baseURLHostname(baseURL)
-		if host == "" {
-			return ""
-		}
-		return defaultScheme + "://" + net.JoinHostPort(host, "1317")
+	if isWalletProxyEndpoint(baseURL, walletRPC, walletRPCProxyPath) {
+		return deriveWalletProxyEndpoint(baseURL, walletRESTProxyPath)
 	}
 
-	parsed, err := url.Parse(rest)
+	defaultScheme := walletEndpointDefaultScheme(baseURL)
+	parsed, err := url.Parse(normalizeWalletEndpoint(walletRPC, defaultScheme))
 	if err != nil || parsed.Host == "" {
 		return ""
 	}
+
+	if parsed.Path != "" && parsed.Path != "/" {
+		siblingPath, ok := deriveWalletRESTSiblingPath(parsed.Path)
+		if !ok {
+			return ""
+		}
+		parsed.Path = siblingPath
+		parsed.RawPath = ""
+		return parsed.String()
+	}
+
 	setURLPort(parsed, "1317")
 	return parsed.String()
 }
@@ -427,62 +462,6 @@ func normalizeWalletEndpoint(raw, defaultScheme string) string {
 		parsed.Scheme = defaultScheme
 	}
 	return parsed.String()
-}
-
-func rewriteEndpointHost(baseURL, raw, defaultScheme string) string {
-	normalized := normalizeWalletEndpoint(raw, defaultScheme)
-	if normalized == "" {
-		return ""
-	}
-
-	parsed, err := url.Parse(normalized)
-	if err != nil || parsed.Host == "" {
-		return ""
-	}
-
-	publicHost := baseURLHostname(baseURL)
-	if publicHost != "" && isLocalHost(parsed.Hostname()) {
-		setURLHost(parsed, publicHost)
-		if defaultScheme != "" {
-			parsed.Scheme = defaultScheme
-		}
-	}
-	return parsed.String()
-}
-
-func baseURLHostname(raw string) string {
-	parsed, err := url.Parse(strings.TrimSpace(raw))
-	if err != nil {
-		return ""
-	}
-	return parsed.Hostname()
-}
-
-func isLocalHost(host string) bool {
-	host = strings.TrimSpace(strings.Trim(host, "[]"))
-	if host == "" {
-		return false
-	}
-	if strings.EqualFold(host, "localhost") {
-		return true
-	}
-	ip := net.ParseIP(host)
-	if ip == nil {
-		return false
-	}
-	return ip.IsLoopback() || ip.IsUnspecified()
-}
-
-func setURLHost(u *url.URL, host string) {
-	if u == nil {
-		return
-	}
-	port := u.Port()
-	if port == "" {
-		u.Host = host
-		return
-	}
-	u.Host = net.JoinHostPort(host, port)
 }
 
 func setURLPort(u *url.URL, port string) {

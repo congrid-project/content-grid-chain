@@ -7,12 +7,7 @@ const slotStatus = {
   UNLISTED: 3,
 };
 
-const dependencyURLs = {
-  stargate: "https://esm.sh/@cosmjs/stargate@0.32.4?bundle",
-  protoSigning: "https://esm.sh/@cosmjs/proto-signing@0.32.4?bundle",
-  long: "https://esm.sh/long@5.2.3?bundle",
-  protobufjs: "https://esm.sh/protobufjs@7.3.0/minimal.js?bundle",
-};
+const walletBundleURL = "/static/wallet-deps.bundle.mjs";
 
 let walletDepsPromise = null;
 
@@ -222,13 +217,9 @@ async function loadWalletDeps() {
   }
 
   walletDepsPromise = (async () => {
-    const stargate = await import(dependencyURLs.stargate);
-    const protoSigning = await import(dependencyURLs.protoSigning);
-    const longMod = await import(dependencyURLs.long);
-    const protobufMod = await import(dependencyURLs.protobufjs);
-    const _m0 = protobufMod.default || protobufMod;
-
-    const Long = longMod.default;
+    const walletDeps = await import(walletBundleURL);
+    const _m0 = walletDeps._m0;
+    const Long = walletDeps.Long;
     if (!Long) {
       throw new Error("Failed to load Long dependency.");
     }
@@ -238,16 +229,16 @@ async function loadWalletDeps() {
       _m0.configure();
     }
 
-    const registry = new protoSigning.Registry(stargate.defaultRegistryTypes);
+    const registry = new walletDeps.Registry(walletDeps.defaultRegistryTypes);
     registry.register("/contentgrid.registry.v1.MsgCreateSlot", makeMsgCreateSlot(_m0, Long));
     registry.register("/contentgrid.registry.v1.MsgUpdateSlotStatus", makeMsgUpdateSlotStatus(_m0));
     registry.register("/contentgrid.registry.v1.MsgLeaseSlot", makeMsgLeaseSlot(_m0, Long));
     registry.register("/contentgrid.registry.v1.MsgRegisterPublisher", makeMsgRegisterPublisher(_m0));
 
     return {
-      SigningStargateClient: stargate.SigningStargateClient,
-      GasPrice: stargate.GasPrice,
-      calculateFee: stargate.calculateFee,
+      SigningStargateClient: walletDeps.SigningStargateClient,
+      GasPrice: walletDeps.GasPrice,
+      calculateFee: walletDeps.calculateFee,
       Long,
       registry,
     };
