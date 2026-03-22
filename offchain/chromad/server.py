@@ -1,4 +1,13 @@
 import os
+import sys
+
+# Override default sqlite3 with pysqlite3-binary for older Linux systems (e.g. CentOS/Oracle Linux)
+try:
+    __import__('pysqlite3')
+    sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+except ImportError:
+    pass
+
 from typing import Any, Dict, List, Optional
 
 import chromadb
