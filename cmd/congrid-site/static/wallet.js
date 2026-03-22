@@ -8,10 +8,10 @@ const slotStatus = {
 };
 
 const dependencyURLs = {
-  stargate: "https://cdn.jsdelivr.net/npm/@cosmjs/stargate@0.32.3/+esm",
-  protoSigning: "https://cdn.jsdelivr.net/npm/@cosmjs/proto-signing@0.32.3/+esm",
+  stargate: "https://cdn.jsdelivr.net/npm/@cosmjs/stargate@0.32.4/+esm",
+  protoSigning: "https://cdn.jsdelivr.net/npm/@cosmjs/proto-signing@0.32.4/+esm",
   long: "https://cdn.jsdelivr.net/npm/long@5.2.3/+esm",
-  protobufjs: "https://cdn.jsdelivr.net/npm/protobufjs@7.2.5/minimal.js/+esm",
+  protobufjs: "https://cdn.jsdelivr.net/npm/protobufjs@7.3.0/minimal.js/+esm",
 };
 
 let walletDepsPromise = null;
@@ -639,6 +639,7 @@ function bindPublisherRegisterForms() {
         const txHash = await submitTx([msg], 220000);
         showFlash(`Publisher registered. Tx: ${txHash}`, false, form);
       } catch (err) {
+        console.error("Wallet Action Error:", err);
         showFlash(err.message || String(err), true, form);
       }
     });
