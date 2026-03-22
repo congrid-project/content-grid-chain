@@ -159,7 +159,7 @@ func main() {
 		mux.Handle(walletRESTProxyPath, walletRESTProxy)
 		mux.Handle(walletRESTProxyPath+"/", walletRESTProxy)
 	}
-	mux.HandleFunc("GET /", s.handleHome(*baseURL))
+	mux.HandleFunc("GET /{$}", s.handleHome(*baseURL))
 	mux.HandleFunc("GET /publishers", s.handlePublishers(*baseURL))
 	mux.HandleFunc("POST /publishers/register", s.handlePublisherRegister(*baseURL))
 	mux.HandleFunc("GET /verifiers", s.handleVerifiers(*baseURL))
