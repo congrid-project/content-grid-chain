@@ -261,8 +261,11 @@ async function loadWalletDeps() {
   return walletDepsPromise;
 }
 
-function showFlash(message, isError = false) {
-  const flash = document.querySelector("[data-wallet-flash]");
+function showFlash(message, isError = false, context = document) {
+  let flash = context.querySelector("[data-wallet-flash]");
+  if (!flash) {
+    flash = document.querySelector("[data-wallet-flash]");
+  }
   if (!flash) {
     if (message) {
       alert(message);
@@ -634,9 +637,9 @@ function bindPublisherRegisterForms() {
           },
         };
         const txHash = await submitTx([msg], 220000);
-        showFlash(`Publisher registered. Tx: ${txHash}`);
+        showFlash(`Publisher registered. Tx: ${txHash}`, false, form);
       } catch (err) {
-        showFlash(err.message || String(err), true);
+        showFlash(err.message || String(err), true, form);
       }
     });
   });

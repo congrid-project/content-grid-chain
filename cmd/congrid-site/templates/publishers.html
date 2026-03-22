@@ -108,6 +108,7 @@
         <input type="hidden" name="domain" value="" data-wallet-register-domain />
         <input type="hidden" name="wallet" value="" data-wallet-register-wallet />
         <button class="btn" type="submit">Register with connected wallet</button>
+        <div class="callout" data-wallet-flash hidden style="margin-top: 10px;"></div>
       </form>
       <p class="muted" style="margin-top:10px;">
         CLI mode: use generated command and replace <code>&lt;local-key-name&gt;</code> with your local key alias.
@@ -161,6 +162,15 @@
     return true;
   }
 
+  // Real-time synchronization so the user doesn't strictly need to hit 'Generate' 
+  // before 'Register with connected wallet' in Step 3.
+  domainInput?.addEventListener("input", () => {
+    if (walletRegisterDomainInput) walletRegisterDomainInput.value = normalizeDomain(domainInput.value);
+  });
+  walletInput?.addEventListener("input", () => {
+    if (walletRegisterWalletInput) walletRegisterWalletInput.value = String(walletInput.value || "").trim();
+  });
+
   useConnectedBtn?.addEventListener("click", () => {
     const addr = String(connectedWalletEl?.textContent || "").trim();
     if (!addr || addr === "Not connected") {
@@ -168,6 +178,8 @@
       return;
     }
     walletInput.value = addr;
+    // trigger input event so it updates the hidden Step 3 input
+    walletInput.dispatchEvent(new Event("input"));
   });
 
   form.addEventListener("submit", (event) => {
