@@ -112,6 +112,8 @@ Production deployment is not fully automated in this repo yet. Use the official 
 3. Update `config/config.toml` (seeds/persistent peers, p2p/rpc ports) and `config/app.toml` (api/grpc, minimum gas prices).
 4. Start the node as a service and validate RPC/gRPC health.
 
+Containerized operator stack: see `docs/docker-validator.md` for a Docker/Compose example that joins an existing network and runs `verifierd` plus its support services.
+
 **Operator reserve and issuance pool allocation**
 
 The issuance split is controlled by registry params in genesis (`app_state.registry.params`). The defaults align with the whitepaper:

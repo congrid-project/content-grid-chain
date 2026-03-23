@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -122,6 +123,9 @@ func (r *Relayer) submitDrandBeacon(ctx context.Context, b *drandHTTPResponse) e
 	var lastErr error
 	for attempt := 1; attempt <= 3; attempt++ {
 		cmd := exec.CommandContext(ctx, r.Cfg.Submit.Binary, args...)
+		if err := r.attachKeyringPassphrase(cmd); err != nil {
+			return err
+		}
 		out, err := cmd.CombinedOutput()
 		if err != nil {
 			lastErr = fmt.Errorf("submit tx failed: %w: %s", err, string(out))
@@ -154,6 +158,22 @@ func (r *Relayer) submitDrandBeacon(ctx context.Context, b *drandHTTPResponse) e
 		return lastErr
 	}
 	return fmt.Errorf("submit drand beacon failed after retries")
+}
+
+func (r *Relayer) attachKeyringPassphrase(cmd *exec.Cmd) error {
+	if strings.ToLower(strings.TrimSpace(r.Cfg.Submit.KeyringBackend)) != "file" {
+		return nil
+	}
+	envName := strings.TrimSpace(r.Cfg.Submit.KeyringPassEnv)
+	if envName == "" {
+		return nil
+	}
+	passphrase, ok := os.LookupEnv(envName)
+	if !ok {
+		return fmt.Errorf("keyring passphrase env %q is not set", envName)
+	}
+	cmd.Stdin = strings.NewReader(passphrase + "\n")
+	return nil
 }
 
 func isRetriableTxError(out []byte) bool {

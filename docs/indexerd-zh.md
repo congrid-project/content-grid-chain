@@ -37,12 +37,12 @@
 - 从第一个 Congrid 徽章图像 URL 中提取的钱包地址：
   `https://congrid.net/...?...publisher=<domain>&wallet=<addr>`（尽力而为）
 
-＃＃ 要求
+## 要求
 
-启动嵌入服务：
+先启动基于 Chroma 的辅助服务。`indexerd` 通过它完成嵌入、持久化和相似站点查询：
 
 ```bash
-python offchain/services/sentence_transformer_server.py --host 0.0.0.0 --port 9000
+python offchain/chromad/server.py
 ```
 
 ## 配置
@@ -55,8 +55,9 @@ cp offchain/indexerd/config.example.json offchain/indexerd/config.json
 
 - `chain_grpc_addr`：链 gRPC 端点（例如 `127.0.0.1:9090`）
 - `publishers`：可选的静态域列表（可能包括端口）
-- `listen_addr`：例如__代码_1__
-- `embedder_base_url`：嵌入服务器基本 URL
+- `listen_addr`：例如 `127.0.0.1:9100`
+- `chroma_base_url`：Chroma 辅助服务 URL
+- `chroma_collection`：发布者文档使用的集合名
 - `index_interval_minutes`：重新索引的频率
 - `signature_bits`：返回签名的大小（8的倍数；默认128）
 

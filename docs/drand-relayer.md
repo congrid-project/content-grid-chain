@@ -20,6 +20,8 @@ Key fields:
 - `poll_interval_seconds`: how often to poll drand
 - `submit.*`: chain tx settings for `content-grid-d`
 
+For unattended container deployments with `submit.keyring_backend=file`, set `submit.keyring_passphrase_env` to the environment variable name that contains the keyring passphrase.
+
 ## Run
 
 One-time sync:

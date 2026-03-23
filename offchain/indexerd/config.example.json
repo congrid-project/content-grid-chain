@@ -5,9 +5,6 @@
 
   "listen_addr": "127.0.0.1:9100",
 
-  "embedder_base_url": "http://127.0.0.1:9000",
-  "normalize_embeddings": true,
-
   "chroma_base_url": "http://127.0.0.1:8000",
   "chroma_collection": "publishers",
 

@@ -15,6 +15,7 @@
     "from": "verifier-key",
     "keyring_backend": "os",
     "keyring_dir": "",
+    "keyring_passphrase_env": "",
     "home": "",
     "gas": "200000",
     "gas_adjustment": 1.0,

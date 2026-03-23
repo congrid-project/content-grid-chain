@@ -1,0 +1,164 @@
+version: "3.9"
+
+x-operator-image: &operator_image
+  build:
+    context: .
+    dockerfile: Dockerfile
+  image: congrid-operator:local
+
+services:
+  node:
+    <<: *operator_image
+    restart: unless-stopped
+    entrypoint: ["/usr/local/bin/congrid-node-entrypoint"]
+    environment:
+      CONGRID_HOME: /var/lib/congrid
+      CONGRID_MONIKER: ${CONGRID_MONIKER:-validator-01}
+      CONGRID_CHAIN_ID: ${CONGRID_CHAIN_ID:-content-grid-1}
+      CONGRID_GENESIS_URL: ${CONGRID_GENESIS_URL:-}
+      CONGRID_GENESIS_FILE: ${CONGRID_GENESIS_FILE:-}
+      CONGRID_KEYRING_BACKEND: ${CONGRID_KEYRING_BACKEND:-file}
+      CONGRID_KEYRING_DIR: ${CONGRID_KEYRING_DIR:-}
+      CONGRID_P2P_SEEDS: ${CONGRID_P2P_SEEDS:-}
+      CONGRID_PERSISTENT_PEERS: ${CONGRID_PERSISTENT_PEERS:-}
+      CONGRID_P2P_EXTERNAL_ADDRESS: ${CONGRID_P2P_EXTERNAL_ADDRESS:-}
+      CONGRID_MINIMUM_GAS_PRICES: ${CONGRID_MINIMUM_GAS_PRICES:-0.001ucongrid}
+      CONGRID_RPC_LADDR: tcp://0.0.0.0:26657
+      CONGRID_P2P_LADDR: tcp://0.0.0.0:26656
+      CONGRID_API_ADDRESS: tcp://0.0.0.0:1317
+      CONGRID_GRPC_ADDRESS: 0.0.0.0:9090
+    volumes:
+      - congrid-home:/var/lib/congrid
+      - ./docker/network:/network:ro
+      - ./docker/secrets:/run/congrid-secrets:ro
+    ports:
+      - "${CONGRID_P2P_PORT:-26656}:26656"
+      - "${CONGRID_RPC_PORT:-26657}:26657"
+      - "${CONGRID_API_PORT:-1317}:1317"
+      - "${CONGRID_GRPC_PORT:-9090}:9090"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -lc 'echo >/dev/tcp/127.0.0.1/26657 && echo >/dev/tcp/127.0.0.1/9090'"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  chromad:
+    <<: *operator_image
+    restart: unless-stopped
+    entrypoint: ["/usr/local/bin/congrid-chromad-entrypoint"]
+    environment:
+      CHROMA_PATH: /var/lib/congrid/chroma
+      CHROMA_HOST: 0.0.0.0
+      CHROMA_PORT: 8000
+    volumes:
+      - chroma-data:/var/lib/congrid/chroma
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8000/healthz >/dev/null"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
+
+  indexerd:
+    <<: *operator_image
+    restart: unless-stopped
+    entrypoint: ["/usr/local/bin/congrid-indexerd-entrypoint"]
+    depends_on:
+      node:
+        condition: service_healthy
+      chromad:
+        condition: service_healthy
+    environment:
+      CONGRID_NODE_GRPC_ADDR: node:9090
+      CONGRID_INDEXER_PUBLISHERS: ${CONGRID_INDEXER_PUBLISHERS:-}
+      CONGRID_INDEXER_LISTEN_ADDR: 0.0.0.0:9100
+      CONGRID_CHROMA_BASE_URL: ${CONGRID_CHROMA_BASE_URL:-http://chromad:8000}
+      CONGRID_CHROMA_COLLECTION: ${CONGRID_CHROMA_COLLECTION:-publishers}
+      CONGRID_SIGNATURE_BITS: ${CONGRID_SIGNATURE_BITS:-128}
+      CONGRID_FETCH_TIMEOUT_SECONDS: ${CONGRID_FETCH_TIMEOUT_SECONDS:-10}
+      CONGRID_INDEX_INTERVAL_MINUTES: ${CONGRID_INDEX_INTERVAL_MINUTES:-60}
+      CONGRID_INDEXER_MAX_BODY_BYTES: ${CONGRID_INDEXER_MAX_BODY_BYTES:-1048576}
+      CONGRID_CHAIN_TIMEOUT_SECONDS: ${CONGRID_CHAIN_TIMEOUT_SECONDS:-10}
+      CONGRID_CHAIN_PAGE_LIMIT: ${CONGRID_CHAIN_PAGE_LIMIT:-200}
+    ports:
+      - "${CONGRID_INDEXER_PORT:-9100}:9100"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9100/healthz >/dev/null"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  verifierd:
+    <<: *operator_image
+    restart: unless-stopped
+    entrypoint: ["/usr/local/bin/congrid-verifierd-entrypoint"]
+    depends_on:
+      node:
+        condition: service_healthy
+      indexerd:
+        condition: service_healthy
+    environment:
+      CONGRID_HOME: /var/lib/congrid
+      CONGRID_CHAIN_ID: ${CONGRID_CHAIN_ID:-content-grid-1}
+      CONGRID_NODE_RPC_URL: tcp://node:26657
+      CONGRID_NODE_GRPC_ADDR: node:9090
+      CONGRID_INDEXERD_BASE_URL: http://indexerd:9100
+      CONGRID_KEYRING_BACKEND: ${CONGRID_KEYRING_BACKEND:-file}
+      CONGRID_KEYRING_DIR: ${CONGRID_KEYRING_DIR:-}
+      CONGRID_VERIFIER_KEY_NAME: ${CONGRID_VERIFIER_KEY_NAME:-verifier-key}
+      CONGRID_VERIFIER_KEY_MNEMONIC_FILE: ${CONGRID_VERIFIER_KEY_MNEMONIC_FILE:-}
+      CONGRID_VERIFIER_KEYRING_PASSPHRASE_FILE: ${CONGRID_VERIFIER_KEYRING_PASSPHRASE_FILE:-}
+      CONGRID_VERIFIER_ADDRESS: ${CONGRID_VERIFIER_ADDRESS:-}
+      CONGRID_VERIFIER_VERIFY_SCHEME: ${CONGRID_VERIFIER_VERIFY_SCHEME:-https}
+      CONGRID_VERIFIER_POLL_INTERVAL_SECONDS: ${CONGRID_VERIFIER_POLL_INTERVAL_SECONDS:-15}
+      CONGRID_VERIFIER_COMMIT_WINDOW_SECONDS: ${CONGRID_VERIFIER_COMMIT_WINDOW_SECONDS:-300}
+      CONGRID_VERIFIER_ROUND_INTERVAL_SECONDS: ${CONGRID_VERIFIER_ROUND_INTERVAL_SECONDS:-3600}
+      CONGRID_VERIFIER_ASSIGNMENT_DELAY_MAX_SECONDS: ${CONGRID_VERIFIER_ASSIGNMENT_DELAY_MAX_SECONDS:-3600}
+      CONGRID_VERIFIER_DISABLE_ASSIGNMENT_CHECK: ${CONGRID_VERIFIER_DISABLE_ASSIGNMENT_CHECK:-false}
+      CONGRID_VERIFIER_GAS: ${CONGRID_VERIFIER_GAS:-200000}
+      CONGRID_VERIFIER_GAS_ADJUSTMENT: ${CONGRID_VERIFIER_GAS_ADJUSTMENT:-1}
+      CONGRID_VERIFIER_FEES: ${CONGRID_VERIFIER_FEES:-5000ucongrid}
+      CONGRID_VERIFIER_GAS_PRICES: ${CONGRID_VERIFIER_GAS_PRICES:-}
+      CONGRID_VERIFIER_BROADCAST_MODE: ${CONGRID_VERIFIER_BROADCAST_MODE:-sync}
+    volumes:
+      - congrid-home:/var/lib/congrid
+      - ./docker/secrets:/run/congrid-secrets:ro
+
+  drand-relayer:
+    <<: *operator_image
+    profiles: ["drand"]
+    restart: unless-stopped
+    entrypoint: ["/usr/local/bin/congrid-drand-relayer-entrypoint"]
+    depends_on:
+      node:
+        condition: service_healthy
+    environment:
+      CONGRID_HOME: /var/lib/congrid
+      CONGRID_CHAIN_ID: ${CONGRID_CHAIN_ID:-content-grid-1}
+      CONGRID_NODE_RPC_URL: tcp://node:26657
+      CONGRID_NODE_GRPC_ADDR: node:9090
+      CONGRID_KEYRING_BACKEND: ${CONGRID_KEYRING_BACKEND:-file}
+      CONGRID_KEYRING_DIR: ${CONGRID_KEYRING_DIR:-}
+      CONGRID_DRAND_KEY_NAME: ${CONGRID_DRAND_KEY_NAME:-drand-relayer}
+      CONGRID_DRAND_KEY_MNEMONIC_FILE: ${CONGRID_DRAND_KEY_MNEMONIC_FILE:-}
+      CONGRID_DRAND_KEYRING_PASSPHRASE_FILE: ${CONGRID_DRAND_KEYRING_PASSPHRASE_FILE:-}
+      CONGRID_DRAND_API_BASE_URL: ${CONGRID_DRAND_API_BASE_URL:-https://api.drand.sh}
+      CONGRID_DRAND_CHAIN_HASH: ${CONGRID_DRAND_CHAIN_HASH:-52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971}
+      CONGRID_DRAND_POLL_INTERVAL_SECONDS: ${CONGRID_DRAND_POLL_INTERVAL_SECONDS:-3}
+      CONGRID_DRAND_REQUEST_TIMEOUT_SECONDS: ${CONGRID_DRAND_REQUEST_TIMEOUT_SECONDS:-10}
+      CONGRID_DRAND_GAS: ${CONGRID_DRAND_GAS:-220000}
+      CONGRID_DRAND_GAS_ADJUSTMENT: ${CONGRID_DRAND_GAS_ADJUSTMENT:-1}
+      CONGRID_DRAND_FEES: ${CONGRID_DRAND_FEES:-5000ucongrid}
+      CONGRID_DRAND_GAS_PRICES: ${CONGRID_DRAND_GAS_PRICES:-}
+      CONGRID_DRAND_BROADCAST_MODE: ${CONGRID_DRAND_BROADCAST_MODE:-sync}
+    volumes:
+      - congrid-home:/var/lib/congrid
+      - ./docker/secrets:/run/congrid-secrets:ro
+
+volumes:
+  congrid-home:
+  chroma-data:

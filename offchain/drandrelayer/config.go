@@ -24,6 +24,7 @@ type SubmitConfig struct {
 	From           string  `json:"from"`
 	KeyringBackend string  `json:"keyring_backend"`
 	KeyringDir     string  `json:"keyring_dir"`
+	KeyringPassEnv string  `json:"keyring_passphrase_env"`
 	Home           string  `json:"home"`
 	Gas            string  `json:"gas"`
 	GasAdjustment  float64 `json:"gas_adjustment"`
@@ -57,6 +58,7 @@ func (c *Config) normalize() {
 	c.Submit.From = strings.TrimSpace(c.Submit.From)
 	c.Submit.KeyringBackend = strings.TrimSpace(c.Submit.KeyringBackend)
 	c.Submit.KeyringDir = strings.TrimSpace(c.Submit.KeyringDir)
+	c.Submit.KeyringPassEnv = strings.TrimSpace(c.Submit.KeyringPassEnv)
 	c.Submit.Home = strings.TrimSpace(c.Submit.Home)
 	c.Submit.Gas = strings.TrimSpace(c.Submit.Gas)
 	c.Submit.Fees = strings.TrimSpace(c.Submit.Fees)

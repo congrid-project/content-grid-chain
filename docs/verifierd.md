@@ -46,8 +46,10 @@ Fields:
 - `disable_assignment_check`: set `true` to bypass verifierd's local deterministic assignment validation (default `false`)
 - `submit`: tx submission settings for `content-grid-d`
   - `binary`
-  - `chain_id`, `node`, `from`, `keyring_backend`, `keyring_dir`, `home`
+  - `chain_id`, `node`, `from`, `keyring_backend`, `keyring_dir`, `keyring_passphrase_env`, `home`
   - `gas`, `gas_adjustment`, `fees`, `gas_prices`, `broadcast_mode`, `yes`
+
+For unattended container deployments with `keyring_backend=file`, set `submit.keyring_passphrase_env` to the name of an environment variable that holds the passphrase.
 
 ## Run
 

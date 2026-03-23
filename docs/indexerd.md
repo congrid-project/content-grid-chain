@@ -39,10 +39,10 @@ For each publisher homepage, `indexerd` stores:
 
 ## Requirements
 
-Start the embedding service:
+Start the Chroma-backed helper service first. `indexerd` uses it for embeddings, persistence, and similarity search:
 
 ```bash
-python offchain/services/sentence_transformer_server.py --host 0.0.0.0 --port 9000
+python offchain/chromad/server.py
 ```
 
 ## Config
@@ -56,7 +56,8 @@ Key fields:
 - `chain_grpc_addr`: chain gRPC endpoint (e.g. `127.0.0.1:9090`)
 - `publishers`: optional static list of domains (may include ports)
 - `listen_addr`: e.g. `127.0.0.1:9100`
-- `embedder_base_url`: embedding server base URL
+- `chroma_base_url`: Chroma helper base URL
+- `chroma_collection`: collection name used for publisher documents
 - `index_interval_minutes`: how often to re-index
 - `signature_bits`: size of the returned signature (multiple of 8; default 128)
 

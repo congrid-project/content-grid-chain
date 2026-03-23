@@ -114,6 +114,8 @@
 3. 配置 `config/config.toml`（`seeds`/`persistent_peers`、p2p/rpc 端口）与 `config/app.toml`（api/grpc、`minimum-gas-prices`）。
 4. 以服务方式启动节点并完成 RPC/gRPC 健康检查。
 
+容器化 operator 栈见 `docs/docker-validator-zh.md`，其中包含加入现有网络并同时运行 `verifierd` 与其支撑组件的 Docker/Compose 示例。
+
 **运营商保留与发行池代币分配**
 
 发行拆分由创世参数 `app_state.registry.params` 控制，默认与白皮书一致：

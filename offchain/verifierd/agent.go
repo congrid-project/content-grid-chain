@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"sort"
 	"strconv"
@@ -306,6 +307,9 @@ func (a *Agent) execTxWithRetry(ctx context.Context, args []string, maxAttempts 
 	var lastErr error
 	for attempt := 0; attempt < maxAttempts; attempt++ {
 		cmd := exec.CommandContext(ctx, a.Cfg.Submit.Binary, args...)
+		if err := a.attachKeyringPassphrase(cmd); err != nil {
+			return nil, "", err
+		}
 		out, err := cmd.CombinedOutput()
 		lastOut = out
 		raw := string(out)
@@ -331,6 +335,22 @@ func (a *Agent) execTxWithRetry(ctx context.Context, args []string, maxAttempts 
 		}
 	}
 	return lastOut, "", lastErr
+}
+
+func (a *Agent) attachKeyringPassphrase(cmd *exec.Cmd) error {
+	if strings.ToLower(strings.TrimSpace(a.Cfg.Submit.KeyringBackend)) != "file" {
+		return nil
+	}
+	envName := strings.TrimSpace(a.Cfg.Submit.KeyringPassEnv)
+	if envName == "" {
+		return nil
+	}
+	passphrase, ok := os.LookupEnv(envName)
+	if !ok {
+		return fmt.Errorf("keyring passphrase env %q is not set", envName)
+	}
+	cmd.Stdin = strings.NewReader(passphrase + "\n")
+	return nil
 }
 
 func isRetriableTxOutput(raw string) bool {
