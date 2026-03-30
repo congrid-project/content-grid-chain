@@ -9,6 +9,8 @@ This chain (Cosmos SDK–based) coordinates a publisher registry and a verifier 
 - Confirms publisher badges and records verification outcomes
 - Distributes publisher/verifier rewards via on-chain parameters
 
+Terminology: `validator` means a Cosmos consensus validator; `verifier` means the Congrid publisher-verification role.
+
 Quick links: see `whitepaper.md` for the design (note: legacy sections may not reflect current scope), `docs/tokenomics.md` for the economic blueprint, and `AGENTS.md` for contribution guidelines.
 
 ## Requirements
@@ -23,7 +25,7 @@ Quick links: see `whitepaper.md` for the design (note: legacy sections may not r
 
 ### Local single node startup
 
-1. Run `./content-grid-d devnet --home ./devnet-home --chain-id grid-dev-1`, the CLI will automatically complete `init → keys add → add-genesis-account → gentx → collect-gentxs`, and generate a single-node genesis file with the default validator key (name `validator`, keyring backend is `test`).
+1. Run `./content-grid-d devnet --home ./devnet-home --chain-id grid-dev-1`, the CLI will automatically complete `init → keys add → add-genesis-account → gentx → collect-gentxs`, and generate a single-node genesis file with the default consensus-validator key (name `validator`, keyring backend is `test`).
 2. Execute `./content-grid-d start --home ./devnet-home` to start the local node. If reinitialization is required, append `--force` to clear the old home directory.
 
 ### Local multi-node network (manual)
@@ -112,7 +114,7 @@ Production deployment is not fully automated in this repo yet. Use the official 
 3. Update `config/config.toml` (seeds/persistent peers, p2p/rpc ports) and `config/app.toml` (api/grpc, minimum gas prices).
 4. Start the node as a service and validate RPC/gRPC health.
 
-Containerized operator stack: see `docs/docker-validator.md` for a Docker/Compose example that joins an existing network and runs `verifierd` plus its support services.
+Containerized operator stack: see `docs/docker-operator.md` for a Docker/Compose example that joins an existing network and runs `verifierd` plus its support services.
 
 **Operator reserve and issuance pool allocation**
 

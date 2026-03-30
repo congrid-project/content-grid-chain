@@ -3,13 +3,15 @@
 内容网格项目的核心协议实现——去中心化的内容网络和搜索协议。
 
 ＃＃ 关于
-该链（基于 Cosmos SDK）协调 Publisher 注册与 Verifier 验证网络：
+该链（基于 Cosmos SDK）协调 publisher 注册与 verifier 核验网络：
 - Publisher 域名上链注册
-- 验证者参与验证轮次并提交结果
+- verifier 参与验证轮次并提交结果
 - 确认 Badge 与归属关系
 - 通过链上参数分配 Publisher 与 Verifier 奖励
 
-快速链接：有关设计，请参阅 `whitepaper.md`（注意：部分历史内容可能与当前范围不同）；有关经济蓝图，请参阅 `docs/tokenomics.md`；有关贡献指南，请参阅 `AGENTS.md`。
+术语说明：`validator` 专指 Cosmos 共识验证人；`verifier` 专指 ConGrid 的发布者核验角色。
+
+快速链接：有关设计，请参阅 `whitepaper.md`（注意：部分历史内容可能与当前范围不同）；有关经济蓝图，请参阅 `docs/tokenomics-zh.md`；有关贡献指南，请参阅 `AGENTS.md`。
 
 ＃＃ 要求
 - Go 1.22+（使用最新的稳定版本）
@@ -23,7 +25,7 @@
 
 ### 本地单节点启动
 
-1. 运行`./content-grid-d devnet --home ./devnet-home --chain-id grid-dev-1`，CLI将自动完成`init → keys add → add-genesis-account → gentx → collect-gentxs`，并使用默认验证器密钥（名称`validator`，密钥环后端为`test`）生成单节点创世文件。
+1. 运行`./content-grid-d devnet --home ./devnet-home --chain-id grid-dev-1`，CLI将自动完成`init → keys add → add-genesis-account → gentx → collect-gentxs`，并使用默认共识验证人密钥（名称`validator`，密钥环后端为`test`）生成单节点创世文件。
 2. 执行`./content-grid-d start --home ./devnet-home`启动本地节点。如果需要重新初始化，请附加 `--force` 以清除旧的主目录。
 
 ### 本地多节点网络（手动）
@@ -114,7 +116,7 @@
 3. 配置 `config/config.toml`（`seeds`/`persistent_peers`、p2p/rpc 端口）与 `config/app.toml`（api/grpc、`minimum-gas-prices`）。
 4. 以服务方式启动节点并完成 RPC/gRPC 健康检查。
 
-容器化 operator 栈见 `docs/docker-validator-zh.md`，其中包含加入现有网络并同时运行 `verifierd` 与其支撑组件的 Docker/Compose 示例。
+容器化 operator 栈见 `docs/docker-operator-zh.md`，其中包含加入现有网络并同时运行 `verifierd` 与其支撑组件的 Docker/Compose 示例。
 
 **运营商保留与发行池代币分配**
 
@@ -132,15 +134,15 @@
 }
 ```
 
-发行池（发布者 + 验证者）由 `tokenomics` 模块账户在运行时维护，在每轮结算时按需补足。若希望在创世时预置发行池余额，需要在 `app_state.bank.balances` 为 `tokenomics` 模块账户添加余额，并同步更新 `app_state.bank.supply`。
+发行池（发布者 + verifier）由 `tokenomics` 模块账户在运行时维护，在每轮结算时按需补足。若希望在创世时预置发行池余额，需要在 `app_state.bank.balances` 为 `tokenomics` 模块账户添加余额，并同步更新 `app_state.bank.supply`。
 
 运营商保留部分目前未在链上自动分发，请在创世时显式分配（例如分配给多签金库或锁仓账户），可通过 `app_state.bank.balances` 或 `content-grid-d genesis add-genesis-account` 完成。
 
-**其他节点 / 发布者 / 验证者部署**
+**其他节点 / 发布者 / verifier 部署**
 
 - 其他全节点：重复主网节点步骤，使用独立 `--home` 和端口，并设置 `p2p.persistent_peers` 或 `p2p.seeds`。
 - 发布者：部署站点、挂载验证徽章，并按下方“出版商注册”流程在主网 RPC/gRPC 上执行注册。
-- 验证者（发布者验证代理）：创建并充值验证者地址，执行 `content-grid-d verifier bond` 绑定，再按 `docs/verifierd.md` 部署 `verifierd`。
+- verifier（发布者核验代理）：创建并充值 verifier 地址，执行 `content-grid-d verifier bond` 绑定，再按 `docs/verifierd-zh.md` 部署 `verifierd`。
 - 共识验证人：创世期走标准 Cosmos `gentx` 流程；主网运行后可用 `content-grid-d tx staking create-validator`。
 
 ### 出版商注册
@@ -149,7 +151,7 @@
 
 1. **添加Congrid官方链接+归因图片（验证所需）**：您必须在要绑定的网站首页（`/`）添加Congrid官方网站的链接，并且该链接必须用归因图片（徽章）包裹。
 
-目前验证者判定规则参见`offchain/registry/verifier.go`：
+目前 verifier 判定规则参见`offchain/registry/verifier.go`：
 - 官方网站链接必须为**`<a href="https://congrid.net">`**（或`https://www.congrid.net/`）。 **官网地址本身不允许包含查询/片段**。
 - `<img src="...">` 必须包含在 `a` 内。
 - `img src` 必须是 `https://congrid.net/...` （或 `https://www.congrid.net/...`）并在 **路径或查询** 中携带：
@@ -167,36 +169,36 @@
    ```
 
 2. **执行注册命令**（或使用 `/publishers` 页面生成的命令）：运行`./content-grid-d publisher register <domain> --from <key-or-address> [--metadata-uri <link>] [--referrer <address>]`。
-- `--referrer`：可选，referrer地址（用于影响验证者的收益权重；publisher推荐publisher不生效）。
+- `--referrer`：可选，referrer地址（用于影响 verifier 的收益权重；publisher 推荐 publisher 不生效）。
 - 系统会自动识别并锁定域名的**一级域名**（Primary Domain，如`example.com`）。
 - 同一一级域名下只能注册一个站点，防止他人抢注子域名。支持非默认端口（例如 `example.com:8080`）。
-3. **验证完成**：命令会访问`https://<domain>/`来验证是否包含congrid官方链接；链下验证节点也会定期抓取主页进行确认。
+3. **验证完成**：命令会访问`https://<domain>/`来验证是否包含 congrid 官方链接；链下 verifier 代理也会定期抓取主页进行确认。
 - **无需押金/质押**：发布者注册本身不需要锁定或质押。
-- **手续费策略**：当交易只包含 `MsgRegisterPublisher` 时，可使用 0 手续费提交（例如 `--fees 0ucongrid`）。其他交易类型仍遵循验证人最小 gas price 策略，除非使用 `feegrant`。
+- **手续费策略**：当交易只包含 `MsgRegisterPublisher` 时，可使用 0 手续费提交（例如 `--fees 0ucongrid`）。其他交易类型仍遵循共识验证人最小 gas price 策略，除非使用 `feegrant`。
 4. **查询状态**：注册成功后，可以通过gRPC查询或CLI `content-grid-d query registry publisher <domain>`查看。
 
-### 验证者债券（普通地址+托管）
+### verifier 债券（普通地址 + 托管）
 
-验证者以普通账户地址（`congrid1...`）参与验证网络，首先将代币绑定到模块托管账户**（escrow）后才被认为符合资格。
+verifier 以普通账户地址（`congrid1...`）参与验证网络，首先将代币绑定到模块托管账户 **（escrow）** 后才被认为符合资格。
 
 - 债券：`./content-grid-d verifier bond <amount> --denom ucongrid --from <key>`
 - 解绑：`./content-grid-d verifier unbond <amount> --denom ucongrid --from <key>`
 
-有关详细信息，请参阅 `docs/verifiers.md`。
+有关详细信息，请参阅 `docs/verifiers-zh.md`。
 
 ### 经济公用事业
 
 - 使用 `go run ./cmd/tokenomics <subcommand>` 模拟供应、生成创世模板或制作空投表。
-- 有关参数详细信息，请参阅 `docs/tokenomics.md`；有关提案流程，请参阅 `docs/governance.md`。
+- 有关参数详细信息，请参阅 `docs/tokenomics-zh.md`；有关提案流程，请参阅 `docs/governance-zh.md`。
 
 笔记：
 - 不要提交构建工件（请参阅 `.gitignore`）。
 - CLI 是一个最小的框架，等待完整的服务器/运行时连接。
 
 ## 链下组件
-- `offchain/indexerd`：发布者主页索引 + 嵌入 + 相似性签名（请参阅`docs/indexerd.md`）。
-- `offchain/verifierd`：链驱动的发布者验证代理（请参阅`docs/verifierd.md`）。
-- `offchain/drandrelayer`：drand 信标中继用于随机数接入（请参阅`docs/drand-relayer.md`）。
+- `offchain/indexerd`：发布者主页索引 + 嵌入 + 相似性签名（请参阅`docs/indexerd-zh.md`）。
+- `offchain/verifierd`：链驱动的发布者核验代理（请参阅`docs/verifierd-zh.md`）。
+- `offchain/drandrelayer`：drand 信标中继用于随机数接入（请参阅`docs/drand-relayer-zh.md`）。
 
 ## 项目状态
 第一阶段骨架。 `app/` 包为 Cosmos SDK v0.53 提供模块基础知识、编码和默认创世帮助程序。

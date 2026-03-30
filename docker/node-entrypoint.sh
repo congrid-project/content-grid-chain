@@ -3,7 +3,7 @@ set -euo pipefail
 
 source /usr/local/lib/congrid/common.sh
 
-: "${CONGRID_MONIKER:=validator-01}"
+: "${CONGRID_MONIKER:=node-01}"
 : "${CONGRID_CHAIN_ID:=content-grid-1}"
 : "${CONGRID_KEYRING_BACKEND:=test}"
 : "${CONGRID_KEYRING_DIR:=}"

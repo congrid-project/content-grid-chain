@@ -37,7 +37,7 @@ go run ./cmd/congrid-site \
 - `/leases` — 租约发布板（slot/lease ID + 可复制嵌入片段）
 - `/publishers` — 发布商入职（第三方钱包连接、域名+钱包填写、自动生成徽章片段和注册命令）
 - `/publisher/dashboard` — 管理发布商位置（创建、暂停、取消列出）
-- `/verifiers` — 验证者加入
+- `/verifiers` — verifier 加入
 - `/docs` — 指向存储库文档的指针
 - `/airdrop` — 验证主页徽章并为每个主域发送一次性可选启动空投（启用时）
 - `/badge.png` — 可嵌入验证徽章（保留查询参数以供将来归因）

@@ -1,6 +1,11 @@
-# Docker Validator / Verifier Stack
+# Docker Operator Stack
 
-This repository now includes a single operator image plus a `docker compose` stack for joining an existing Congrid network and running the off-chain verifier support services.
+This repository now includes a single operator image plus a `docker compose` stack for joining an existing Congrid network and running a node together with the off-chain verifier support services.
+
+Terminology in this document:
+
+- `validator` means a Cosmos consensus validator.
+- `verifier` means the Congrid publisher-verification role and its off-chain agents.
 
 ## What It Runs
 
@@ -14,8 +19,8 @@ This repository now includes a single operator image plus a `docker compose` sta
 
 ## Files
 
-- Compose stack: `docker-compose.validator.yml`
-- Environment example: `docker/validator.env.example`
+- Compose stack: `docker-compose.operator.yml`
+- Environment example: `docker/operator.env.example`
 - Genesis drop-in directory: `docker/network/`
 - Secret file directory: `docker/secrets/`
 
@@ -24,7 +29,7 @@ This repository now includes a single operator image plus a `docker compose` sta
 1. Copy the environment template and edit it:
 
    ```bash
-   cp docker/validator.env.example .env.validator
+   cp docker/operator.env.example .env.operator
    ```
 
 2. Provide the existing network bootstrap data:
@@ -39,13 +44,13 @@ This repository now includes a single operator image plus a `docker compose` sta
 4. Start the stack:
 
    ```bash
-   docker compose --env-file .env.validator -f docker-compose.validator.yml up -d --build
+   docker compose --env-file .env.operator -f docker-compose.operator.yml up -d --build
    ```
 
 5. If this operator should also run `drand-relayer`, start with the profile enabled:
 
    ```bash
-   docker compose --env-file .env.validator -f docker-compose.validator.yml --profile drand up -d --build
+   docker compose --env-file .env.operator -f docker-compose.operator.yml --profile drand up -d --build
    ```
 
 ## Keyring Notes

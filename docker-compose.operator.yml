@@ -13,7 +13,7 @@ services:
     entrypoint: ["/usr/local/bin/congrid-node-entrypoint"]
     environment:
       CONGRID_HOME: /var/lib/congrid
-      CONGRID_MONIKER: ${CONGRID_MONIKER:-validator-01}
+      CONGRID_MONIKER: ${CONGRID_MONIKER:-node-01}
       CONGRID_CHAIN_ID: ${CONGRID_CHAIN_ID:-content-grid-1}
       CONGRID_GENESIS_URL: ${CONGRID_GENESIS_URL:-}
       CONGRID_GENESIS_FILE: ${CONGRID_GENESIS_FILE:-}

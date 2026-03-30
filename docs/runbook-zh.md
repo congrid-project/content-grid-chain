@@ -3,13 +3,15 @@
 > 适用于：`content-grid-d`、`verifierd`、`drand-relayer`、`congrid-site`。
 > 目标：出现问题时，值班学生5分钟内定位方向，15分钟内实施缓解措施。
 
+> 术语说明：`validator` 指 Cosmos 共识验证人；`verifier` 指 ConGrid 的发布者核验角色及其 `verifierd` 代理。
+
 ---
 
 ## 0.环境信息（当前推荐基线）
 
 - 代码目录：`/home/eking/workspace/congrid.net`
 - 链节点HOME：`/home/eking/.content-grid-d`（当前默认基线）
-- 验证者配置：`/home/eking/workspace/congrid.net/offchain/verifierd/config.json`
+- verifierd 配置：`/home/eking/workspace/congrid.net/offchain/verifierd/config.json`
 - drand 中继器配置：`/home/eking/workspace/congrid.net/offchain/drandrelayer/config.json`
 - 站点配置（推荐 env 文件）：`/home/eking/workspace/congrid.net/.env.site`
 - 日志目录（推荐）：`/home/eking/workspace/congrid.net/logs/`
@@ -17,7 +19,7 @@
 
 负责人（现任）：
 - 链：`eking`
-- 验证者：`eking`
+- verifier 负责人：`eking`
 - 站点：`eking`
 - 值班通知：`Telegram @eking (id:6148992071)`
 
@@ -27,7 +29,7 @@
 
 - 链节点：`content-grid-d`
 - 职责：共识、状态执行、gRPC/RPC 提供
-- 验证代理：`verifierd`
+- verifier 代理：`verifierd`
 - 职责：拉动分配、提交/揭示、站点验证
 - 随机信标中继：`drand-relayer`
 - 职责：拉取最新的drand信标并上传到链上提交
@@ -78,7 +80,7 @@ echo >/dev/tcp/127.0.0.1/9090
 - 最新区块持续增长
 - 没有连续的恐慌/共识失败
 
-## 2.2 验证者
+## 2.2 verifierd / verifier 代理
 
 ### 启动（手动模式）
 ```bash
@@ -92,9 +94,9 @@ cd /home/eking/workspace/congrid.net
 ```
 
 关键日志关键字：
-- __代码_0__
-- __代码_0__
-- __代码_0__ / __代码_1__
+- `submitted commit`
+- `revealed result (passed=true|false)`
+- `commit failed` / `reveal failed`
 
 ## 2.3 drand-relayer
 
@@ -110,8 +112,8 @@ cd /home/eking/workspace/congrid.net
 ```
 
 关键日志关键字：
-- __代码_0__
-- __代码_0__
+- `submitted beacon round=`
+- `sync error`
 
 ## 2.4 congrid-site
 
@@ -139,7 +141,7 @@ go run ./cmd/congrid-site \
 ## 3.日常检查（每班）
 
 - [ ] 链高正常增长
-- [ ] verifierd 最近15分钟commit/reveal成功率符合标准
+- [ ] verifierd 最近 15 分钟 commit/reveal 成功率符合标准
 - [ ] drand信标缠绕轮数持续增加（无长期停滞）
 - [ ] 发布者已验证 比例没有异常下降
 - [ ] 租赁违约（VIOLATED）比率未异常上升
@@ -167,7 +169,7 @@ go run ./cmd/congrid-site \
 ./content-grid-d verifier assignments <verifier-addr> --node tcp://127.0.0.1:26657 --grpc-addr 127.0.0.1:9090 --grpc-insecure -o json
 ```
 
-舒适：
+缓解措施：
 - 确认 verifierd 配置（轮询、提交窗口）
 - 如有必要，重新启动verifierd（保留日志）
 - 如果链参数不合理，按照参数调整流程
@@ -181,7 +183,7 @@ go run ./cmd/congrid-site \
 2. 帐号顺序是否冲突？
 3. 节点是否产生块抖动或时钟偏差
 
-舒适：
+缓解措施：
 - 确认tx串行提交是否有效
 - 适当增加reveal buffer等待
 - 检查系统时钟 (NTP)

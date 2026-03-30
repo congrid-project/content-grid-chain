@@ -1,45 +1,46 @@
-# indexerd（链下）——发布者主页索引+嵌入+相似性签名
+# indexerd（链下）——发布者主页索引、嵌入与相似性签名
 
-`indexerd` 定期获取发布者主页，提取规范化文本，生成嵌入，派生**紧凑的相似性签名**，并公开 HTTP API 供验证者（和其他组件）查询缓存的结果。
+`indexerd` 会定期抓取 publisher 首页，提取规范化文本，生成嵌入，派生**紧凑的相似性签名**，并提供 HTTP API，供 verifier 及其他链下组件查询缓存结果。
 
-＃＃ 为什么
+## 为什么需要它
 
-- 避免每个验证者重复获取相同的发布者主页。
-- 避免每个验证者重复运行嵌入推理。
-- 提供一个简短、传输成本低的**签名**（例如 128 位），可用于：
-  - 多样性/重复数据删除启发法
-  - “太相似”门控
+- 避免每个 verifier 都重复抓取相同的 publisher 首页。
+- 避免每个 verifier 都重复执行嵌入推理。
+- 提供一个短小、便于传输的**签名**（例如 128-bit），用于：
+  - 多样性 / 去重启发式
+  - “过于相似”门槛判断
   - 轻量级相似度分桶
 
-## 发布者发现
+## publisher 发现方式
 
-`indexerd` 可以为发布者建立索引：
+`indexerd` 可以从以下来源建立 publisher 索引：
 
-- **链注册表（推荐）：**通过gRPC（`Query/Publishers`）查询注册表模块。
-- **静态列表：** 配置中的 `publishers` （对于本地/开发有用）。
+- **链上注册表（推荐）**：通过 gRPC 查询注册表模块的 `Query/Publishers`。
+- **静态列表**：配置文件里的 `publishers` 字段（适合本地 / 开发环境）。
 
-如果两者均已配置，`indexerd` 将索引联合（已删除重复数据）。
+如果两者都配置了，`indexerd` 会取并集并去重。
 
-活动状态过滤（当前行为）：
-- 仅当 `status == VERIFIED` 和 `cooldown_until_unix <= now` 时，链发现的发布者才会被编入索引。
-- 如果之前索引的发布者不再处于活动状态，indexerd 会从内存缓存和（启用时）Chroma 中删除它。
-- 配置 `chain_grpc_addr` 时，静态列表发布者也会通过链状态进行过滤。
+当前的活跃状态过滤规则：
 
-## 什么被索引
+- 只有当 `status == VERIFIED` 且 `cooldown_until_unix <= now` 时，链上发现的 publisher 才会被索引。
+- 如果某个已索引 publisher 不再活跃，indexerd 会把它从内存缓存以及（启用时）Chroma 中剔除。
+- 当配置了 `chain_grpc_addr` 时，静态列表中的 publisher 也会经过链状态过滤。
 
-对于每个发布者主页，`indexerd` 存储：
+## 索引内容
 
-- 标准化降价（尽力而为）
-- 嵌入向量（内部用于语义查询/调试）
-- 紧凑的相似性签名（默认值：`signature_bits=128`）
-- 获取的主页字节的 `body_sha256` （用于绑定/调试）
+对每个 publisher 首页，`indexerd` 会存储：
+
+- 规范化后的 markdown（best-effort）
+- 嵌入向量（仅供内部语义查询 / 调试）
+- 紧凑的相似性签名（默认 `signature_bits=128`）
+- 抓取页面字节流的 `body_sha256`（用于绑定 / 调试）
 - 找到的 Congrid 链接数量
-- 从第一个 Congrid 徽章图像 URL 中提取的钱包地址：
-  `https://congrid.net/...?...publisher=<domain>&wallet=<addr>`（尽力而为）
+- 从第一个 Congrid 徽章图片 URL 中提取的钱包地址：
+  `https://congrid.net/...?...publisher=<domain>&wallet=<addr>`（best-effort）
 
-## 要求
+## 依赖
 
-先启动基于 Chroma 的辅助服务。`indexerd` 通过它完成嵌入、持久化和相似站点查询：
+先启动基于 Chroma 的辅助服务。`indexerd` 会通过它完成嵌入、持久化和相似站点查询：
 
 ```bash
 python offchain/chromad/server.py
@@ -51,17 +52,17 @@ python offchain/chromad/server.py
 cp offchain/indexerd/config.example.json offchain/indexerd/config.json
 ```
 
-关键领域：
+关键字段：
 
-- `chain_grpc_addr`：链 gRPC 端点（例如 `127.0.0.1:9090`）
-- `publishers`：可选的静态域列表（可能包括端口）
+- `chain_grpc_addr`：链 gRPC 端点，例如 `127.0.0.1:9090`
+- `publishers`：可选的静态域名列表（可包含端口）
 - `listen_addr`：例如 `127.0.0.1:9100`
-- `chroma_base_url`：Chroma 辅助服务 URL
-- `chroma_collection`：发布者文档使用的集合名
-- `index_interval_minutes`：重新索引的频率
-- `signature_bits`：返回签名的大小（8的倍数；默认128）
+- `chroma_base_url`：Chroma 辅助服务地址
+- `chroma_collection`：publisher 文档使用的 collection 名称
+- `index_interval_minutes`：重新索引间隔
+- `signature_bits`：返回签名的位数（必须是 8 的倍数；默认 128）
 
-＃＃ 跑步
+## 运行
 
 索引一次：
 
@@ -77,21 +78,21 @@ go run ./offchain/indexerd --config offchain/indexerd/config.json
 
 ## API
 
-- __代码_0__
-- `GET /v1/publishers` — 列出缓存的发布者文档
-- `GET /v1/publishers/{domain}` — 获取发布者的缓存文档
-- `POST /v1/index` — 触发后台重新索引
-- `POST /v1/query` — 语义搜索（使用存储的嵌入）
-- `POST /v1/similar` — 类似的发布者域（`limit` 通过 JSON 正文或查询参数；默认 `15`）
+- `GET /healthz`
+- `GET /v1/publishers`：列出缓存的 publisher 文档
+- `GET /v1/publishers/{domain}`：读取指定 publisher 的缓存文档
+- `POST /v1/index`：触发后台重新索引
+- `POST /v1/query`：语义搜索（使用已存储的嵌入）
+- `POST /v1/similar`：查询相似 publisher 域名（`limit` 可通过 JSON body 或 query 参数传入，默认 `15`）
 
-### 编辑/详细模式
+### Redaction / verbose 模式
 
-默认情况下，`GET /v1/publishers*` **编辑大字段**（`markdown`、`embedding`）。
+默认情况下，`GET /v1/publishers*` 会**隐藏大字段**（`markdown`、`embedding`）。
 
-包含它们（仅调试）：
+仅在调试时包含这些字段：
 
-- __代码_0__
-- __代码_0__
+- `GET /v1/publishers?verbose=true`
+- `GET /v1/publishers/{domain}?verbose=true`
 
 ### 示例查询
 
