@@ -53,6 +53,15 @@
    docker compose --env-file .env.operator -f docker-compose.operator.yml --profile drand up -d --build
    ```
 
+如果你只想在本地运行一个全节点，而不启动 `chromad` / `indexerd` / `verifierd` / `drand-relayer`，可以只构建并启动 `node` 服务：
+
+```bash
+docker compose --env-file .env.operator -f docker-compose.operator.yml build node
+docker compose --env-file .env.operator -f docker-compose.operator.yml up -d node
+```
+
+`node` 服务现在使用轻量 `node-runtime` 构建目标，只包含 `content-grid-d` 和节点入口脚本；其余链下服务仍使用完整的 `operator-runtime` 镜像。
+
 ## Keyring 说明
 
 - 样例默认使用 `CONGRID_KEYRING_BACKEND=file`。

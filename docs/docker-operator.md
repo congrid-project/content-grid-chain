@@ -53,6 +53,15 @@ Terminology in this document:
    docker compose --env-file .env.operator -f docker-compose.operator.yml --profile drand up -d --build
    ```
 
+If you only want a local full node and do not need `chromad`, `indexerd`, `verifierd`, or `drand-relayer`, build and start only the `node` service:
+
+```bash
+docker compose --env-file .env.operator -f docker-compose.operator.yml build node
+docker compose --env-file .env.operator -f docker-compose.operator.yml up -d node
+```
+
+The `node` service now uses a lightweight `node-runtime` build target that contains only `content-grid-d` plus the node entrypoint. The other off-chain services continue to use the full `operator-runtime` image.
+
 ## Keyring Notes
 
 - The compose example defaults to `CONGRID_KEYRING_BACKEND=file`.

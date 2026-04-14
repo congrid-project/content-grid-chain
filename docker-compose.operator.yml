@@ -1,14 +1,22 @@
 version: "3.9"
 
+x-node-image: &node_image
+  build:
+    context: .
+    dockerfile: Dockerfile
+    target: node-runtime
+  image: localhost/congrid-node:local
+
 x-operator-image: &operator_image
   build:
     context: .
     dockerfile: Dockerfile
-  image: congrid-operator:local
+    target: operator-runtime
+  image: localhost/congrid-operator:local
 
 services:
   node:
-    <<: *operator_image
+    <<: *node_image
     restart: unless-stopped
     entrypoint: ["/usr/local/bin/congrid-node-entrypoint"]
     environment:
