@@ -39,11 +39,13 @@ RUN apt-get update \
 
 COPY docker/common.sh /usr/local/lib/congrid/common.sh
 COPY docker/node-entrypoint.sh /usr/local/bin/congrid-node-entrypoint
+COPY docker/validator-cli.sh /usr/local/bin/congrid-validator-cli
 COPY --from=node-builder /out/content-grid-d /usr/local/bin/content-grid-d
 
 RUN chmod 0755 \
   /usr/local/lib/congrid/common.sh \
   /usr/local/bin/congrid-node-entrypoint \
+  /usr/local/bin/congrid-validator-cli \
   /usr/local/bin/content-grid-d
 
 VOLUME ["/var/lib/congrid"]
@@ -70,6 +72,7 @@ RUN pip install --no-cache-dir -r /opt/congrid/offchain/chromad/requirements.txt
 COPY offchain/chromad/server.py /opt/congrid/offchain/chromad/server.py
 COPY docker/common.sh /usr/local/lib/congrid/common.sh
 COPY docker/node-entrypoint.sh /usr/local/bin/congrid-node-entrypoint
+COPY docker/validator-cli.sh /usr/local/bin/congrid-validator-cli
 COPY docker/indexerd-entrypoint.sh /usr/local/bin/congrid-indexerd-entrypoint
 COPY docker/verifierd-entrypoint.sh /usr/local/bin/congrid-verifierd-entrypoint
 COPY docker/drand-relayer-entrypoint.sh /usr/local/bin/congrid-drand-relayer-entrypoint
@@ -82,6 +85,7 @@ COPY --from=operator-builder /out/drand-relayer /usr/local/bin/drand-relayer
 RUN chmod 0755 \
   /usr/local/lib/congrid/common.sh \
   /usr/local/bin/congrid-node-entrypoint \
+  /usr/local/bin/congrid-validator-cli \
   /usr/local/bin/congrid-indexerd-entrypoint \
   /usr/local/bin/congrid-verifierd-entrypoint \
   /usr/local/bin/congrid-drand-relayer-entrypoint \

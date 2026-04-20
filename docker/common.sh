@@ -219,3 +219,51 @@ install_network_genesis() {
     die "fresh node home requires CONGRID_GENESIS_FILE or CONGRID_GENESIS_URL to join an existing network"
   fi
 }
+
+render_validator_json() {
+  local out_path="$1"
+  local amount="$2"
+  local moniker="$3"
+  local identity="$4"
+  local website="$5"
+  local security="$6"
+  local details="$7"
+  local commission_rate="$8"
+  local commission_max_rate="$9"
+  local commission_max_change_rate="${10}"
+  local min_self_delegation="${11}"
+  local pubkey_json
+
+  [ -n "$amount" ] || die "CONGRID_VALIDATOR_AMOUNT is required when CONGRID_VALIDATOR_JSON_ENABLE=true"
+
+  mkdir -p "$(dirname "$out_path")"
+  pubkey_json="$("$CONTENT_GRID_BIN" comet show-validator --home "$CONGRID_HOME")"
+
+  jq -n \
+    --argjson pubkey "$pubkey_json" \
+    --arg amount "$amount" \
+    --arg moniker "$moniker" \
+    --arg identity "$identity" \
+    --arg website "$website" \
+    --arg security "$security" \
+    --arg details "$details" \
+    --arg commission_rate "$commission_rate" \
+    --arg commission_max_rate "$commission_max_rate" \
+    --arg commission_max_change_rate "$commission_max_change_rate" \
+    --arg min_self_delegation "$min_self_delegation" \
+    '{
+      pubkey: $pubkey,
+      amount: $amount,
+      moniker: $moniker,
+      identity: $identity,
+      website: $website,
+      security: $security,
+      details: $details,
+      "commission-rate": $commission_rate,
+      "commission-max-rate": $commission_max_rate,
+      "commission-max-change-rate": $commission_max_change_rate,
+      "min-self-delegation": $min_self_delegation
+    }' >"$out_path"
+
+  log "rendered validator.json to $out_path"
+}

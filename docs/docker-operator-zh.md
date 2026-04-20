@@ -75,6 +75,47 @@ docker compose --env-file .env.operator -f docker-compose.operator.yml up -d nod
 - 节点需要先同步到目标网络。
 - 需要给 operator 账户充值，并用 `content-grid-d tx staking create-validator` 创建共识验证人，或者在创世期按 `gentx` 流程加入。
 - 如果你是在迁移已有共识验证人，请在首次启动前把正确的 `priv_validator_key.json` 和 `priv_validator_state.json` 放进节点 home volume。
+- 如果你希望把 `create-validator` 用到的 `validator.json` 一并纳入 Docker 管理，可以在 `.env.operator` 里设置：
+  - `CONGRID_VALIDATOR_KEY_NAME`
+  - `CONGRID_VALIDATOR_KEYRING_DIR`（留空表示沿用 `CONGRID_HOME` / `CONGRID_KEYRING_DIR` 下的默认 keyring）
+  - `CONGRID_VALIDATOR_JSON_ENABLE=true`
+  - `CONGRID_VALIDATOR_AMOUNT`
+  - `CONGRID_VALIDATOR_MONIKER`、`CONGRID_VALIDATOR_IDENTITY`、`CONGRID_VALIDATOR_WEBSITE`、`CONGRID_VALIDATOR_SECURITY`、`CONGRID_VALIDATOR_DETAILS`
+  - `CONGRID_VALIDATOR_COMMISSION_RATE`、`CONGRID_VALIDATOR_COMMISSION_MAX_RATE`、`CONGRID_VALIDATOR_COMMISSION_MAX_CHANGE_RATE`
+  - `CONGRID_VALIDATOR_MIN_SELF_DELEGATION`
+- 启动 `node` 后，入口脚本会用本机的 `content-grid-d comet show-validator` 自动填充 `pubkey`，并将最终 JSON 写到 `CONGRID_VALIDATOR_JSON_PATH`（默认 `/var/lib/congrid/config/validator.json`）。
+- 这样生成的文件会跟随节点 volume 持久化，便于后续审计或在容器内执行 `content-grid-d tx staking create-validator /var/lib/congrid/config/validator.json ...`。
+- `node` 镜像里还自带了 `congrid-validator-cli`，会自动复用上面的 validator env，便于统一执行常见运维命令。
+
+常用示例：
+
+```bash
+podman exec congridnet_node_1 congrid-validator-cli show-config
+
+read -rsp 'Keyring passphrase: ' KEYRING_PASS
+echo
+
+ACC=$(
+  printf '%s\n' "$KEYRING_PASS" |
+  podman exec -i congridnet_node_1 \
+    congrid-validator-cli show-account-address 2>/dev/null
+)
+
+VALOPER=$(
+  printf '%s\n' "$KEYRING_PASS" |
+  podman exec -i congridnet_node_1 \
+    congrid-validator-cli show-valoper-address 2>/dev/null
+)
+
+printf 'ACC=%s\nVALOPER=%s\n' "$ACC" "$VALOPER"
+
+podman exec -it congridnet_node_1 \
+  congrid-validator-cli create-validator \
+  --gas auto \
+  --gas-adjustment 1.5 \
+  --gas-prices 0.001ucongrid \
+  -y
+```
 
 ## 健康检查
 

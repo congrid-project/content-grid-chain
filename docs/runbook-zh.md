@@ -80,6 +80,44 @@ echo >/dev/tcp/127.0.0.1/9090
 - 最新区块持续增长
 - 没有连续的恐慌/共识失败
 
+### Docker 节点上的共识验证人运维
+
+如果节点跑在仓库自带的 Docker/Podman `node` 容器里，建议把下面这些值固定到 env 文件：
+
+- `CONGRID_VALIDATOR_KEY_NAME`
+- `CONGRID_VALIDATOR_KEYRING_DIR`（留空表示沿用默认 keyring 路径）
+- `CONGRID_VALIDATOR_JSON_PATH`
+
+容器内置了 `congrid-validator-cli`，会自动复用这些 env：
+
+```bash
+podman exec congridnet_node_1 congrid-validator-cli show-config
+
+read -rsp 'Keyring passphrase: ' KEYRING_PASS
+echo
+
+ACC=$(
+  printf '%s\n' "$KEYRING_PASS" |
+  podman exec -i congridnet_node_1 \
+    congrid-validator-cli show-account-address 2>/dev/null
+)
+
+VALOPER=$(
+  printf '%s\n' "$KEYRING_PASS" |
+  podman exec -i congridnet_node_1 \
+    congrid-validator-cli show-valoper-address 2>/dev/null
+)
+
+./content-grid-d query staking validator "$VALOPER" --node tcp://127.0.0.1:26657
+
+podman exec -it congridnet_node_1 \
+  congrid-validator-cli create-validator \
+  --gas auto \
+  --gas-adjustment 1.5 \
+  --gas-prices 0.001ucongrid \
+  -y
+```
+
 ## 2.2 verifierd / verifier 代理
 
 ### 启动（手动模式）

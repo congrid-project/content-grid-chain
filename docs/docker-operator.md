@@ -75,6 +75,47 @@ If you also want the node to produce blocks as a Cosmos validator:
 - The node must be fully synced to the target network.
 - You must fund the operator account and create the validator with `content-grid-d tx staking create-validator`, or join at genesis via the normal `gentx` flow.
 - If you are migrating an existing validator, persist the node volume and place the correct `priv_validator_key.json` / `priv_validator_state.json` in the node home before first start.
+- If you want the `validator.json` manifest used by `create-validator` to live under Docker-managed config as well, set these in `.env.operator`:
+  - `CONGRID_VALIDATOR_KEY_NAME`
+  - `CONGRID_VALIDATOR_KEYRING_DIR` (leave empty to reuse the default keyring under `CONGRID_HOME` / `CONGRID_KEYRING_DIR`)
+  - `CONGRID_VALIDATOR_JSON_ENABLE=true`
+  - `CONGRID_VALIDATOR_AMOUNT`
+  - `CONGRID_VALIDATOR_MONIKER`, `CONGRID_VALIDATOR_IDENTITY`, `CONGRID_VALIDATOR_WEBSITE`, `CONGRID_VALIDATOR_SECURITY`, `CONGRID_VALIDATOR_DETAILS`
+  - `CONGRID_VALIDATOR_COMMISSION_RATE`, `CONGRID_VALIDATOR_COMMISSION_MAX_RATE`, `CONGRID_VALIDATOR_COMMISSION_MAX_CHANGE_RATE`
+  - `CONGRID_VALIDATOR_MIN_SELF_DELEGATION`
+- On node startup, the entrypoint will fill `pubkey` from the local `content-grid-d comet show-validator` output and write the final JSON to `CONGRID_VALIDATOR_JSON_PATH` (default `/var/lib/congrid/config/validator.json`).
+- The generated file persists with the node volume, which makes it easier to audit later or run `content-grid-d tx staking create-validator /var/lib/congrid/config/validator.json ...` inside the container.
+- The node image also ships with `congrid-validator-cli`, which reuses those validator env vars so common validator operations do not need repeated `--home` / `--keyring-dir` flags.
+
+Common examples:
+
+```bash
+podman exec congridnet_node_1 congrid-validator-cli show-config
+
+read -rsp 'Keyring passphrase: ' KEYRING_PASS
+echo
+
+ACC=$(
+  printf '%s\n' "$KEYRING_PASS" |
+  podman exec -i congridnet_node_1 \
+    congrid-validator-cli show-account-address 2>/dev/null
+)
+
+VALOPER=$(
+  printf '%s\n' "$KEYRING_PASS" |
+  podman exec -i congridnet_node_1 \
+    congrid-validator-cli show-valoper-address 2>/dev/null
+)
+
+printf 'ACC=%s\nVALOPER=%s\n' "$ACC" "$VALOPER"
+
+podman exec -it congridnet_node_1 \
+  congrid-validator-cli create-validator \
+  --gas auto \
+  --gas-adjustment 1.5 \
+  --gas-prices 0.001ucongrid \
+  -y
+```
 
 ## Health Checks
 
