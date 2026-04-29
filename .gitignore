@@ -52,3 +52,7 @@ Thumbs.db
 /logs/
 /test-results/
 /website/index.html
+
+# Docker runtime secrets
+/docker/secrets/*
+!/docker/secrets/.gitkeep
