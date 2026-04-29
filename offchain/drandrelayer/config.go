@@ -8,11 +8,15 @@ import (
 )
 
 type Config struct {
-	GRPCAddr          string `json:"grpc_addr"`
-	DrandAPIBaseURL   string `json:"drand_api_base_url"`
-	DrandChainHash    string `json:"drand_chain_hash"`
-	PollIntervalSec   int    `json:"poll_interval_seconds"`
-	RequestTimeoutSec int    `json:"request_timeout_seconds"`
+	GRPCAddr              string `json:"grpc_addr"`
+	DrandAPIBaseURL       string `json:"drand_api_base_url"`
+	DrandChainHash        string `json:"drand_chain_hash"`
+	PollIntervalSec       int    `json:"poll_interval_seconds"`
+	MinSubmitIntervalSec  int    `json:"min_submit_interval_seconds"`
+	RequestTimeoutSec     int    `json:"request_timeout_seconds"`
+	RetryBackoffSec       int    `json:"retry_backoff_seconds"`
+	TxInclusionTimeoutSec int    `json:"tx_inclusion_timeout_seconds"`
+	MaxSubmitRetries      int    `json:"max_submit_retries"`
 
 	Submit SubmitConfig `json:"submit"`
 }
@@ -74,10 +78,22 @@ func (c *Config) applyDefaults() {
 		c.DrandAPIBaseURL = "https://api.drand.sh"
 	}
 	if c.PollIntervalSec <= 0 {
-		c.PollIntervalSec = 3
+		c.PollIntervalSec = 60
+	}
+	if c.MinSubmitIntervalSec <= 0 {
+		c.MinSubmitIntervalSec = 300
 	}
 	if c.RequestTimeoutSec <= 0 {
 		c.RequestTimeoutSec = 10
+	}
+	if c.RetryBackoffSec <= 0 {
+		c.RetryBackoffSec = 30
+	}
+	if c.TxInclusionTimeoutSec <= 0 {
+		c.TxInclusionTimeoutSec = 120
+	}
+	if c.MaxSubmitRetries <= 0 {
+		c.MaxSubmitRetries = 1
 	}
 	if c.Submit.Binary == "" {
 		c.Submit.Binary = "content-grid-d"

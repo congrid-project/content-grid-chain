@@ -66,7 +66,14 @@ docker compose --env-file .env.operator -f docker-compose.operator.yml up -d nod
 
 - 样例默认使用 `CONGRID_KEYRING_BACKEND=file`。
 - `verifierd` 和 `drand-relayer` 已支持在容器里用 `file` keyring 无人值守签名：口令通过文件注入到环境变量，再由进程读取。
+- 建议给 validator、verifier、drand-relayer 使用不同的 keyring 目录，例如 `CONGRID_VALIDATOR_KEYRING_DIR`、`CONGRID_VERIFIER_KEYRING_DIR`、`CONGRID_DRAND_KEYRING_DIR`。这样可以避免多个账户共用同一个 `file` keyring 口令和导入流程。
 - 仅在本地临时测试时，才建议改成 `CONGRID_KEYRING_BACKEND=test` 并把 mnemonic 直接写入 env。
+
+## drand-relayer 长期运行节奏
+
+- 默认 `CONGRID_DRAND_POLL_INTERVAL_SECONDS=60`，`CONGRID_DRAND_MIN_SUBMIT_INTERVAL_SECONDS=300`，也就是每分钟检查一次，最多每 5 分钟提交一次链上 beacon。
+- 如果遇到 account sequence mismatch 或 tx cache 竞争，默认 `CONGRID_DRAND_RETRY_BACKOFF_SECONDS=30` 且 `CONGRID_DRAND_MAX_SUBMIT_RETRIES=1`，避免短时间内重复签同一账户序号。
+- 如果链出块慢，可以提高 `CONGRID_DRAND_TX_INCLUSION_TIMEOUT_SECONDS`，默认是 `120` 秒。
 
 ## 共识验证人说明
 

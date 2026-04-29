@@ -22,17 +22,26 @@ type drandHTTPResponse struct {
 }
 
 type Relayer struct {
-	Cfg        Config
-	Chain      *ChainClient
-	HTTPClient *http.Client
-	mu         sync.Mutex
+	Cfg              Config
+	Chain            *ChainClient
+	HTTPClient       *http.Client
+	mu               sync.Mutex
+	lastSubmitAt     time.Time
+	nextSubmitTryAt  time.Time
+	lastSkippedRound uint64
 }
 
 func (r *Relayer) RunOnce(ctx context.Context) error {
-	onChainRound, err := r.Chain.LatestDrandRound(ctx)
+	now := time.Now()
+	if now.Before(r.nextSubmitTryAt) {
+		return nil
+	}
+
+	onChainBeacon, err := r.Chain.LatestDrandBeacon(ctx)
 	if err != nil {
 		return fmt.Errorf("query latest on-chain drand beacon: %w", err)
 	}
+	r.rememberOnChainSubmitTime(onChainBeacon)
 
 	latest, err := r.fetchLatestDrand(ctx)
 	if err != nil {
@@ -41,15 +50,54 @@ func (r *Relayer) RunOnce(ctx context.Context) error {
 	if latest.Round == 0 {
 		return fmt.Errorf("drand latest response missing round")
 	}
-	if latest.Round <= onChainRound {
+	if latest.Round <= onChainBeacon.Round {
+		return nil
+	}
+	if r.shouldThrottleSubmit(now, latest.Round) {
 		return nil
 	}
 
 	if err := r.submitDrandBeacon(ctx, latest); err != nil {
+		if isRetriableTxErrorText(err.Error()) {
+			r.nextSubmitTryAt = now.Add(time.Duration(r.Cfg.RetryBackoffSec) * time.Second)
+		}
 		return err
 	}
+	r.lastSubmitAt = now
+	r.nextSubmitTryAt = now.Add(time.Duration(r.Cfg.MinSubmitIntervalSec) * time.Second)
+	r.lastSkippedRound = 0
 	log.Printf("drand-relayer: submitted beacon round=%d", latest.Round)
 	return nil
+}
+
+func (r *Relayer) rememberOnChainSubmitTime(beacon DrandBeaconState) {
+	if beacon.SubmittedAtUnix <= 0 {
+		return
+	}
+	submittedAt := time.Unix(beacon.SubmittedAtUnix, 0)
+	if r.lastSubmitAt.IsZero() || submittedAt.After(r.lastSubmitAt) {
+		r.lastSubmitAt = submittedAt
+	}
+}
+
+func (r *Relayer) shouldThrottleSubmit(now time.Time, round uint64) bool {
+	if r.Cfg.MinSubmitIntervalSec <= 0 || r.lastSubmitAt.IsZero() {
+		return false
+	}
+	next := r.lastSubmitAt.Add(time.Duration(r.Cfg.MinSubmitIntervalSec) * time.Second)
+	if !now.Before(next) {
+		return false
+	}
+	if r.lastSkippedRound != round {
+		log.Printf(
+			"drand-relayer: delaying beacon round=%d until %s (min_submit_interval=%ds)",
+			round,
+			next.UTC().Format(time.RFC3339),
+			r.Cfg.MinSubmitIntervalSec,
+		)
+		r.lastSkippedRound = round
+	}
+	return true
 }
 
 func (r *Relayer) fetchLatestDrand(ctx context.Context) (*drandHTTPResponse, error) {
@@ -121,7 +169,7 @@ func (r *Relayer) submitDrandBeacon(ctx context.Context, b *drandHTTPResponse) e
 	}
 
 	var lastErr error
-	for attempt := 1; attempt <= 3; attempt++ {
+	for attempt := 1; attempt <= r.Cfg.MaxSubmitRetries; attempt++ {
 		cmd := exec.CommandContext(ctx, r.Cfg.Submit.Binary, args...)
 		if err := r.attachKeyringPassphrase(cmd); err != nil {
 			return err
@@ -130,7 +178,7 @@ func (r *Relayer) submitDrandBeacon(ctx context.Context, b *drandHTTPResponse) e
 		if err != nil {
 			lastErr = fmt.Errorf("submit tx failed: %w: %s", err, string(out))
 			if isRetriableTxError(out) {
-				time.Sleep(time.Duration(attempt) * 500 * time.Millisecond)
+				r.sleepBeforeRetry(ctx, attempt)
 				continue
 			}
 			return lastErr
@@ -139,7 +187,7 @@ func (r *Relayer) submitDrandBeacon(ctx context.Context, b *drandHTTPResponse) e
 		if err != nil {
 			lastErr = err
 			if isRetriableTxError(out) {
-				time.Sleep(time.Duration(attempt) * 500 * time.Millisecond)
+				r.sleepBeforeRetry(ctx, attempt)
 				continue
 			}
 			return err
@@ -147,7 +195,7 @@ func (r *Relayer) submitDrandBeacon(ctx context.Context, b *drandHTTPResponse) e
 		if err := r.waitTxIncluded(ctx, txHash); err != nil {
 			lastErr = err
 			if isRetriableTxError([]byte(err.Error())) {
-				time.Sleep(time.Duration(attempt) * 500 * time.Millisecond)
+				r.sleepBeforeRetry(ctx, attempt)
 				continue
 			}
 			return err
@@ -158,6 +206,22 @@ func (r *Relayer) submitDrandBeacon(ctx context.Context, b *drandHTTPResponse) e
 		return lastErr
 	}
 	return fmt.Errorf("submit drand beacon failed after retries")
+}
+
+func (r *Relayer) sleepBeforeRetry(ctx context.Context, attempt int) {
+	if attempt >= r.Cfg.MaxSubmitRetries {
+		return
+	}
+	delay := time.Duration(r.Cfg.RetryBackoffSec) * time.Second
+	if delay <= 0 {
+		delay = 30 * time.Second
+	}
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+	case <-timer.C:
+	}
 }
 
 func (r *Relayer) attachKeyringPassphrase(cmd *exec.Cmd) error {
@@ -177,7 +241,11 @@ func (r *Relayer) attachKeyringPassphrase(cmd *exec.Cmd) error {
 }
 
 func isRetriableTxError(out []byte) bool {
-	lower := strings.ToLower(string(out))
+	return isRetriableTxErrorText(string(out))
+}
+
+func isRetriableTxErrorText(text string) bool {
+	lower := strings.ToLower(text)
 	if strings.Contains(lower, "account sequence mismatch") {
 		return true
 	}
@@ -239,7 +307,7 @@ func (r *Relayer) waitTxIncluded(ctx context.Context, txHash string) error {
 	args := []string{
 		"query", "wait-tx", txHash,
 		"--node", r.Cfg.Submit.Node,
-		"--timeout", "30s",
+		"--timeout", fmt.Sprintf("%ds", r.Cfg.TxInclusionTimeoutSec),
 		"-o", "json",
 	}
 	if r.Cfg.Submit.Home != "" {

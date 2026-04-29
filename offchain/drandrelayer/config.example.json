@@ -2,8 +2,12 @@
   "grpc_addr": "127.0.0.1:9090",
   "drand_api_base_url": "https://api.drand.sh",
   "drand_chain_hash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
-  "poll_interval_seconds": 3,
+  "poll_interval_seconds": 60,
+  "min_submit_interval_seconds": 300,
   "request_timeout_seconds": 10,
+  "retry_backoff_seconds": 30,
+  "tx_inclusion_timeout_seconds": 120,
+  "max_submit_retries": 1,
   "submit": {
     "binary": "content-grid-d",
     "chain_id": "content-grid-1",

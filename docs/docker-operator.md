@@ -66,7 +66,14 @@ The `node` service now uses a lightweight `node-runtime` build target that conta
 
 - The compose example defaults to `CONGRID_KEYRING_BACKEND=file`.
 - `verifierd` and `drand-relayer` support unattended `file` keyring signing by reading the passphrase from a file-backed environment variable.
+- Use separate keyring directories for the validator, verifier, and drand-relayer accounts, such as `CONGRID_VALIDATOR_KEYRING_DIR`, `CONGRID_VERIFIER_KEYRING_DIR`, and `CONGRID_DRAND_KEYRING_DIR`. This avoids sharing one `file` keyring passphrase and import flow across unrelated accounts.
 - For disposable local testing only, you can switch to `CONGRID_KEYRING_BACKEND=test` and set mnemonic values directly in the env file instead of using secret files.
+
+## drand-relayer Long-Running Cadence
+
+- Defaults are `CONGRID_DRAND_POLL_INTERVAL_SECONDS=60` and `CONGRID_DRAND_MIN_SUBMIT_INTERVAL_SECONDS=300`, so the relayer checks once per minute and submits at most once every 5 minutes.
+- For account sequence mismatch or tx cache races, defaults are `CONGRID_DRAND_RETRY_BACKOFF_SECONDS=30` and `CONGRID_DRAND_MAX_SUBMIT_RETRIES=1` to avoid repeatedly signing with a stale account sequence.
+- If block inclusion is slow, increase `CONGRID_DRAND_TX_INCLUSION_TIMEOUT_SECONDS`; the default is `120` seconds.
 
 ## Consensus Validator Notes
 

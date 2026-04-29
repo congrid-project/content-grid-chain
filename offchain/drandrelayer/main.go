@@ -44,7 +44,15 @@ func main() {
 		return
 	}
 
-	log.Printf("drand-relayer started (poll=%ds chain_hash=%s)", cfg.PollIntervalSec, cfg.DrandChainHash)
+	log.Printf(
+		"drand-relayer started (poll=%ds min_submit_interval=%ds retry_backoff=%ds tx_inclusion_timeout=%ds max_submit_retries=%d chain_hash=%s)",
+		cfg.PollIntervalSec,
+		cfg.MinSubmitIntervalSec,
+		cfg.RetryBackoffSec,
+		cfg.TxInclusionTimeoutSec,
+		cfg.MaxSubmitRetries,
+		cfg.DrandChainHash,
+	)
 	ticker := time.NewTicker(time.Duration(cfg.PollIntervalSec) * time.Second)
 	defer ticker.Stop()
 	for {

@@ -155,6 +155,7 @@ ensure_key_present() {
   local keyring_dir="$5"
   local passphrase="$6"
   local -a args=(keys add "$name" --recover --output json)
+  local source_file
 
   if key_exists "$name" "$home" "$backend" "$keyring_dir" "$passphrase"; then
     return
@@ -162,19 +163,34 @@ ensure_key_present() {
   [ -n "$mnemonic" ] || die "key $name is missing and no mnemonic was provided"
 
   append_keyring_args args "$home" "$backend" "$keyring_dir"
+  source_file="$(mktemp)"
+  printf '%s' "$mnemonic" >"$source_file"
+  args+=(--source "$source_file")
 
   case "$backend" in
     test|memory)
-      printf '%s\n' "$mnemonic" | "$CONTENT_GRID_BIN" "${args[@]}" >/dev/null
+      "$CONTENT_GRID_BIN" "${args[@]}" >/dev/null || {
+        rm -f "$source_file"
+        return 1
+      }
       ;;
     file)
       [ -n "$passphrase" ] || die "keyring backend=file requires a passphrase to import $name"
-      printf '%s\n%s\n%s\n' "$passphrase" "$passphrase" "$mnemonic" | "$CONTENT_GRID_BIN" "${args[@]}" >/dev/null
+      if printf '%s\n' "$passphrase" | "$CONTENT_GRID_BIN" "${args[@]}" >/dev/null 2>&1; then
+        rm -f "$source_file"
+        return
+      fi
+      printf '%s\n%s\n' "$passphrase" "$passphrase" | "$CONTENT_GRID_BIN" "${args[@]}" >/dev/null || {
+        rm -f "$source_file"
+        return 1
+      }
       ;;
     *)
+      rm -f "$source_file"
       die "automated key import is not supported for keyring backend=$backend"
       ;;
   esac
+  rm -f "$source_file"
 }
 
 ensure_home_initialized() {
