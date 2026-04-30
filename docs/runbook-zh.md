@@ -200,15 +200,17 @@ go run ./cmd/congrid-site \
 1. 检查是否生成赋值
 2. 检查 verifierd 是否有 `submitted commit` / `revealed result`
 3. 检查`reveal window not open` / `account sequence mismatch`是否频繁出现
+4. 如果日志显示成功但 assignment 仍无 `submission`，查询对应 tx 的 `code`；进块但 `code != 0` 仍然是失败
 
 命令：
 ```bash
 ./content-grid-d query registry publisher --domain <domain> --node tcp://127.0.0.1:26657 --grpc-addr 127.0.0.1:9090 --grpc-insecure -o json
 ./content-grid-d verifier assignments <verifier-addr> --node tcp://127.0.0.1:26657 --grpc-addr 127.0.0.1:9090 --grpc-insecure -o json
+./content-grid-d query tx <txhash> --node tcp://127.0.0.1:26657 -o json
 ```
 
 缓解措施：
-- 确认 verifierd 配置（轮询、提交窗口）
+- 确认 verifierd 配置（轮询、提交窗口、`commit_start_buffer_seconds`、`tx_inclusion_timeout_seconds`）
 - 如有必要，重新启动verifierd（保留日志）
 - 如果链参数不合理，按照参数调整流程
 
@@ -223,7 +225,8 @@ go run ./cmd/congrid-site \
 
 缓解措施：
 - 确认tx串行提交是否有效
-- 适当增加reveal buffer等待
+- 适当增加 `CONGRID_VERIFIER_COMMIT_START_BUFFER_SECONDS`、`CONGRID_VERIFIER_TX_INCLUSION_TIMEOUT_SECONDS`
+- 确认 `CONGRID_VERIFIER_STATE_DIR` 持久化，避免 nonce 丢失后无法 reveal
 - 检查系统时钟 (NTP)
 
 ---

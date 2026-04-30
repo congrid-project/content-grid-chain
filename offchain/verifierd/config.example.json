@@ -1,12 +1,16 @@
 {
   "grpc_addr": "127.0.0.1:9090",
   "verifier_address": "congrid1verifieraaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "state_dir": ".verifierd-state",
   "poll_interval_seconds": 15,
   "verify_scheme": "https",
+  "commit_start_buffer_seconds": 15,
   "commit_window_seconds": 300,
   "round_interval_seconds": 3600,
   "assignment_delay_max_seconds": 3600,
   "disable_assignment_check": false,
+  "retry_backoff_seconds": 30,
+  "tx_inclusion_timeout_seconds": 120,
   "indexerd_base_url": "http://127.0.0.1:9100",
   "submit": {
     "binary": "content-grid-d",

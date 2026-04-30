@@ -49,7 +49,8 @@ func main() {
 		return
 	}
 
-	log.Printf("verifierd started (verifier=%s, poll=%ds)", cfg.VerifierAddress, cfg.PollIntervalSec)
+	log.Printf("verifierd started (verifier=%s, poll=%ds, commit_start_buffer=%ds, tx_inclusion_timeout=%ds, retry_backoff=%ds)",
+		cfg.VerifierAddress, cfg.PollIntervalSec, cfg.CommitStartBufferSeconds, cfg.TxInclusionTimeoutSeconds, cfg.RetryBackoffSeconds)
 	ticker := time.NewTicker(time.Duration(cfg.PollIntervalSec) * time.Second)
 	defer ticker.Stop()
 	for {

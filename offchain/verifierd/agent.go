@@ -57,7 +57,12 @@ func (a *Agent) PollOnce(ctx context.Context) error {
 		if a.Cfg.CommitWindowSeconds > 0 {
 			commitDeadline := assignment.GetStartAtUnix() + a.Cfg.CommitWindowSeconds
 			if now > commitDeadline {
-				continue
+				if _, ok, err := a.pendingRevealForAssignment(assignment); err != nil {
+					log.Printf("assignment %s/%d skipped: pending reveal state invalid: %v", assignment.GetDomain(), assignment.GetRoundStartUnix(), err)
+					continue
+				} else if !ok {
+					continue
+				}
 			}
 		}
 		key := assignmentKey(assignment)
@@ -82,119 +87,177 @@ func (a *Agent) Wait() {
 func (a *Agent) runAssignment(ctx context.Context, assignment *registrypb.PublisherVerificationAssignment, key string) {
 	defer a.unmarkInFlight(key)
 
-	startAt := time.Unix(assignment.GetStartAtUnix(), 0)
-	if delay := time.Until(startAt); delay > 0 {
-		timer := time.NewTimer(delay)
-		select {
-		case <-ctx.Done():
-			timer.Stop()
-			return
-		case <-timer.C:
-		}
-	}
-	if time.Now().Unix() > assignment.GetDeadlineUnix() {
-		log.Printf("missed assignment %s (deadline passed)", key)
-		return
-	}
-
-	owner, err := a.Chain.PublisherOwner(ctx, assignment.GetDomain())
-	if err != nil {
-		log.Printf("assignment %s: failed to fetch owner: %v", key, err)
-		return
-	}
-	if owner == "" {
-		log.Printf("assignment %s: owner not found", key)
-		return
-	}
-
-	timeout := time.Until(time.Unix(assignment.GetDeadlineUnix(), 0))
-	if timeout <= 0 {
-		log.Printf("assignment %s: deadline passed before verification", key)
-		return
-	}
-	verifyCtx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-	leaseExpectations, leaseErr := a.Chain.ActiveLeaseExpectationsForDomain(verifyCtx, assignment.GetDomain())
-	if leaseErr != nil {
-		log.Printf("assignment %s: failed to fetch active leases: %v", key, leaseErr)
-		err = a.Verifier.Verify(verifyCtx, assignment.GetDomain(), owner)
-	} else {
-		err = a.Verifier.VerifyWithLeases(verifyCtx, assignment.GetDomain(), owner, leaseExpectations)
-	}
-	passed := err == nil
-	if err != nil {
-		log.Printf("assignment %s: verification failed: %v", key, err)
-	}
-
-	// Similar-site verification (optional): compute expected top-15 and compare to homepage.
-	var (
-		observedHash string
-	)
-	if passed && strings.TrimSpace(a.Cfg.IndexerdBaseURL) != "" {
-		// Fetch homepage HTML for parsing similar domains.
-		page, ferr := fetchHomepageHTML(verifyCtx, a.Cfg.VerifyScheme, assignment.GetDomain())
-		if ferr != nil {
-			log.Printf("assignment %s: fetch homepage for similar parse failed: %v", key, ferr)
-		} else {
-			observed, _ := parseObservedSimilarDomains(page)
-			obsHash := sha256HexOfSet(observed)
-			expected, _, eerr := fetchExpectedSimilar(ctx, a.Cfg.IndexerdBaseURL, assignment.GetDomain())
-			if eerr != nil {
-				log.Printf("assignment %s: expected similar fetch failed: %v", key, eerr)
-			} else {
-				match := overlapCount(observed, expected)
-				observedHash = obsHash
-
-				if match < similarOverlapRequired {
-					passed = false
-					log.Printf("assignment %s: similar overlap insufficient: matched=%d expected=%d", key, match, similarTopN)
-				}
-			}
-		}
-	}
-
-	evidenceHash := strings.TrimSpace(observedHash)
 	commitDeadlineUnix := assignment.GetStartAtUnix() + a.Cfg.CommitWindowSeconds
 	if commitDeadlineUnix >= assignment.GetDeadlineUnix() {
 		log.Printf("assignment %s: commit window (%d) overlaps deadline (%d)", key, commitDeadlineUnix, assignment.GetDeadlineUnix())
 		return
 	}
-	if time.Now().Unix() > commitDeadlineUnix {
-		log.Printf("assignment %s: commit window closed (deadline %d)", key, commitDeadlineUnix)
+	assignmentDeadline := time.Unix(assignment.GetDeadlineUnix(), 0)
+	if time.Now().Unix() > assignment.GetDeadlineUnix() {
+		log.Printf("missed assignment %s (deadline passed)", key)
+		a.deletePendingReveal(assignment)
 		return
 	}
 
-	nonce, err := generateNonce(16)
+	pending, hasPending, err := a.pendingRevealForAssignment(assignment)
 	if err != nil {
-		log.Printf("assignment %s: failed to generate nonce: %v", key, err)
+		log.Printf("assignment %s: failed to load pending reveal state: %v", key, err)
 		return
 	}
-	commitHash := registrypb.ComputeVerificationCommitHash(assignment.GetDomain(), assignment.GetRoundStartUnix(), a.Cfg.VerifierAddress, passed, evidenceHash, nonce)
-	if err := a.submitCommit(ctx, assignment, commitHash); err != nil {
-		log.Printf("assignment %s: commit failed: %v", key, err)
-		return
+
+	if !hasPending {
+		commitStartAt := time.Unix(assignment.GetStartAtUnix()+a.Cfg.CommitStartBufferSeconds, 0)
+		if !sleepUntil(ctx, commitStartAt) {
+			return
+		}
+
+		if time.Now().Unix() > commitDeadlineUnix {
+			log.Printf("assignment %s: commit window closed (deadline %d)", key, commitDeadlineUnix)
+			return
+		}
+
+		owner, err := a.Chain.PublisherOwner(ctx, assignment.GetDomain())
+		if err != nil {
+			log.Printf("assignment %s: failed to fetch owner: %v", key, err)
+			return
+		}
+		if owner == "" {
+			log.Printf("assignment %s: owner not found", key)
+			return
+		}
+
+		timeout := time.Until(assignmentDeadline)
+		if timeout <= 0 {
+			log.Printf("assignment %s: deadline passed before verification", key)
+			return
+		}
+		verifyCtx, cancel := context.WithTimeout(ctx, timeout)
+		defer cancel()
+		leaseExpectations, leaseErr := a.Chain.ActiveLeaseExpectationsForDomain(verifyCtx, assignment.GetDomain())
+		if leaseErr != nil {
+			log.Printf("assignment %s: failed to fetch active leases: %v", key, leaseErr)
+			err = a.Verifier.Verify(verifyCtx, assignment.GetDomain(), owner)
+		} else {
+			err = a.Verifier.VerifyWithLeases(verifyCtx, assignment.GetDomain(), owner, leaseExpectations)
+		}
+		passed := err == nil
+		if err != nil {
+			log.Printf("assignment %s: verification failed: %v", key, err)
+		}
+
+		var observedHash string
+		if passed && strings.TrimSpace(a.Cfg.IndexerdBaseURL) != "" {
+			page, ferr := fetchHomepageHTML(verifyCtx, a.Cfg.VerifyScheme, assignment.GetDomain())
+			if ferr != nil {
+				log.Printf("assignment %s: fetch homepage for similar parse failed: %v", key, ferr)
+			} else {
+				observed, _ := parseObservedSimilarDomains(page)
+				obsHash := sha256HexOfSet(observed)
+				expected, _, eerr := fetchExpectedSimilar(ctx, a.Cfg.IndexerdBaseURL, assignment.GetDomain())
+				if eerr != nil {
+					log.Printf("assignment %s: expected similar fetch failed: %v", key, eerr)
+				} else {
+					match := overlapCount(observed, expected)
+					observedHash = obsHash
+
+					if match < similarOverlapRequired {
+						passed = false
+						log.Printf("assignment %s: similar overlap insufficient: matched=%d expected=%d", key, match, similarTopN)
+					}
+				}
+			}
+		}
+
+		nonce, err := generateNonce(16)
+		if err != nil {
+			log.Printf("assignment %s: failed to generate nonce: %v", key, err)
+			return
+		}
+		evidenceHash := strings.TrimSpace(observedHash)
+		commitHash := registrypb.ComputeVerificationCommitHash(assignment.GetDomain(), assignment.GetRoundStartUnix(), a.Cfg.VerifierAddress, passed, evidenceHash, nonce)
+		pending = pendingReveal{
+			Key:            key,
+			Domain:         assignment.GetDomain(),
+			RoundStartUnix: assignment.GetRoundStartUnix(),
+			Verifier:       a.Cfg.VerifierAddress,
+			Passed:         passed,
+			EvidenceHash:   evidenceHash,
+			Nonce:          nonce,
+			CommitHash:     commitHash,
+		}
+		if err := a.savePendingReveal(pending); err != nil {
+			log.Printf("assignment %s: failed to persist pending reveal state: %v", key, err)
+			return
+		}
+	} else {
+		log.Printf("assignment %s: resuming pending reveal state", key)
 	}
-	log.Printf("assignment %s: submitted commit", key)
+
+	if !pending.CommitRecorded && time.Now().Unix() <= commitDeadlineUnix {
+		if err := a.submitCommitUntil(ctx, assignment, pending.CommitHash, time.Unix(commitDeadlineUnix, 0)); err != nil {
+			log.Printf("assignment %s: commit failed: %v", key, err)
+			return
+		}
+		pending.CommitRecorded = true
+		if err := a.savePendingReveal(pending); err != nil {
+			log.Printf("assignment %s: failed to update pending reveal state: %v", key, err)
+			return
+		}
+		log.Printf("assignment %s: submitted commit", key)
+	}
 
 	revealAt := time.Unix(commitDeadlineUnix+6, 0)
-	if delay := time.Until(revealAt); delay > 0 {
-		timer := time.NewTimer(delay)
-		select {
-		case <-ctx.Done():
-			timer.Stop()
-			return
-		case <-timer.C:
-		}
+	if !sleepUntil(ctx, revealAt) {
+		return
 	}
 	if time.Now().Unix() > assignment.GetDeadlineUnix() {
 		log.Printf("assignment %s: missed reveal window (deadline %d)", key, assignment.GetDeadlineUnix())
+		a.deletePendingReveal(assignment)
 		return
 	}
-	if err := a.submitReveal(ctx, assignment, passed, evidenceHash, nonce); err != nil {
+	if err := a.submitRevealUntil(ctx, assignment, pending, assignmentDeadline); err != nil {
 		log.Printf("assignment %s: reveal failed: %v", key, err)
+		if !isRetriableRevealError(err) || time.Now().After(assignmentDeadline) {
+			a.deletePendingReveal(assignment)
+		}
 		return
 	}
-	log.Printf("assignment %s: revealed result (passed=%t)", key, passed)
+	a.deletePendingReveal(assignment)
+	log.Printf("assignment %s: revealed result (passed=%t)", key, pending.Passed)
+}
+
+func (a *Agent) submitCommitUntil(ctx context.Context, assignment *registrypb.PublisherVerificationAssignment, commitHash string, deadline time.Time) error {
+	var lastErr error
+	for {
+		err := a.submitCommit(ctx, assignment, commitHash)
+		if err == nil || isAlreadyCommittedError(err) {
+			return nil
+		}
+		lastErr = err
+		if !isRetriableCommitError(err) || time.Now().After(deadline) {
+			return err
+		}
+		if !sleepForRetry(ctx, a.retryBackoff(), deadline) {
+			return lastErr
+		}
+	}
+}
+
+func (a *Agent) submitRevealUntil(ctx context.Context, assignment *registrypb.PublisherVerificationAssignment, pending pendingReveal, deadline time.Time) error {
+	var lastErr error
+	for {
+		err := a.submitReveal(ctx, assignment, pending.Passed, pending.EvidenceHash, pending.Nonce)
+		if err == nil || isAlreadySubmittedError(err) {
+			return nil
+		}
+		lastErr = err
+		if !isRetriableRevealError(err) || time.Now().After(deadline) {
+			return err
+		}
+		if !sleepForRetry(ctx, a.retryBackoff(), deadline) {
+			return lastErr
+		}
+	}
 }
 
 func (a *Agent) submitCommit(ctx context.Context, assignment *registrypb.PublisherVerificationAssignment, commitHash string) error {
@@ -234,7 +297,7 @@ func (a *Agent) submitCommit(ctx context.Context, assignment *registrypb.Publish
 	a.txMu.Lock()
 	defer a.txMu.Unlock()
 
-	out, txHash, err := a.execTxWithRetry(ctx, args, 3)
+	out, txHash, err := a.execTxWithRetry(ctx, args, 1)
 	if err != nil {
 		return fmt.Errorf("commit tx failed: %w: %s", err, string(out))
 	}
@@ -289,7 +352,7 @@ func (a *Agent) submitReveal(ctx context.Context, assignment *registrypb.Publish
 	a.txMu.Lock()
 	defer a.txMu.Unlock()
 
-	out, txHash, err := a.execTxWithRetry(ctx, args, 10)
+	out, txHash, err := a.execTxWithRetry(ctx, args, 1)
 	if err != nil {
 		return fmt.Errorf("reveal tx failed: %w: %s", err, string(out))
 	}
@@ -330,7 +393,9 @@ func (a *Agent) execTxWithRetry(ctx context.Context, args []string, maxAttempts 
 		}
 
 		if attempt < maxAttempts-1 {
-			time.Sleep(1200 * time.Millisecond)
+			if !sleepFor(ctx, a.retryBackoff()) {
+				return lastOut, "", ctx.Err()
+			}
 			continue
 		}
 	}
@@ -361,7 +426,50 @@ func isRetriableTxOutput(raw string) bool {
 	if strings.Contains(lower, "reveal window not open") {
 		return true
 	}
+	if strings.Contains(lower, "verification commit not found") {
+		return true
+	}
+	if strings.Contains(lower, "verification commit window closed") {
+		return true
+	}
+	if strings.Contains(lower, "timed out waiting for transaction") {
+		return true
+	}
 	return false
+}
+
+func isAlreadyCommittedError(err error) bool {
+	return errContains(err, "verification commit already submitted") || errContains(err, "commit already recorded")
+}
+
+func isAlreadySubmittedError(err error) bool {
+	return errContains(err, "verification submission already recorded") || errContains(err, "submission already recorded")
+}
+
+func isRetriableCommitError(err error) bool {
+	if err == nil {
+		return false
+	}
+	return errContains(err, "account sequence mismatch") ||
+		errContains(err, "timed out waiting for transaction") ||
+		errContains(err, "verification commit window closed")
+}
+
+func isRetriableRevealError(err error) bool {
+	if err == nil {
+		return false
+	}
+	return errContains(err, "account sequence mismatch") ||
+		errContains(err, "timed out waiting for transaction") ||
+		errContains(err, "verification reveal window not open") ||
+		errContains(err, "verification commit not found")
+}
+
+func errContains(err error, needle string) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(strings.ToLower(err.Error()), strings.ToLower(needle))
 }
 
 func ensureTxSuccess(out []byte) (string, error) {
@@ -410,7 +518,7 @@ func (a *Agent) waitTxIncluded(ctx context.Context, txHash string) error {
 	args := []string{
 		"query", "wait-tx", txHash,
 		"--node", a.Cfg.Submit.Node,
-		"--timeout", "30s",
+		"--timeout", fmt.Sprintf("%ds", a.Cfg.TxInclusionTimeoutSeconds),
 		"-o", "json",
 	}
 	if a.Cfg.Submit.Home != "" {
@@ -422,7 +530,52 @@ func (a *Agent) waitTxIncluded(ctx context.Context, txHash string) error {
 	if err != nil {
 		return fmt.Errorf("wait-tx failed: %w: %s", err, string(out))
 	}
+	if _, err := ensureTxSuccess(out); err != nil {
+		return err
+	}
 	return nil
+}
+
+func (a *Agent) retryBackoff() time.Duration {
+	seconds := a.Cfg.RetryBackoffSeconds
+	if seconds <= 0 {
+		seconds = 30
+	}
+	return time.Duration(seconds) * time.Second
+}
+
+func sleepUntil(ctx context.Context, t time.Time) bool {
+	if delay := time.Until(t); delay > 0 {
+		return sleepFor(ctx, delay)
+	}
+	return true
+}
+
+func sleepForRetry(ctx context.Context, backoff time.Duration, deadline time.Time) bool {
+	if !deadline.IsZero() {
+		remaining := time.Until(deadline)
+		if remaining <= 0 {
+			return false
+		}
+		if backoff > remaining {
+			backoff = remaining
+		}
+	}
+	return sleepFor(ctx, backoff)
+}
+
+func sleepFor(ctx context.Context, delay time.Duration) bool {
+	if delay <= 0 {
+		return true
+	}
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return false
+	case <-timer.C:
+		return true
+	}
 }
 
 func generateNonce(size int) (string, error) {

@@ -160,15 +160,17 @@ Troubleshooting:
 1. Check whether assignment is generated
 2. Check if verifierd has `submitted commit` / `revealed result`
 3. Check whether `reveal window not open` / `account sequence mismatch` occurs frequently
+4. If logs show success but the assignment still has no `submission`, query the tx `code`; included txs with `code != 0` still failed
 
 Order:
 ```bash
 ./content-grid-d query registry publisher --domain <domain> --node tcp://127.0.0.1:26657 --grpc-addr 127.0.0.1:9090 --grpc-insecure -o json
 ./content-grid-d verifier assignments <verifier-addr> --node tcp://127.0.0.1:26657 --grpc-addr 127.0.0.1:9090 --grpc-insecure -o json
+./content-grid-d query tx <txhash> --node tcp://127.0.0.1:26657 -o json
 ```
 
 ease:
-- Confirm verifierd configuration (poll, commit window)
+- Confirm verifierd configuration (poll, commit window, `commit_start_buffer_seconds`, `tx_inclusion_timeout_seconds`)
 - Restart verifierd if necessary (keep logs)
 - If the chain parameters are unreasonable, follow the parameter adjustment process
 
@@ -183,7 +185,8 @@ Troubleshooting:
 
 ease:
 - Confirm whether tx serial submission is effective
-- Appropriately increase the reveal buffer wait
+- Increase `CONGRID_VERIFIER_COMMIT_START_BUFFER_SECONDS` and `CONGRID_VERIFIER_TX_INCLUSION_TIMEOUT_SECONDS` if needed
+- Confirm `CONGRID_VERIFIER_STATE_DIR` is persisted so nonces are not lost before reveal
 - Check system clock (NTP)
 
 ---

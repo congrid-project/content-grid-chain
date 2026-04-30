@@ -75,6 +75,13 @@ docker compose --env-file .env.operator -f docker-compose.operator.yml up -d nod
 - 如果遇到 account sequence mismatch 或 tx cache 竞争，默认 `CONGRID_DRAND_RETRY_BACKOFF_SECONDS=30` 且 `CONGRID_DRAND_MAX_SUBMIT_RETRIES=1`，避免短时间内重复签同一账户序号。
 - 如果链出块慢，可以提高 `CONGRID_DRAND_TX_INCLUSION_TIMEOUT_SECONDS`，默认是 `120` 秒。
 
+## verifierd 提交节奏
+
+- 默认 `CONGRID_VERIFIER_COMMIT_START_BUFFER_SECONDS=15`，assignment 开始后延迟 15 秒再提交 commit，避免区块时间略早于本机时间导致 commit 被链上拒绝。
+- 默认 `CONGRID_VERIFIER_TX_INCLUSION_TIMEOUT_SECONDS=120`，`verifierd` 会等待交易进块并检查 tx `code`，不会再把“进块但执行失败”的交易误判为成功。
+- 默认 `CONGRID_VERIFIER_RETRY_BACKOFF_SECONDS=30`，遇到 sequence mismatch、窗口未打开、tx 等待超时等可重试错误时会退避重试。
+- 默认 `CONGRID_VERIFIER_STATE_DIR=/var/lib/congrid/verifierd-state`，commit 的 nonce 会持久化到节点 volume，方便 reveal 在 tx 超时或进程重启后继续使用同一 nonce。
+
 ## 共识验证人说明
 
 如果你还希望这个 `node` 同时承担 Cosmos 共识验证人职责：

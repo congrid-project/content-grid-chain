@@ -11,6 +11,7 @@ load_env_or_file CONGRID_VERIFIER_KEYRING_PASSPHRASE
 : "${CONGRID_NODE_GRPC_ADDR:=node:9090}"
 : "${CONGRID_INDEXERD_BASE_URL:=http://indexerd:9100}"
 : "${CONGRID_VERIFIER_CONFIG:=/tmp/congrid-verifierd.json}"
+: "${CONGRID_VERIFIER_STATE_DIR:=$CONGRID_HOME/verifierd-state}"
 : "${CONGRID_VERIFIER_KEY_NAME:=verifier-key}"
 : "${CONGRID_VERIFIER_KEYRING_BACKEND:=${CONGRID_KEYRING_BACKEND:-test}}"
 : "${CONGRID_VERIFIER_KEYRING_DIR:=${CONGRID_KEYRING_DIR:-}}"
@@ -18,10 +19,13 @@ load_env_or_file CONGRID_VERIFIER_KEYRING_PASSPHRASE
 : "${CONGRID_VERIFIER_ADDRESS:=}"
 : "${CONGRID_VERIFIER_VERIFY_SCHEME:=https}"
 : "${CONGRID_VERIFIER_POLL_INTERVAL_SECONDS:=15}"
+: "${CONGRID_VERIFIER_COMMIT_START_BUFFER_SECONDS:=15}"
 : "${CONGRID_VERIFIER_COMMIT_WINDOW_SECONDS:=300}"
 : "${CONGRID_VERIFIER_ROUND_INTERVAL_SECONDS:=3600}"
 : "${CONGRID_VERIFIER_ASSIGNMENT_DELAY_MAX_SECONDS:=3600}"
 : "${CONGRID_VERIFIER_DISABLE_ASSIGNMENT_CHECK:=false}"
+: "${CONGRID_VERIFIER_RETRY_BACKOFF_SECONDS:=30}"
+: "${CONGRID_VERIFIER_TX_INCLUSION_TIMEOUT_SECONDS:=120}"
 : "${CONGRID_VERIFIER_GAS:=200000}"
 : "${CONGRID_VERIFIER_GAS_ADJUSTMENT:=1}"
 : "${CONGRID_VERIFIER_FEES:=5000ucongrid}"
@@ -54,6 +58,7 @@ fi
 jq -n \
   --arg grpc_addr "$CONGRID_NODE_GRPC_ADDR" \
   --arg verifier_address "$CONGRID_VERIFIER_ADDRESS" \
+  --arg state_dir "$CONGRID_VERIFIER_STATE_DIR" \
   --arg verify_scheme "$CONGRID_VERIFIER_VERIFY_SCHEME" \
   --arg indexerd_base_url "$CONGRID_INDEXERD_BASE_URL" \
   --arg binary "$CONTENT_GRID_BIN" \
@@ -69,21 +74,28 @@ jq -n \
   --arg broadcast_mode "$CONGRID_VERIFIER_BROADCAST_MODE" \
   --arg keyring_passphrase_env "$keyring_passphrase_env" \
   --argjson poll_interval_seconds "$CONGRID_VERIFIER_POLL_INTERVAL_SECONDS" \
+  --argjson commit_start_buffer_seconds "$CONGRID_VERIFIER_COMMIT_START_BUFFER_SECONDS" \
   --argjson commit_window_seconds "$CONGRID_VERIFIER_COMMIT_WINDOW_SECONDS" \
   --argjson round_interval_seconds "$CONGRID_VERIFIER_ROUND_INTERVAL_SECONDS" \
   --argjson assignment_delay_max_seconds "$CONGRID_VERIFIER_ASSIGNMENT_DELAY_MAX_SECONDS" \
   --argjson disable_assignment_check "$CONGRID_VERIFIER_DISABLE_ASSIGNMENT_CHECK" \
+  --argjson retry_backoff_seconds "$CONGRID_VERIFIER_RETRY_BACKOFF_SECONDS" \
+  --argjson tx_inclusion_timeout_seconds "$CONGRID_VERIFIER_TX_INCLUSION_TIMEOUT_SECONDS" \
   --argjson gas_adjustment "$CONGRID_VERIFIER_GAS_ADJUSTMENT" \
   '
   {
     grpc_addr: $grpc_addr,
     verifier_address: $verifier_address,
+    state_dir: $state_dir,
     poll_interval_seconds: $poll_interval_seconds,
     verify_scheme: $verify_scheme,
+    commit_start_buffer_seconds: $commit_start_buffer_seconds,
     commit_window_seconds: $commit_window_seconds,
     round_interval_seconds: $round_interval_seconds,
     assignment_delay_max_seconds: $assignment_delay_max_seconds,
     disable_assignment_check: $disable_assignment_check,
+    retry_backoff_seconds: $retry_backoff_seconds,
+    tx_inclusion_timeout_seconds: $tx_inclusion_timeout_seconds,
     indexerd_base_url: $indexerd_base_url,
     submit: {
       binary: $binary,

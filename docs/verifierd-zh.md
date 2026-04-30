@@ -41,12 +41,16 @@ cp offchain/verifierd/config.example.json offchain/verifierd/config.json
 
 - `grpc_addr`：链 gRPC 端点（默认 `127.0.0.1:9090`）
 - `verifier_address`：verifier 的 bech32 地址（`congrid1...`）
+- `state_dir`：pending commit/reveal 状态目录，用来持久化 nonce，避免进程重启或 tx 等待超时后无法 reveal
 - `poll_interval_seconds`：轮询 assignment 的间隔
 - `verify_scheme`：`https`（默认）；本地开发可用 `http`
+- `commit_start_buffer_seconds`：assignment 开始后等待多久再提交 commit，用来避开区块时间略早于本机时间的边界问题
 - `commit_window_seconds`：verifierd 调度使用的本地 commit window，必须与链上参数对齐
 - `round_interval_seconds`：本地确定性校验使用的预期轮次间隔（默认 `3600`）
 - `assignment_delay_max_seconds`：本地确定性校验使用的最大 assignment 延迟（默认等于 `round_interval_seconds`）
 - `disable_assignment_check`：设为 `true` 可跳过 verifierd 的本地确定性校验（默认 `false`）
+- `retry_backoff_seconds`：commit/reveal 遇到 sequence mismatch、窗口未打开、tx 等待超时等可重试错误后的退避时间
+- `tx_inclusion_timeout_seconds`：提交交易后等待进块并检查 tx `code` 的最长时间
 - `submit`：`content-grid-d` 的交易提交配置
   - `binary`
   - `chain_id`、`node`、`from`、`keyring_backend`、`keyring_dir`、`keyring_passphrase_env`、`home`

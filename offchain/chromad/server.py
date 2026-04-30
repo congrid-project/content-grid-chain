@@ -38,6 +38,26 @@ def get_collection(name: str):
 default_ef = embedding_functions.DefaultEmbeddingFunction()
 
 
+def first_embedding(result: Dict[str, Any]) -> List[float]:
+    if not result:
+        return []
+    embeddings = result.get("embeddings")
+    if embeddings is None:
+        return []
+    if hasattr(embeddings, "tolist"):
+        embeddings = embeddings.tolist()
+    if len(embeddings) == 0:
+        return []
+    first = embeddings[0]
+    if first is None:
+        return []
+    if hasattr(first, "tolist"):
+        first = first.tolist()
+    if len(first) == 0:
+        return []
+    return [float(x) for x in first]
+
+
 class UpsertReq(BaseModel):
     collection: str
     id: str
@@ -94,7 +114,7 @@ def upsert(req: UpsertReq):
         metadatas=[req.metadata or {}],
     )
     got = col.get(ids=[cid], include=["embeddings"])
-    emb = got["embeddings"][0] if got and got.get("embeddings") else []
+    emb = first_embedding(got)
     return {"status": "ok", "embedding": emb}
 
 @app.post("/v1/embed", response_model=EmbedResp)
@@ -134,10 +154,10 @@ def similar(req: SimilarReq):
 
     # Fetch the domain's embedding first
     got = col.get(ids=[domain], include=["embeddings"])
-    if not got or not got.get("embeddings"):
+    emb = first_embedding(got)
+    if len(emb) == 0:
         raise HTTPException(status_code=404, detail="domain not indexed")
 
-    emb = got["embeddings"][0]
     res = col.query(query_embeddings=[emb], n_results=req.limit + 1, include=["distances"])
 
     ids = res.get("ids", [[]])[0]

@@ -38,12 +38,16 @@ cp offchain/verifierd/config.example.json offchain/verifierd/config.json
 Fields:
 - `grpc_addr`: chain gRPC endpoint (default `127.0.0.1:9090`)
 - `verifier_address`: verifier bech32 (`congrid1...`)
+- `state_dir`: pending commit/reveal state directory used to persist nonces across tx timeouts and process restarts
 - `poll_interval_seconds`: assignment poll interval
 - `verify_scheme`: `https` (default) or `http` for local dev
+- `commit_start_buffer_seconds`: delay after assignment start before submitting commit, avoiding block-time edge cases
 - `commit_window_seconds`: local commit window used by verifierd scheduling (must be aligned with on-chain params)
 - `round_interval_seconds`: expected round interval for deterministic assignment validation (default `3600`)
 - `assignment_delay_max_seconds`: expected assignment delay cap used in deterministic validation (default `round_interval_seconds`)
 - `disable_assignment_check`: set `true` to bypass verifierd's local deterministic assignment validation (default `false`)
+- `retry_backoff_seconds`: backoff after retriable commit/reveal errors such as sequence mismatch, reveal window not open, or tx wait timeout
+- `tx_inclusion_timeout_seconds`: how long to wait for submitted tx inclusion and successful tx `code`
 - `submit`: tx submission settings for `content-grid-d`
   - `binary`
   - `chain_id`, `node`, `from`, `keyring_backend`, `keyring_dir`, `keyring_passphrase_env`, `home`

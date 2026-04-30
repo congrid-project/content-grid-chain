@@ -4,18 +4,23 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
 type Config struct {
 	GRPCAddr                  string `json:"grpc_addr"`
 	VerifierAddress           string `json:"verifier_address"`
+	StateDir                  string `json:"state_dir"`
 	PollIntervalSec           int    `json:"poll_interval_seconds"`
 	VerifyScheme              string `json:"verify_scheme"`
+	CommitStartBufferSeconds  int64  `json:"commit_start_buffer_seconds"`
 	CommitWindowSeconds       int64  `json:"commit_window_seconds"`
 	RoundIntervalSeconds      int64  `json:"round_interval_seconds"`
 	AssignmentDelayMaxSeconds int64  `json:"assignment_delay_max_seconds"`
 	DisableAssignmentCheck    bool   `json:"disable_assignment_check"`
+	RetryBackoffSeconds       int    `json:"retry_backoff_seconds"`
+	TxInclusionTimeoutSeconds int    `json:"tx_inclusion_timeout_seconds"`
 
 	// Similarity backend (optional): indexerd endpoint providing /v1/similar.
 	// Example: "http://127.0.0.1:9100".
@@ -58,6 +63,7 @@ func loadConfig(path string) (Config, error) {
 func (c *Config) normalize() {
 	c.GRPCAddr = strings.TrimSpace(c.GRPCAddr)
 	c.VerifierAddress = strings.TrimSpace(c.VerifierAddress)
+	c.StateDir = strings.TrimSpace(c.StateDir)
 	c.VerifyScheme = strings.TrimSpace(c.VerifyScheme)
 	c.IndexerdBaseURL = strings.TrimSpace(c.IndexerdBaseURL)
 	c.Submit.Binary = strings.TrimSpace(c.Submit.Binary)
@@ -84,6 +90,9 @@ func (c *Config) applyDefaults() {
 	if c.VerifyScheme == "" {
 		c.VerifyScheme = "https"
 	}
+	if c.CommitStartBufferSeconds <= 0 {
+		c.CommitStartBufferSeconds = 15
+	}
 	if c.CommitWindowSeconds <= 0 {
 		c.CommitWindowSeconds = 300
 	}
@@ -95,6 +104,12 @@ func (c *Config) applyDefaults() {
 	}
 	if c.AssignmentDelayMaxSeconds > c.RoundIntervalSeconds {
 		c.AssignmentDelayMaxSeconds = c.RoundIntervalSeconds
+	}
+	if c.RetryBackoffSeconds <= 0 {
+		c.RetryBackoffSeconds = 30
+	}
+	if c.TxInclusionTimeoutSeconds <= 0 {
+		c.TxInclusionTimeoutSeconds = 120
 	}
 	if c.Submit.Binary == "" {
 		c.Submit.Binary = "content-grid-d"
@@ -114,6 +129,13 @@ func (c *Config) applyDefaults() {
 	if c.Submit.BroadcastMode == "" {
 		c.Submit.BroadcastMode = "sync"
 	}
+	if c.StateDir == "" {
+		if c.Submit.Home != "" {
+			c.StateDir = filepath.Join(c.Submit.Home, "verifierd-state")
+		} else {
+			c.StateDir = ".verifierd-state"
+		}
+	}
 }
 
 func (c Config) Validate() error {
@@ -125,6 +147,18 @@ func (c Config) Validate() error {
 	}
 	if c.CommitWindowSeconds <= 0 {
 		return fmt.Errorf("commit_window_seconds must be positive")
+	}
+	if c.CommitStartBufferSeconds < 0 {
+		return fmt.Errorf("commit_start_buffer_seconds must be non-negative")
+	}
+	if c.CommitStartBufferSeconds >= c.CommitWindowSeconds {
+		return fmt.Errorf("commit_start_buffer_seconds must be smaller than commit_window_seconds")
+	}
+	if c.RetryBackoffSeconds <= 0 {
+		return fmt.Errorf("retry_backoff_seconds must be positive")
+	}
+	if c.TxInclusionTimeoutSeconds <= 0 {
+		return fmt.Errorf("tx_inclusion_timeout_seconds must be positive")
 	}
 	if c.Submit.ChainID == "" {
 		return fmt.Errorf("submit.chain_id required")

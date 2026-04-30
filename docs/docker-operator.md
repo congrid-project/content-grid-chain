@@ -75,6 +75,13 @@ The `node` service now uses a lightweight `node-runtime` build target that conta
 - For account sequence mismatch or tx cache races, defaults are `CONGRID_DRAND_RETRY_BACKOFF_SECONDS=30` and `CONGRID_DRAND_MAX_SUBMIT_RETRIES=1` to avoid repeatedly signing with a stale account sequence.
 - If block inclusion is slow, increase `CONGRID_DRAND_TX_INCLUSION_TIMEOUT_SECONDS`; the default is `120` seconds.
 
+## verifierd Submission Cadence
+
+- `CONGRID_VERIFIER_COMMIT_START_BUFFER_SECONDS=15` waits 15 seconds after assignment start before committing, avoiding block-time edge cases where the next block is still timestamped before the assignment start.
+- `CONGRID_VERIFIER_TX_INCLUSION_TIMEOUT_SECONDS=120` makes `verifierd` wait for tx inclusion and validate the returned tx `code`, so an included-but-failed tx is not treated as successful.
+- `CONGRID_VERIFIER_RETRY_BACKOFF_SECONDS=30` backs off after retriable errors such as sequence mismatch, reveal window not open, or tx wait timeout.
+- `CONGRID_VERIFIER_STATE_DIR=/var/lib/congrid/verifierd-state` persists commit nonces in the node volume so reveal can continue with the same nonce after tx timeouts or process restarts.
+
 ## Consensus Validator Notes
 
 If you also want the node to produce blocks as a Cosmos validator:
