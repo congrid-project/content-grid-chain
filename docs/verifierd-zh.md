@@ -60,6 +60,51 @@ cp offchain/verifierd/config.example.json offchain/verifierd/config.json
 
 ## 运行
 
+### 一键脚本（Linux/macOS，无 Docker）
+
+脚本会在本机完成构建、key 检查/导入、配置生成和启动：
+
+```bash
+cp /path/to/verifier.mnemonic ~/.congrid-verifier.mnemonic
+printf '%s\n' '<keyring-passphrase>' > ~/.congrid-verifier.pass
+chmod 600 ~/.congrid-verifier.mnemonic ~/.congrid-verifier.pass
+
+cat > .env.verifier <<'EOF'
+CONGRID_CHAIN_ID=content-grid-1
+CONGRID_NODE_RPC_URL=tcp://127.0.0.1:26657
+CONGRID_NODE_GRPC_ADDR=127.0.0.1:9090
+CONGRID_VERIFIER_KEY_NAME=verifier-key
+CONGRID_VERIFIER_KEYRING_BACKEND=file
+CONGRID_VERIFIER_KEY_MNEMONIC_FILE=$HOME/.congrid-verifier.mnemonic
+CONGRID_VERIFIER_KEYRING_PASSPHRASE_FILE=$HOME/.congrid-verifier.pass
+EOF
+
+./scripts/verifier-oneclick.sh --env .env.verifier start
+./scripts/verifier-oneclick.sh status
+./scripts/verifier-oneclick.sh logs
+```
+
+默认行为：
+
+- 构建 `bin/content-grid-d` 和 `bin/verifierd`
+- 生成 `offchain/verifierd/config.json`
+- 后台启动 `verifierd`，日志写入 `logs/verifierd.out`，PID 写入 `logs/verifierd.pid`
+- 如果 key 不存在且未提供 mnemonic，会创建新 key，并把创建输出保存到 `logs/verifier-key.created-key.json`
+
+停止或重启：
+
+```bash
+./scripts/verifier-oneclick.sh stop
+./scripts/verifier-oneclick.sh restart
+```
+
+可选：提交 verifier bond（账户需要已有可用余额）：
+
+```bash
+CONGRID_VERIFIER_BOND_AMOUNT=1000000 \
+./scripts/verifier-oneclick.sh --env .env.verifier bond
+```
+
 立即轮询一次（并等待已经开始的 assignment window）：
 
 ```bash

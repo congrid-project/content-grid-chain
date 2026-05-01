@@ -75,6 +75,65 @@
   --grpc-insecure -o json</code></pre>
     </div>
 
+    <h3>Docker operator stack</h3>
+    <p>
+      For unattended operation, use the repository Docker Compose stack. It runs a node plus the
+      required verifier support services: <code>chromad</code>, <code>indexerd</code>, and
+      <code>verifierd</code>. Here, <code>verifierd</code> is the Congrid publisher verifier,
+      not a Cosmos consensus validator.
+    </p>
+
+    <div class="code">
+<pre><code># Prepare operator env and secret files
+cp docker/operator.env.example .env.operator
+mkdir -p docker/network docker/secrets
+
+# Put the network genesis at docker/network/genesis.json, then edit .env.operator:
+# - CONGRID_CHAIN_ID={{.WalletConfig.ChainID}}
+# - CONGRID_GENESIS_FILE=/network/genesis.json
+# - CONGRID_PERSISTENT_PEERS=&lt;node-id&gt;@&lt;host&gt;:26656,...
+# - CONGRID_KEYRING_BACKEND=file
+# - CONGRID_VERIFIER_KEYRING_DIR=/var/lib/congrid/keyrings/verifier
+# - CONGRID_VERIFIER_KEY_MNEMONIC_FILE=/run/congrid-secrets/verifier.mnemonic
+# - CONGRID_VERIFIER_KEYRING_PASSPHRASE_FILE=/run/congrid-secrets/verifier.passphrase
+
+# Store these files outside git history.
+$EDITOR docker/secrets/verifier.mnemonic
+$EDITOR docker/secrets/verifier.passphrase
+
+# Start the verifier stack
+docker compose --env-file .env.operator -f docker-compose.operator.yml up -d --build \
+  node chromad indexerd verifierd
+
+# Optional: run drand-relayer too if the network uses drand-backed assignment randomness
+docker compose --env-file .env.operator -f docker-compose.operator.yml --profile drand up -d --build \
+  drand-relayer
+
+# Watch verifier progress
+docker compose --env-file .env.operator -f docker-compose.operator.yml logs -f verifierd</code></pre>
+    </div>
+
+    <p>
+      The Docker entrypoint generates the verifierd config from env values. The important long-running
+      defaults are <code>CONGRID_VERIFIER_COMMIT_START_BUFFER_SECONDS=15</code>,
+      <code>CONGRID_VERIFIER_TX_INCLUSION_TIMEOUT_SECONDS=120</code>, and
+      <code>CONGRID_VERIFIER_STATE_DIR=/var/lib/congrid/verifierd-state</code>, which persists
+      pending commit/reveal nonces across restarts.
+    </p>
+
+    <div class="code">
+<pre><code># Confirm the verifier address resolved by verifierd
+docker compose --env-file .env.operator -f docker-compose.operator.yml logs verifierd | \
+  grep 'starting verifierd verifier='
+
+# Confirm assignments and successful submissions from the host
+./content-grid-d verifier assignments &lt;verifier-address&gt; \
+  --node {{.WalletConfig.RPC}} \
+  --grpc-addr 127.0.0.1:9090 \
+  --grpc-insecure \
+  --include-finalized -o json</code></pre>
+    </div>
+
     <h2>Step 3 — Keep your verifier reliable</h2>
     <ul>
       <li>Use stable DNS/network; avoid frequent IP rotations.</li>
