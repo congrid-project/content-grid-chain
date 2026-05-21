@@ -452,6 +452,45 @@ tcp_ready() {
   (echo >/dev/tcp/"$host"/"$port") >/dev/null 2>&1
 }
 
+diagnose_node_wait_failure() {
+  local grpc_host="$1"
+  local grpc_port="$2"
+  local rpc_hp rpc_host rpc_port app_toml grpc_enable grpc_address
+
+  log "diagnostic: verifier-oneclick does not start content-grid-d; it expects an already running node"
+
+  rpc_hp="$(host_port_from_addr "$CONGRID_NODE_RPC_URL")"
+  rpc_host="${rpc_hp%:*}"
+  rpc_port="${rpc_hp##*:}"
+  if [ -n "$rpc_host" ] && [ -n "$rpc_port" ] && [ "$rpc_host" != "$rpc_port" ]; then
+    if tcp_ready "$rpc_host" "$rpc_port"; then
+      log "diagnostic: node RPC is reachable at $rpc_host:$rpc_port"
+    else
+      log "diagnostic: node RPC is also not reachable at $rpc_host:$rpc_port"
+    fi
+  fi
+
+  app_toml="$CONGRID_HOME/config/app.toml"
+  if [ -f "$app_toml" ]; then
+    grpc_enable="$(awk '
+      /^\[grpc\]/ { in_grpc=1; next }
+      /^\[/ { in_grpc=0 }
+      in_grpc && /^[[:space:]]*enable[[:space:]]*=/ { print $0 }
+    ' "$app_toml" | tail -n 1)"
+    grpc_address="$(awk '
+      /^\[grpc\]/ { in_grpc=1; next }
+      /^\[/ { in_grpc=0 }
+      in_grpc && /^[[:space:]]*address[[:space:]]*=/ { print $0 }
+    ' "$app_toml" | tail -n 1)"
+    [ -z "$grpc_enable" ] || log "diagnostic: $app_toml [grpc] $grpc_enable"
+    [ -z "$grpc_address" ] || log "diagnostic: $app_toml [grpc] $grpc_address"
+  else
+    log "diagnostic: node app config not found at $app_toml; set CONGRID_HOME to the node home if it differs"
+  fi
+
+  log "diagnostic: start the node or set CONGRID_NODE_GRPC_ADDR to the reachable endpoint instead of $grpc_host:$grpc_port"
+}
+
 wait_for_node() {
   [ "$CONGRID_WAIT_FOR_NODE" = "true" ] || return
 
@@ -469,6 +508,7 @@ wait_for_node() {
     fi
     sleep 2
   done
+  diagnose_node_wait_failure "$host" "$port"
   die "chain gRPC is not reachable at $host:$port after ${CONGRID_WAIT_TIMEOUT_SECONDS}s"
 }
 
