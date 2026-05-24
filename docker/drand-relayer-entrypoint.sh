@@ -10,6 +10,7 @@ load_env_or_file CONGRID_DRAND_KEYRING_PASSPHRASE
 : "${CONGRID_NODE_RPC_URL:=tcp://node:26657}"
 : "${CONGRID_NODE_GRPC_ADDR:=node:9090}"
 : "${CONGRID_DRAND_RELAYER_CONFIG:=/tmp/congrid-drand-relayer.json}"
+: "${CONGRID_DRAND_LISTEN_ADDR:=0.0.0.0:9201}"
 : "${CONGRID_DRAND_KEY_NAME:=drand-relayer}"
 : "${CONGRID_DRAND_KEYRING_BACKEND:=${CONGRID_KEYRING_BACKEND:-test}}"
 : "${CONGRID_DRAND_KEYRING_DIR:=${CONGRID_KEYRING_DIR:-}}"
@@ -44,6 +45,7 @@ fi
 
 jq -n \
   --arg grpc_addr "$CONGRID_NODE_GRPC_ADDR" \
+  --arg listen_addr "$CONGRID_DRAND_LISTEN_ADDR" \
   --arg drand_api_base_url "$CONGRID_DRAND_API_BASE_URL" \
   --arg drand_chain_hash "$CONGRID_DRAND_CHAIN_HASH" \
   --arg binary "$CONTENT_GRID_BIN" \
@@ -68,6 +70,7 @@ jq -n \
   '
   {
     grpc_addr: $grpc_addr,
+    listen_addr: $listen_addr,
     drand_api_base_url: $drand_api_base_url,
     drand_chain_hash: $drand_chain_hash,
     poll_interval_seconds: $poll_interval_seconds,
@@ -95,5 +98,5 @@ jq -n \
   }
   ' >"$CONGRID_DRAND_RELAYER_CONFIG"
 
-log "starting drand-relayer grpc=$CONGRID_NODE_GRPC_ADDR drand_api=$CONGRID_DRAND_API_BASE_URL"
+log "starting drand-relayer grpc=$CONGRID_NODE_GRPC_ADDR listen=$CONGRID_DRAND_LISTEN_ADDR drand_api=$CONGRID_DRAND_API_BASE_URL"
 exec /usr/local/bin/drand-relayer --config "$CONGRID_DRAND_RELAYER_CONFIG"

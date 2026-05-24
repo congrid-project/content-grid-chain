@@ -25,6 +25,7 @@ type Relayer struct {
 	Cfg              Config
 	Chain            *ChainClient
 	HTTPClient       *http.Client
+	Health           *daemonHealth
 	mu               sync.Mutex
 	lastSubmitAt     time.Time
 	nextSubmitTryAt  time.Time
@@ -41,11 +42,17 @@ func (r *Relayer) RunOnce(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("query latest on-chain drand beacon: %w", err)
 	}
+	if r.Health != nil {
+		r.Health.recordOnChainRound(onChainBeacon.Round)
+	}
 	r.rememberOnChainSubmitTime(onChainBeacon)
 
 	latest, err := r.fetchLatestDrand(ctx)
 	if err != nil {
 		return fmt.Errorf("fetch latest drand: %w", err)
+	}
+	if r.Health != nil {
+		r.Health.recordLatestDrandRound(latest.Round)
 	}
 	if latest.Round == 0 {
 		return fmt.Errorf("drand latest response missing round")
@@ -60,12 +67,19 @@ func (r *Relayer) RunOnce(ctx context.Context) error {
 	if err := r.submitDrandBeacon(ctx, latest); err != nil {
 		if isRetriableTxErrorText(err.Error()) {
 			r.nextSubmitTryAt = now.Add(time.Duration(r.Cfg.RetryBackoffSec) * time.Second)
+			if r.Health != nil {
+				r.Health.recordNextSubmitTryAt(r.nextSubmitTryAt)
+			}
 		}
 		return err
 	}
 	r.lastSubmitAt = now
 	r.nextSubmitTryAt = now.Add(time.Duration(r.Cfg.MinSubmitIntervalSec) * time.Second)
 	r.lastSkippedRound = 0
+	if r.Health != nil {
+		r.Health.recordSubmission(latest.Round)
+		r.Health.recordNextSubmitTryAt(r.nextSubmitTryAt)
+	}
 	log.Printf("drand-relayer: submitted beacon round=%d", latest.Round)
 	return nil
 }
@@ -96,6 +110,9 @@ func (r *Relayer) shouldThrottleSubmit(now time.Time, round uint64) bool {
 			r.Cfg.MinSubmitIntervalSec,
 		)
 		r.lastSkippedRound = round
+	}
+	if r.Health != nil {
+		r.Health.recordThrottle(round, next)
 	}
 	return true
 }

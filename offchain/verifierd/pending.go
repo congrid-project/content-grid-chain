@@ -102,6 +102,30 @@ func (a *Agent) pendingRevealPathForKey(key string) string {
 	return filepath.Join(dir, hex.EncodeToString(sum[:])+".json")
 }
 
+func (a *Agent) pendingRevealCount() (int, error) {
+	dir := strings.TrimSpace(a.Cfg.StateDir)
+	if dir == "" {
+		return 0, nil
+	}
+	entries, err := os.ReadDir(dir)
+	if os.IsNotExist(err) {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+	count := 0
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		if strings.HasSuffix(entry.Name(), ".json") {
+			count++
+		}
+	}
+	return count, nil
+}
+
 func (p pendingReveal) validateForAssignment(assignment *registrypb.PublisherVerificationAssignment, verifier string) error {
 	if assignment == nil {
 		return fmt.Errorf("assignment required")

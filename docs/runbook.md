@@ -91,10 +91,25 @@ cd /home/eking/workspace/congrid.net
 ./verifierd --config /home/eking/workspace/congrid.net/offchain/verifierd/config.json --once
 ```
 
+### Health Check
+```bash
+# Liveness
+curl -fsS http://127.0.0.1:9200/healthz
+
+# Readiness and operator state
+curl -s http://127.0.0.1:9200/readyz | jq .
+```
+
 Key log keywords:
 - `submitted commit`
 - `revealed result (passed=true|false)`
 - `commit failed` / `reveal failed`
+
+Key readiness fields:
+- `status` / `reasons`: `ready` or why `/readyz` returned `503`
+- `last_poll_error`, `consecutive_errors`: chain polling failures
+- `in_flight_assignments`, `pending_reveals`: active and persisted commit/reveal work
+- `last_assignment_error`: latest worker-level commit/reveal/state failure
 
 ## 2.3 drand-relayer
 
@@ -109,9 +124,24 @@ cd /home/eking/workspace/congrid.net
 ./drand-relayer --config /home/eking/workspace/congrid.net/offchain/drandrelayer/config.json --once
 ```
 
+### Health Check
+```bash
+# Liveness
+curl -fsS http://127.0.0.1:9201/healthz
+
+# Readiness and operator state
+curl -s http://127.0.0.1:9201/readyz | jq .
+```
+
 Key log keywords:
 - `submitted beacon round=`
 - `sync error`
+
+Key readiness fields:
+- `status` / `reasons`: `ready` or why `/readyz` returned `503`
+- `last_sync_error`, `consecutive_errors`: chain or drand API sync failures
+- `on_chain_round`, `latest_drand_round`: whether the relayer is observing fresh drand data
+- `last_submitted_round`, `next_submit_try_at`, `throttled_until`: submission/backoff state
 
 ## 2.4 congrid-site
 
@@ -131,6 +161,7 @@ go run ./cmd/congrid-site \
 Optional: set `--keyring-dir` if the content-grid-d keyring lives outside the default location.
 
 Health check:
+- `curl -fsS http://127.0.0.1:8080/healthz`
 - `/`, `/marketplace`, `/publisher/dashboard` are accessible
 - When submitting slot/lease, tx returns successfully and has txhash
 
@@ -139,6 +170,8 @@ Health check:
 ## 3. Daily inspection (each shift)
 
 - [ ] Chain height grows normally
+- [ ] `verifierd` `/readyz` is `ready`
+- [ ] `drand-relayer` `/readyz` is `ready` when enabled
 - [ ] verifierd The commit/reveal success rate in the last 15 minutes meets the standard
 - [ ] The number of drand beacon winding rounds continues to increase (no long-term stagnation)
 - [ ] publisher VERIFIED There is no abnormal decrease in the ratio

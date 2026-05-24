@@ -103,6 +103,7 @@ fi
 : "${CONGRID_WAIT_TIMEOUT_SECONDS:=60}"
 
 : "${CONGRID_VERIFIER_CONFIG:=$ROOT_DIR/offchain/verifierd/config.json}"
+: "${CONGRID_VERIFIER_LISTEN_ADDR:=127.0.0.1:9200}"
 : "${CONGRID_VERIFIER_STATE_DIR:=$CONGRID_HOME/verifierd-state}"
 : "${CONGRID_VERIFIER_KEY_NAME:=verifier-key}"
 : "${CONGRID_VERIFIER_KEYRING_BACKEND:=file}"
@@ -399,6 +400,7 @@ render_verifier_config() {
   cat >"$tmp" <<EOF
 {
   "grpc_addr": "$(json_escape "$CONGRID_NODE_GRPC_ADDR")",
+  "listen_addr": "$(json_escape "$CONGRID_VERIFIER_LISTEN_ADDR")",
   "verifier_address": "$(json_escape "$verifier_address")",
   "state_dir": "$(json_escape "$CONGRID_VERIFIER_STATE_DIR")",
   "poll_interval_seconds": $CONGRID_VERIFIER_POLL_INTERVAL_SECONDS,

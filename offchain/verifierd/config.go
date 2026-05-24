@@ -10,6 +10,7 @@ import (
 
 type Config struct {
 	GRPCAddr                  string `json:"grpc_addr"`
+	ListenAddr                string `json:"listen_addr"`
 	VerifierAddress           string `json:"verifier_address"`
 	StateDir                  string `json:"state_dir"`
 	PollIntervalSec           int    `json:"poll_interval_seconds"`
@@ -62,6 +63,7 @@ func loadConfig(path string) (Config, error) {
 
 func (c *Config) normalize() {
 	c.GRPCAddr = strings.TrimSpace(c.GRPCAddr)
+	c.ListenAddr = strings.TrimSpace(c.ListenAddr)
 	c.VerifierAddress = strings.TrimSpace(c.VerifierAddress)
 	c.StateDir = strings.TrimSpace(c.StateDir)
 	c.VerifyScheme = strings.TrimSpace(c.VerifyScheme)
@@ -83,6 +85,9 @@ func (c *Config) normalize() {
 func (c *Config) applyDefaults() {
 	if c.GRPCAddr == "" {
 		c.GRPCAddr = "127.0.0.1:9090"
+	}
+	if c.ListenAddr == "" {
+		c.ListenAddr = "127.0.0.1:9200"
 	}
 	if c.PollIntervalSec <= 0 {
 		c.PollIntervalSec = 15
@@ -141,6 +146,9 @@ func (c *Config) applyDefaults() {
 func (c Config) Validate() error {
 	if c.GRPCAddr == "" {
 		return fmt.Errorf("grpc_addr required")
+	}
+	if c.ListenAddr == "" {
+		return fmt.Errorf("listen_addr required")
 	}
 	if c.VerifierAddress == "" {
 		return fmt.Errorf("verifier_address required")

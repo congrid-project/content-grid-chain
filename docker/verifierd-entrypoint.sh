@@ -11,6 +11,7 @@ load_env_or_file CONGRID_VERIFIER_KEYRING_PASSPHRASE
 : "${CONGRID_NODE_GRPC_ADDR:=node:9090}"
 : "${CONGRID_INDEXERD_BASE_URL:=http://indexerd:9100}"
 : "${CONGRID_VERIFIER_CONFIG:=/tmp/congrid-verifierd.json}"
+: "${CONGRID_VERIFIER_LISTEN_ADDR:=0.0.0.0:9200}"
 : "${CONGRID_VERIFIER_STATE_DIR:=$CONGRID_HOME/verifierd-state}"
 : "${CONGRID_VERIFIER_KEY_NAME:=verifier-key}"
 : "${CONGRID_VERIFIER_KEYRING_BACKEND:=${CONGRID_KEYRING_BACKEND:-test}}"
@@ -57,6 +58,7 @@ fi
 
 jq -n \
   --arg grpc_addr "$CONGRID_NODE_GRPC_ADDR" \
+  --arg listen_addr "$CONGRID_VERIFIER_LISTEN_ADDR" \
   --arg verifier_address "$CONGRID_VERIFIER_ADDRESS" \
   --arg state_dir "$CONGRID_VERIFIER_STATE_DIR" \
   --arg verify_scheme "$CONGRID_VERIFIER_VERIFY_SCHEME" \
@@ -85,6 +87,7 @@ jq -n \
   '
   {
     grpc_addr: $grpc_addr,
+    listen_addr: $listen_addr,
     verifier_address: $verifier_address,
     state_dir: $state_dir,
     poll_interval_seconds: $poll_interval_seconds,
@@ -116,5 +119,5 @@ jq -n \
   }
   ' >"$CONGRID_VERIFIER_CONFIG"
 
-log "starting verifierd verifier=$CONGRID_VERIFIER_ADDRESS grpc=$CONGRID_NODE_GRPC_ADDR"
+log "starting verifierd verifier=$CONGRID_VERIFIER_ADDRESS grpc=$CONGRID_NODE_GRPC_ADDR listen=$CONGRID_VERIFIER_LISTEN_ADDR"
 exec /usr/local/bin/verifierd --config "$CONGRID_VERIFIER_CONFIG"

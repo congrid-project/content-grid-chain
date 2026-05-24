@@ -274,6 +274,7 @@ tx_wait verifier bond 1 --denom ucongrid --home "$HOME_DIR" --keyring-backend "$
 cat >"$HOME_DIR/verifierd.json" <<JSON
 {
   "grpc_addr": "127.0.0.1:9090",
+  "listen_addr": "127.0.0.1:0",
   "verifier_address": "$VERIFIER_ADDR",
   "poll_interval_seconds": 1,
   "verify_scheme": "http",

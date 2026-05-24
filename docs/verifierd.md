@@ -37,6 +37,7 @@ cp offchain/verifierd/config.example.json offchain/verifierd/config.json
 
 Fields:
 - `grpc_addr`: chain gRPC endpoint (default `127.0.0.1:9090`)
+- `listen_addr`: health/readiness HTTP endpoint (default `127.0.0.1:9200`)
 - `verifier_address`: verifier bech32 (`congrid1...`)
 - `state_dir`: pending commit/reveal state directory used to persist nonces across tx timeouts and process restarts
 - `poll_interval_seconds`: assignment poll interval
@@ -68,3 +69,19 @@ Long-running agent:
 ```bash
 go run ./offchain/verifierd --config offchain/verifierd/config.json
 ```
+
+## Health and readiness
+
+Long-running mode exposes:
+
+- `GET /healthz` on `listen_addr`: liveness only, returns `200 ok` while the process can serve HTTP.
+- `GET /readyz` on `listen_addr`: readiness JSON, returns `200` after successful chain polling and `503` when polling has never succeeded, the last poll failed, or the last successful poll is stale.
+
+Example:
+
+```bash
+curl -fsS http://127.0.0.1:9200/healthz
+curl -s http://127.0.0.1:9200/readyz | jq .
+```
+
+The readiness body includes operator-facing state such as `last_poll_error`, `consecutive_errors`, `last_scan_assignments`, `in_flight_assignments`, `pending_reveals`, and the latest assignment worker error.

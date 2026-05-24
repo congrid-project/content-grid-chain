@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"time"
@@ -34,6 +36,7 @@ func main() {
 		Cfg:        cfg,
 		Chain:      chain,
 		HTTPClient: (httpClientWithTimeout{TimeoutSec: cfg.RequestTimeoutSec}).Client(),
+		Health:     newDaemonHealth(time.Duration(cfg.PollIntervalSec) * time.Second),
 	}
 
 	ctx := context.Background()
@@ -45,18 +48,34 @@ func main() {
 	}
 
 	log.Printf(
-		"drand-relayer started (poll=%ds min_submit_interval=%ds retry_backoff=%ds tx_inclusion_timeout=%ds max_submit_retries=%d chain_hash=%s)",
+		"drand-relayer started (poll=%ds listen=%s min_submit_interval=%ds retry_backoff=%ds tx_inclusion_timeout=%ds max_submit_retries=%d chain_hash=%s)",
 		cfg.PollIntervalSec,
+		cfg.ListenAddr,
 		cfg.MinSubmitIntervalSec,
 		cfg.RetryBackoffSec,
 		cfg.TxInclusionTimeoutSec,
 		cfg.MaxSubmitRetries,
 		cfg.DrandChainHash,
 	)
+	healthServer := &http.Server{
+		Addr:              cfg.ListenAddr,
+		Handler:           healthRoutes(cfg, relayer.Health),
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+	go func() {
+		log.Printf("drand-relayer health listening on %s", cfg.ListenAddr)
+		if err := healthServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("health listen: %v", err)
+		}
+	}()
+
 	ticker := time.NewTicker(time.Duration(cfg.PollIntervalSec) * time.Second)
 	defer ticker.Stop()
 	for {
-		if err := relayer.RunOnce(ctx); err != nil {
+		relayer.Health.recordSyncAttempt()
+		err := relayer.RunOnce(ctx)
+		relayer.Health.recordSyncResult(err)
+		if err != nil {
 			log.Printf("sync error: %v", err)
 		}
 		select {

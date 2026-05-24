@@ -9,6 +9,7 @@ import (
 
 type Config struct {
 	GRPCAddr              string `json:"grpc_addr"`
+	ListenAddr            string `json:"listen_addr"`
 	DrandAPIBaseURL       string `json:"drand_api_base_url"`
 	DrandChainHash        string `json:"drand_chain_hash"`
 	PollIntervalSec       int    `json:"poll_interval_seconds"`
@@ -54,6 +55,7 @@ func loadConfig(path string) (Config, error) {
 
 func (c *Config) normalize() {
 	c.GRPCAddr = strings.TrimSpace(c.GRPCAddr)
+	c.ListenAddr = strings.TrimSpace(c.ListenAddr)
 	c.DrandAPIBaseURL = strings.TrimSpace(c.DrandAPIBaseURL)
 	c.DrandChainHash = strings.TrimSpace(c.DrandChainHash)
 	c.Submit.Binary = strings.TrimSpace(c.Submit.Binary)
@@ -73,6 +75,9 @@ func (c *Config) normalize() {
 func (c *Config) applyDefaults() {
 	if c.GRPCAddr == "" {
 		c.GRPCAddr = "127.0.0.1:9090"
+	}
+	if c.ListenAddr == "" {
+		c.ListenAddr = "127.0.0.1:9201"
 	}
 	if c.DrandAPIBaseURL == "" {
 		c.DrandAPIBaseURL = "https://api.drand.sh"
@@ -118,6 +123,9 @@ func (c *Config) applyDefaults() {
 func (c Config) Validate() error {
 	if c.GRPCAddr == "" {
 		return fmt.Errorf("grpc_addr required")
+	}
+	if c.ListenAddr == "" {
+		return fmt.Errorf("listen_addr required")
 	}
 	if c.DrandChainHash == "" {
 		return fmt.Errorf("drand_chain_hash required")

@@ -136,4 +136,18 @@ podman exec -it congridnet_node_1 \
 - Node RPC: host port `${CONGRID_RPC_PORT}` -> container `26657`
 - Node gRPC: host port `${CONGRID_GRPC_PORT}` -> container `9090`
 - Indexerd HTTP: host port `${CONGRID_INDEXER_PORT}` -> container `9100`
+- verifierd readiness HTTP: host port `${CONGRID_VERIFIER_HEALTH_PORT}` -> container `9200`
+- drand-relayer readiness HTTP: host port `${CONGRID_DRAND_HEALTH_PORT}` -> container `9201` when the `drand` profile is enabled
 - Chroma stays internal to the compose network by default
+
+Endpoint conventions:
+
+```bash
+curl -fsS http://127.0.0.1:${CONGRID_INDEXER_PORT:-9100}/healthz
+curl -fsS http://127.0.0.1:${CONGRID_VERIFIER_HEALTH_PORT:-9200}/healthz
+curl -s http://127.0.0.1:${CONGRID_VERIFIER_HEALTH_PORT:-9200}/readyz | jq .
+curl -fsS http://127.0.0.1:${CONGRID_DRAND_HEALTH_PORT:-9201}/healthz
+curl -s http://127.0.0.1:${CONGRID_DRAND_HEALTH_PORT:-9201}/readyz | jq .
+```
+
+`/healthz` is process liveness. `/readyz` is dependency/work readiness for signer agents and returns `503` with a JSON `reasons` list when the last poll/sync failed, no successful poll/sync has happened yet, or the last success is stale. The compose healthchecks use `/readyz` for `verifierd` and `drand-relayer`, and `/healthz` for `indexerd` and `chromad`.

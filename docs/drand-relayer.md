@@ -15,6 +15,7 @@ cp offchain/drandrelayer/config.example.json offchain/drandrelayer/config.json
 ```
 
 Key fields:
+- `listen_addr`: health/readiness HTTP endpoint (default `127.0.0.1:9201`)
 - `drand_api_base_url`: default `https://api.drand.sh`
 - `drand_chain_hash`: drand network chain hash (quicknet by default in example)
 - `poll_interval_seconds`: how often to poll drand
@@ -39,6 +40,22 @@ Long-running mode:
 ```bash
 go run ./offchain/drandrelayer --config offchain/drandrelayer/config.json
 ```
+
+## Health and readiness
+
+Long-running mode exposes:
+
+- `GET /healthz` on `listen_addr`: liveness only, returns `200 ok` while the process can serve HTTP.
+- `GET /readyz` on `listen_addr`: readiness JSON, returns `200` after successful chain + drand sync and `503` when sync has never succeeded, the last sync failed, or the last successful sync is stale.
+
+Example:
+
+```bash
+curl -fsS http://127.0.0.1:9201/healthz
+curl -s http://127.0.0.1:9201/readyz | jq .
+```
+
+The readiness body includes `last_sync_error`, `consecutive_errors`, `on_chain_round`, `latest_drand_round`, `last_submitted_round`, `next_submit_try_at`, and throttle state.
 
 ## Notes
 

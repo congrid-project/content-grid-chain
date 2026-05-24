@@ -25,6 +25,7 @@ type Agent struct {
 	Cfg      Config
 	Chain    *ChainClient
 	Verifier registryoffchain.HTTPContentVerifier
+	Health   *daemonHealth
 
 	mu       sync.Mutex
 	inFlight map[string]struct{}
@@ -36,6 +37,9 @@ func (a *Agent) PollOnce(ctx context.Context) error {
 	assignments, err := a.Chain.VerifierAssignments(ctx, a.Cfg.VerifierAddress)
 	if err != nil {
 		return err
+	}
+	if a.Health != nil {
+		a.Health.recordAssignmentScan(len(assignments))
 	}
 	now := time.Now().Unix()
 
@@ -85,15 +89,26 @@ func (a *Agent) Wait() {
 }
 
 func (a *Agent) runAssignment(ctx context.Context, assignment *registrypb.PublisherVerificationAssignment, key string) {
-	defer a.unmarkInFlight(key)
+	if a.Health != nil {
+		a.Health.recordAssignmentStarted(key)
+	}
+	var assignmentErr error
+	defer func() {
+		if a.Health != nil {
+			a.Health.recordAssignmentFinished(key, assignmentErr)
+		}
+		a.unmarkInFlight(key)
+	}()
 
 	commitDeadlineUnix := assignment.GetStartAtUnix() + a.Cfg.CommitWindowSeconds
 	if commitDeadlineUnix >= assignment.GetDeadlineUnix() {
-		log.Printf("assignment %s: commit window (%d) overlaps deadline (%d)", key, commitDeadlineUnix, assignment.GetDeadlineUnix())
+		assignmentErr = fmt.Errorf("commit window (%d) overlaps deadline (%d)", commitDeadlineUnix, assignment.GetDeadlineUnix())
+		log.Printf("assignment %s: %v", key, assignmentErr)
 		return
 	}
 	assignmentDeadline := time.Unix(assignment.GetDeadlineUnix(), 0)
 	if time.Now().Unix() > assignment.GetDeadlineUnix() {
+		assignmentErr = fmt.Errorf("deadline passed before assignment started")
 		log.Printf("missed assignment %s (deadline passed)", key)
 		a.deletePendingReveal(assignment)
 		return
@@ -101,7 +116,8 @@ func (a *Agent) runAssignment(ctx context.Context, assignment *registrypb.Publis
 
 	pending, hasPending, err := a.pendingRevealForAssignment(assignment)
 	if err != nil {
-		log.Printf("assignment %s: failed to load pending reveal state: %v", key, err)
+		assignmentErr = fmt.Errorf("failed to load pending reveal state: %w", err)
+		log.Printf("assignment %s: %v", key, assignmentErr)
 		return
 	}
 
@@ -112,23 +128,27 @@ func (a *Agent) runAssignment(ctx context.Context, assignment *registrypb.Publis
 		}
 
 		if time.Now().Unix() > commitDeadlineUnix {
-			log.Printf("assignment %s: commit window closed (deadline %d)", key, commitDeadlineUnix)
+			assignmentErr = fmt.Errorf("commit window closed (deadline %d)", commitDeadlineUnix)
+			log.Printf("assignment %s: %v", key, assignmentErr)
 			return
 		}
 
 		owner, err := a.Chain.PublisherOwner(ctx, assignment.GetDomain())
 		if err != nil {
-			log.Printf("assignment %s: failed to fetch owner: %v", key, err)
+			assignmentErr = fmt.Errorf("failed to fetch owner: %w", err)
+			log.Printf("assignment %s: %v", key, assignmentErr)
 			return
 		}
 		if owner == "" {
-			log.Printf("assignment %s: owner not found", key)
+			assignmentErr = fmt.Errorf("owner not found")
+			log.Printf("assignment %s: %v", key, assignmentErr)
 			return
 		}
 
 		timeout := time.Until(assignmentDeadline)
 		if timeout <= 0 {
-			log.Printf("assignment %s: deadline passed before verification", key)
+			assignmentErr = fmt.Errorf("deadline passed before verification")
+			log.Printf("assignment %s: %v", key, assignmentErr)
 			return
 		}
 		verifyCtx, cancel := context.WithTimeout(ctx, timeout)
@@ -170,7 +190,8 @@ func (a *Agent) runAssignment(ctx context.Context, assignment *registrypb.Publis
 
 		nonce, err := generateNonce(16)
 		if err != nil {
-			log.Printf("assignment %s: failed to generate nonce: %v", key, err)
+			assignmentErr = fmt.Errorf("failed to generate nonce: %w", err)
+			log.Printf("assignment %s: %v", key, assignmentErr)
 			return
 		}
 		evidenceHash := strings.TrimSpace(observedHash)
@@ -186,7 +207,8 @@ func (a *Agent) runAssignment(ctx context.Context, assignment *registrypb.Publis
 			CommitHash:     commitHash,
 		}
 		if err := a.savePendingReveal(pending); err != nil {
-			log.Printf("assignment %s: failed to persist pending reveal state: %v", key, err)
+			assignmentErr = fmt.Errorf("failed to persist pending reveal state: %w", err)
+			log.Printf("assignment %s: %v", key, assignmentErr)
 			return
 		}
 	} else {
@@ -195,12 +217,14 @@ func (a *Agent) runAssignment(ctx context.Context, assignment *registrypb.Publis
 
 	if !pending.CommitRecorded && time.Now().Unix() <= commitDeadlineUnix {
 		if err := a.submitCommitUntil(ctx, assignment, pending.CommitHash, time.Unix(commitDeadlineUnix, 0)); err != nil {
-			log.Printf("assignment %s: commit failed: %v", key, err)
+			assignmentErr = fmt.Errorf("commit failed: %w", err)
+			log.Printf("assignment %s: %v", key, assignmentErr)
 			return
 		}
 		pending.CommitRecorded = true
 		if err := a.savePendingReveal(pending); err != nil {
-			log.Printf("assignment %s: failed to update pending reveal state: %v", key, err)
+			assignmentErr = fmt.Errorf("failed to update pending reveal state: %w", err)
+			log.Printf("assignment %s: %v", key, assignmentErr)
 			return
 		}
 		log.Printf("assignment %s: submitted commit", key)
@@ -211,12 +235,14 @@ func (a *Agent) runAssignment(ctx context.Context, assignment *registrypb.Publis
 		return
 	}
 	if time.Now().Unix() > assignment.GetDeadlineUnix() {
-		log.Printf("assignment %s: missed reveal window (deadline %d)", key, assignment.GetDeadlineUnix())
+		assignmentErr = fmt.Errorf("missed reveal window (deadline %d)", assignment.GetDeadlineUnix())
+		log.Printf("assignment %s: %v", key, assignmentErr)
 		a.deletePendingReveal(assignment)
 		return
 	}
 	if err := a.submitRevealUntil(ctx, assignment, pending, assignmentDeadline); err != nil {
-		log.Printf("assignment %s: reveal failed: %v", key, err)
+		assignmentErr = fmt.Errorf("reveal failed: %w", err)
+		log.Printf("assignment %s: %v", key, assignmentErr)
 		if !isRetriableRevealError(err) || time.Now().After(assignmentDeadline) {
 			a.deletePendingReveal(assignment)
 		}
@@ -755,6 +781,12 @@ func (a *Agent) isInFlight(key string) bool {
 	defer a.mu.Unlock()
 	_, ok := a.inFlight[key]
 	return ok
+}
+
+func (a *Agent) inFlightCount() int {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return len(a.inFlight)
 }
 
 func assignmentKey(assignment *registrypb.PublisherVerificationAssignment) string {

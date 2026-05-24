@@ -1,5 +1,6 @@
 {
   "grpc_addr": "127.0.0.1:9090",
+  "listen_addr": "127.0.0.1:9201",
   "drand_api_base_url": "https://api.drand.sh",
   "drand_chain_hash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
   "poll_interval_seconds": 60,
