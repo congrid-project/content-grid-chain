@@ -35,7 +35,9 @@
 2. 准备现网引导信息：
    - 把官方 `genesis.json` 放到 `docker/network/genesis.json`，并保留 `CONGRID_GENESIS_FILE=/network/genesis.json`；或者
    - 直接在 `.env.operator` 中设置 `CONGRID_GENESIS_URL`。
-   - 同时填入当前网络的 `CONGRID_P2P_SEEDS` 和/或 `CONGRID_PERSISTENT_PEERS`。
+   - 将 `CONGRID_P2P_SEEDS` 设置为官方发布的 seed 列表，节点会通过 CometBFT PEX 和地址簿自动发现其他 peer。
+   - 正常运行时保持 `CONGRID_PERSISTENT_PEERS` 为空；只有需要固定连接某个 peer 时才设置。
+   - 保持 `CONGRID_P2P_PEX=true`。本地或私有 IP 网络将 `CONGRID_P2P_ADDR_BOOK_STRICT=false`；公开主网/测试网 seed 保持 `true`。
 
 3. 为 `verifierd` 准备签名密钥：
    - `docker/secrets/verifier.mnemonic`

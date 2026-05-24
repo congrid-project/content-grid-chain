@@ -81,22 +81,33 @@ The following example takes 3 nodes as an example. The process is: initializatio
    cp $HOME1/config/genesis.json $HOME3/config/genesis.json
    ```
 
-5. Configure ports and interconnections (to avoid local port conflicts)
+5. Configure ports and seed discovery (to avoid local port conflicts)
 - Edit `config/config.toml`: set `p2p.laddr` and `rpc.laddr`.
 - Edit `config/app.toml`: set `api.address` and `grpc.address`.
+- Keep peer exchange enabled on every node in the `[p2p]` section:
+   ```toml
+   pex = true
+   ```
+- For local/private addresses such as `127.0.0.1`, disable strict routability checks:
+   ```toml
+   addr_book_strict = false
+   ```
 - Example port assignment:
      - node1: p2p `26656`, rpc `26657`, api `1317`, grpc `9090`
      - node2: p2p `26666`, rpc `26667`, api `1417`, grpc `9190`
      - node3: p2p `26676`, rpc `26677`, api `1517`, grpc `9290`
 
-6. Set up persistent peers (at least let node2/node3 connect to node1)
+6. Configure node1 as the bootstrap seed for the new nodes
    ```bash
    NODE1_ID=$(./content-grid-d tendermint show-node-id --home $HOME1)
+   echo "${NODE1_ID}@127.0.0.1:26656"
    ```
-Set in `config/config.toml` of node2 and node3:
+Set only the printed seed value in the `[p2p]` section of `config/config.toml` for node2 and node3:
    ```
-   p2p.persistent_peers = "${NODE1_ID}@127.0.0.1:26656"
+   seeds = "<NODE1_ID>@127.0.0.1:26656"
+   persistent_peers = ""
    ```
+Node1 does not need to list node2/node3. When node2 and node3 start, they dial the seed, exchange peer addresses through PEX, and maintain their peer set through the CometBFT address book.
 
 7. Start the nodes separately (different terminals)
    ```bash
@@ -111,7 +122,7 @@ Production deployment is not fully automated in this repo yet. Use the official 
 
 1. Build or download the pinned release, then verify `./content-grid-d version`.
 2. Initialize a home directory and replace `config/genesis.json` with the official mainnet genesis.
-3. Update `config/config.toml` (seeds/persistent peers, p2p/rpc ports) and `config/app.toml` (api/grpc, minimum gas prices).
+3. Update `config/config.toml` (seed peers, p2p/rpc ports) and `config/app.toml` (api/grpc, minimum gas prices). New nodes should set `p2p.seeds` to the published seed list and leave `p2p.persistent_peers` empty unless an operator explicitly needs pinned peer connections.
 4. Start the node as a service and validate RPC/gRPC health.
 
 Containerized operator stack: see `docs/docker-operator.md` for a Docker/Compose example that joins an existing network and runs `verifierd` plus its support services.
@@ -138,7 +149,7 @@ The operator reserve portion is not yet distributed by on-chain logic in this re
 
 **Other node / publisher / verifier deployment**
 
-- Additional full nodes: repeat the production node steps with a separate `--home` and ports, then set `p2p.persistent_peers` or `p2p.seeds` to the mainnet peer list.
+- Additional full nodes: repeat the production node steps with a separate `--home` and ports, set `p2p.seeds` to the mainnet seed list, and rely on PEX/address-book discovery for the rest of the peer set.
 - Publishers: deploy your site, add the verification badge, then use the "Publisher Registration" flow below against the mainnet RPC/gRPC endpoints.
 - Verifiers (publisher verification agents): create and fund a verifier account, bond with `content-grid-d verifier bond`, and run `verifierd` using `docs/verifierd.md`.
 - Consensus validators: use the standard Cosmos `gentx` flow for genesis validators or `content-grid-d tx staking create-validator` after launch.

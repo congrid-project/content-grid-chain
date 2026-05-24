@@ -106,31 +106,32 @@ sha256sum ~/.content-grid-d/config/genesis.json
 
 ---
 
-## 双节点最小互联（persistent peers）
+## 双节点最小互联（seed + PEX）
 
-先在两台机器分别拿 node id：
+先在作为 seed 的节点上拿 node id：
 
 ```bash
 ./content-grid-d tendermint show-node-id --home ~/.content-grid-d
 ```
 
 设：
-- val1: `<NODE1_ID>@<VAL1_IP>:26656`
-- val2: `<NODE2_ID>@<VAL2_IP>:26656`
+- val1 为稳定可访问的 seed：`<NODE1_ID>@<VAL1_IP>:26656`
+- val2 为新加入节点
 
-`~/.content-grid-d/config/config.toml`：
+两台机器的 `~/.content-grid-d/config/config.toml` 的 `[p2p]` 段都保持 PEX 开启：
 
-- val1 节点：
 ```toml
-p2p.persistent_peers = "<NODE2_ID>@<VAL2_IP>:26656"
+pex = true
 ```
 
-- val2 节点：
+val2 只需要在 `[p2p]` 段配置 seed，不需要让 val1 预先写入 val2：
+
 ```toml
-p2p.persistent_peers = "<NODE1_ID>@<VAL1_IP>:26656"
+seeds = "<NODE1_ID>@<VAL1_IP>:26656"
+persistent_peers = ""
 ```
 
-如有防火墙，放通两台机器 TCP/26656。
+val1 不需要配置 val2。val2 启动后会先连接 val1，再通过 CometBFT PEX 和地址簿发现可连接 peer。如使用私网 IP 或本地地址，将对应节点的 `[p2p] addr_book_strict` 设为 `false`。如有防火墙，放通 seed 节点 TCP/26656。
 
 ---
 

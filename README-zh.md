@@ -81,22 +81,33 @@
    cp $HOME1/config/genesis.json $HOME3/config/genesis.json
    ```
 
-5. 配置端口和互连（以避免本地端口冲突）
+5. 配置端口和 seed 发现（以避免本地端口冲突）
 - 编辑`config/config.toml`：设置`p2p.laddr`和`rpc.laddr`。
 - 编辑`config/app.toml`：设置`api.address`和`grpc.address`。
+- 在所有节点的 `[p2p]` 段保持 peer exchange 开启：
+   ```toml
+   pex = true
+   ```
+- 本地或私有地址（如 `127.0.0.1`）需要关闭严格可路由检查：
+   ```toml
+   addr_book_strict = false
+   ```
 - 端口分配示例：
      - 节点1：p2p `26656`，rpc `26657`，api `1317`，grpc `9090`
      - 节点2：p2p `26666`，rpc `26667`，api `1417`，grpc `9190`
      - 节点3：p2p `26676`，rpc `26677`，api `1517`，grpc `9290`
 
-6. 设置持久对等点（至少让node2/node3连接到node1）
+6. 将 node1 配置为新节点的引导 seed
    ```bash
    NODE1_ID=$(./content-grid-d tendermint show-node-id --home $HOME1)
+   echo "${NODE1_ID}@127.0.0.1:26656"
    ```
-在node2和node3的`config/config.toml`中设置：
+只在 node2 和 node3 的 `config/config.toml` 的 `[p2p]` 段写入上面输出的 seed 值：
    ```
-   p2p.persistent_peers = "${NODE1_ID}@127.0.0.1:26656"
+   seeds = "<NODE1_ID>@127.0.0.1:26656"
+   persistent_peers = ""
    ```
+node1 不需要配置 node2/node3。node2 和 node3 启动后会先连接 seed，再通过 CometBFT PEX 和地址簿自动发现其他 peer。
 
 7. 分别启动节点（不同终端）
    ```bash
@@ -113,7 +124,7 @@
 
 1. 构建或下载固定版本的发布包，并确认 `./content-grid-d version`。
 2. 初始化节点主目录，用官方主网 `genesis.json` 替换 `config/genesis.json`。
-3. 配置 `config/config.toml`（`seeds`/`persistent_peers`、p2p/rpc 端口）与 `config/app.toml`（api/grpc、`minimum-gas-prices`）。
+3. 配置 `config/config.toml`（seed peers、p2p/rpc 端口）与 `config/app.toml`（api/grpc、`minimum-gas-prices`）。新节点只需要把 `p2p.seeds` 设置为官方 seed 列表，除非运维上明确需要固定连接，否则保持 `p2p.persistent_peers` 为空。
 4. 以服务方式启动节点并完成 RPC/gRPC 健康检查。
 
 容器化 operator 栈见 `docs/docker-operator-zh.md`，其中包含加入现有网络并同时运行 `verifierd` 与其支撑组件的 Docker/Compose 示例。
@@ -140,7 +151,7 @@
 
 **其他节点 / 发布者 / verifier 部署**
 
-- 其他全节点：重复主网节点步骤，使用独立 `--home` 和端口，并设置 `p2p.persistent_peers` 或 `p2p.seeds`。
+- 其他全节点：重复主网节点步骤，使用独立 `--home` 和端口，将 `p2p.seeds` 设置为主网 seed 列表，并依赖 PEX/地址簿自动发现其他 peer。
 - 发布者：部署站点、挂载验证徽章，并按下方“出版商注册”流程在主网 RPC/gRPC 上执行注册。
 - verifier（发布者核验代理）：创建并充值 verifier 地址，执行 `content-grid-d verifier bond` 绑定，再按 `docs/verifierd-zh.md` 部署 `verifierd`。
 - 共识验证人：创世期走标准 Cosmos `gentx` 流程；主网运行后可用 `content-grid-d tx staking create-validator`。

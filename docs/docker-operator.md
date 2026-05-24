@@ -35,7 +35,9 @@ Terminology in this document:
 2. Provide the existing network bootstrap data:
    - Put the official `genesis.json` at `docker/network/genesis.json` and keep `CONGRID_GENESIS_FILE=/network/genesis.json`, or
    - set `CONGRID_GENESIS_URL` to a reachable genesis URL.
-   - Set `CONGRID_P2P_SEEDS` and/or `CONGRID_PERSISTENT_PEERS` to the current network peer list.
+   - Set `CONGRID_P2P_SEEDS` to the published seed list. The node will use CometBFT PEX and its address book to discover the rest of the peers.
+   - Leave `CONGRID_PERSISTENT_PEERS` empty for normal operation; use it only when a node must pin a specific peer connection.
+   - Keep `CONGRID_P2P_PEX=true`. For local or private IP networks, set `CONGRID_P2P_ADDR_BOOK_STRICT=false`; for public mainnet/testnet seeds, keep it `true`.
 
 3. Provide signer secrets for `verifierd`:
    - `docker/secrets/verifier.mnemonic`
