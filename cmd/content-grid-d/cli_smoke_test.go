@@ -25,6 +25,10 @@ func TestCLISmokeLifecycle(t *testing.T) {
 
 	runCLI(t, homeDir, "init", "smoke-node", "--chain-id", chainID)
 
+	configPath := filepath.Join(homeDir, "config", "config.toml")
+	configContents := string(readFile(t, configPath))
+	require.Contains(t, configContents, `timeout_commit = "30s"`)
+
 	runCLI(t, homeDir, "keys", "add", "validator", "--keyring-backend", "test")
 	addr := strings.TrimSpace(runCLI(t, homeDir, "keys", "show", "validator", "--keyring-backend", "test", "--address"))
 	require.NotEmpty(t, addr)

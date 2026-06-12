@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"time"
 
 	cmtcfg "github.com/cometbft/cometbft/config"
 	dbm "github.com/cosmos/cosmos-db"
@@ -271,6 +272,7 @@ func txCommand() *cobra.Command {
 
 func initCometBFTConfig() *cmtcfg.Config {
 	cfg := cmtcfg.DefaultConfig()
+	cfg.Consensus.TimeoutCommit = 30 * time.Second
 	return cfg
 }
 
