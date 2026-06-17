@@ -25,6 +25,8 @@ go run ./cmd/congrid-site \
 
 Optional slot defaults: `--slot-rate-denom`, `--slot-unit-seconds`, `--slot-min-duration-seconds`, `--slot-max-duration-seconds`. Use `--gas-prices` to set the wallet gas price (default `0.001ucongrid`).
 
+Server-side registration and airdrop transactions invoke `content-grid-d`. By default the site looks up `content-grid-d` from `PATH`; for production, install it as `/usr/local/bin/content-grid-d` or set `--content-grid-bin /path/to/content-grid-d` / `CONTENT_GRID_BIN`.
+
 Open: <http://localhost:8080>
 
 ## Why Go?

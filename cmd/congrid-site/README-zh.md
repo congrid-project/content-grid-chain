@@ -24,6 +24,8 @@ go run ./cmd/congrid-site \
 
 可选插槽默认值：`--slot-rate-denom`、`--slot-unit-seconds`、`--slot-min-duration-seconds`、`--slot-max-duration-seconds`。使用 `--gas-prices` 设置钱包 gas price（默认 `0.001ucongrid`）。
 
+服务端注册和空投交易需要调用 `content-grid-d`。默认会从 `PATH` 查找 `content-grid-d`；生产环境建议安装到 `/usr/local/bin/content-grid-d`，或通过 `--content-grid-bin /path/to/content-grid-d` / `CONTENT_GRID_BIN` 显式指定。
+
 打开： <http://localhost:8080>
 
 ## 为什么要去？

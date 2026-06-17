@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os/exec"
 	"strings"
 	"time"
 
@@ -69,8 +68,7 @@ func (s *server) lookupKeyAddress(ctx context.Context, keyName string) (string, 
 	if s.regCfg.KeyringDir != "" {
 		args = append(args, "--keyring-dir", s.regCfg.KeyringDir)
 	}
-	cmd := exec.CommandContext(ctx, "./content-grid-d", args...)
-	cmd.Dir = "/home/eking/workspace/congrid.net"
+	cmd := contentGridCommand(ctx, s.regCfg.ContentGridBin, args...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("keys show failed: %w: %s", err, string(out))
@@ -104,8 +102,7 @@ func (s *server) sendPublisherRegister(ctx context.Context, domain, fromKey stri
 		args = append(args, "--gas-prices", s.regCfg.GasPrices)
 	}
 
-	cmd := exec.CommandContext(ctx, "./content-grid-d", args...)
-	cmd.Dir = "/home/eking/workspace/congrid.net"
+	cmd := contentGridCommand(ctx, s.regCfg.ContentGridBin, args...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("register failed: %w: %s", err, string(out))

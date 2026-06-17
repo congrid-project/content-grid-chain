@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os/exec"
 	"strings"
 	"sync"
 	"time"
@@ -18,17 +17,18 @@ import (
 )
 
 type airdropConfig struct {
-	DBPath        string
-	ChainID       string
-	NodeRPC       string
-	Denom         string
-	Amount        string
-	FaucetKeyName string
-	Keyring       string
-	KeyringDir    string
-	Fees          string
-	GasPrices     string
-	BaseURL       string
+	DBPath         string
+	ChainID        string
+	NodeRPC        string
+	Denom          string
+	Amount         string
+	FaucetKeyName  string
+	ContentGridBin string
+	Keyring        string
+	KeyringDir     string
+	Fees           string
+	GasPrices      string
+	BaseURL        string
 }
 
 type airdropper struct {
@@ -181,8 +181,7 @@ func (a *airdropper) sendAirdrop(ctx context.Context, toAddr string) (string, er
 		args = append(args, "--gas-prices", strings.TrimSpace(a.cfg.GasPrices))
 	}
 
-	cmd := exec.CommandContext(ctx, "./content-grid-d", args...)
-	cmd.Dir = "/home/eking/workspace/congrid.net"
+	cmd := contentGridCommand(ctx, a.cfg.ContentGridBin, args...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("send failed: %w: %s", err, string(out))

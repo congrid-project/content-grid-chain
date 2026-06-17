@@ -51,6 +51,7 @@ func main() {
 		denom          = flag.String("denom", "ucongrid", "fee token denom")
 		amount         = flag.String("airdrop-amount", "25000", "amount (in denom base units) to send per domain")
 		faucetKeyName  = flag.String("faucet-key", "faucet", "local keyring key name used by content-grid-d")
+		contentGridBin = flag.String("content-grid-bin", defaultContentGridBin(), "content-grid-d executable path/name for server-side tx helpers (or CONTENT_GRID_BIN)")
 		keyringBackend = flag.String("keyring-backend", "test", "keyring backend for content-grid-d")
 		keyringDir     = flag.String("keyring-dir", "", "optional keyring directory for content-grid-d")
 		fees           = flag.String("fees", "", "optional explicit fees (e.g. 0ucongrid or 2000stake)")
@@ -135,6 +136,7 @@ func main() {
 	regCfg := PublisherRegisterConfig{
 		ChainID:        strings.TrimSpace(*chainID),
 		NodeRPC:        strings.TrimSpace(*nodeRPC),
+		ContentGridBin: strings.TrimSpace(*contentGridBin),
 		KeyringBackend: strings.TrimSpace(*keyringBackend),
 		KeyringDir:     strings.TrimSpace(*keyringDir),
 		Fees:           strings.TrimSpace(*fees),
@@ -177,17 +179,18 @@ func main() {
 
 	if *airdropEnabled {
 		cfg := airdropConfig{
-			DBPath:        *airdropDB,
-			ChainID:       *chainID,
-			NodeRPC:       *nodeRPC,
-			Denom:         *denom,
-			Amount:        *amount,
-			FaucetKeyName: *faucetKeyName,
-			Keyring:       *keyringBackend,
-			KeyringDir:    strings.TrimSpace(*keyringDir),
-			Fees:          *fees,
-			GasPrices:     *gasPrices,
-			BaseURL:       *baseURL,
+			DBPath:         *airdropDB,
+			ChainID:        *chainID,
+			NodeRPC:        *nodeRPC,
+			Denom:          *denom,
+			Amount:         *amount,
+			FaucetKeyName:  *faucetKeyName,
+			ContentGridBin: strings.TrimSpace(*contentGridBin),
+			Keyring:        *keyringBackend,
+			KeyringDir:     strings.TrimSpace(*keyringDir),
+			Fees:           *fees,
+			GasPrices:      *gasPrices,
+			BaseURL:        *baseURL,
 		}
 		air, err := newAirdropper(s, cfg)
 		if err != nil {
@@ -347,6 +350,7 @@ type pageData struct {
 type PublisherRegisterConfig struct {
 	ChainID        string
 	NodeRPC        string
+	ContentGridBin string
 	KeyringBackend string
 	KeyringDir     string
 	Fees           string
