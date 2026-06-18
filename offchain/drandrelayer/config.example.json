@@ -11,7 +11,7 @@
   "max_submit_retries": 1,
   "submit": {
     "binary": "content-grid-d",
-    "chain_id": "content-grid-1",
+    "chain_id": "congrid-main",
     "node": "tcp://localhost:26657",
     "from": "drand-relayer",
     "keyring_backend": "os",

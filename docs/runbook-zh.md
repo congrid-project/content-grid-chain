@@ -162,7 +162,7 @@ go run ./cmd/congrid-site \
   --addr :8080 \
   --base-url https://congrid.net \
   --slots-store chain \
-  --chain-id content-grid-1 \
+  --chain-id congrid-main \
   --node tcp://127.0.0.1:26657 \
   --slots-grpc 127.0.0.1:9090 \
   --keyring-backend os

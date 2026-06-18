@@ -6,7 +6,7 @@ source /usr/local/lib/congrid/common.sh
 : "${CONGRID_KEYRING_BACKEND:=file}"
 : "${CONGRID_KEYRING_DIR:=}"
 : "${CONGRID_CLIENT_NODE:=tcp://127.0.0.1:26657}"
-: "${CONGRID_CHAIN_ID:=content-grid-1}"
+: "${CONGRID_CHAIN_ID:=congrid-main}"
 : "${CONGRID_VALIDATOR_JSON_PATH:=$CONGRID_HOME/config/validator.json}"
 : "${CONGRID_VALIDATOR_KEY_NAME:=}"
 : "${CONGRID_VALIDATOR_KEYRING_DIR:=$CONGRID_KEYRING_DIR}"

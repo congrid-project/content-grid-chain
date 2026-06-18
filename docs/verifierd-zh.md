@@ -70,7 +70,7 @@ printf '%s\n' '<keyring-passphrase>' > ~/.congrid-verifier.pass
 chmod 600 ~/.congrid-verifier.mnemonic ~/.congrid-verifier.pass
 
 cat > .env.verifier <<'EOF'
-CONGRID_CHAIN_ID=content-grid-1
+CONGRID_CHAIN_ID=congrid-main
 CONGRID_NODE_RPC_URL=tcp://127.0.0.1:26657
 CONGRID_NODE_GRPC_ADDR=127.0.0.1:9090
 CONGRID_VERIFIER_KEY_NAME=verifier-key

@@ -22,7 +22,7 @@ services:
     environment:
       CONGRID_HOME: /var/lib/congrid
       CONGRID_MONIKER: ${CONGRID_MONIKER:-node-01}
-      CONGRID_CHAIN_ID: ${CONGRID_CHAIN_ID:-content-grid-1}
+      CONGRID_CHAIN_ID: ${CONGRID_CHAIN_ID:-congrid-main}
       CONGRID_GENESIS_URL: ${CONGRID_GENESIS_URL:-}
       CONGRID_GENESIS_FILE: ${CONGRID_GENESIS_FILE:-}
       CONGRID_KEYRING_BACKEND: ${CONGRID_KEYRING_BACKEND:-file}
@@ -127,7 +127,7 @@ services:
         condition: service_healthy
     environment:
       CONGRID_HOME: /var/lib/congrid
-      CONGRID_CHAIN_ID: ${CONGRID_CHAIN_ID:-content-grid-1}
+      CONGRID_CHAIN_ID: ${CONGRID_CHAIN_ID:-congrid-main}
       CONGRID_NODE_RPC_URL: tcp://node:26657
       CONGRID_NODE_GRPC_ADDR: node:9090
       CONGRID_INDEXERD_BASE_URL: http://indexerd:9100
@@ -176,7 +176,7 @@ services:
         condition: service_healthy
     environment:
       CONGRID_HOME: /var/lib/congrid
-      CONGRID_CHAIN_ID: ${CONGRID_CHAIN_ID:-content-grid-1}
+      CONGRID_CHAIN_ID: ${CONGRID_CHAIN_ID:-congrid-main}
       CONGRID_NODE_RPC_URL: tcp://node:26657
       CONGRID_NODE_GRPC_ADDR: node:9090
       CONGRID_DRAND_LISTEN_ADDR: 0.0.0.0:9201

@@ -26,7 +26,7 @@ Commands:
   config      Render verifierd config only
 
 Common environment:
-  CONGRID_CHAIN_ID=content-grid-1
+  CONGRID_CHAIN_ID=congrid-main
   CONGRID_NODE_RPC_URL=tcp://127.0.0.1:26657
   CONGRID_NODE_GRPC_ADDR=127.0.0.1:9090
   CONGRID_HOME=$HOME/.content-grid-d
@@ -42,7 +42,7 @@ Common environment:
   CONGRID_VERIFIER_BOND_DENOM=ucongrid
 
 Example:
-  CONGRID_CHAIN_ID=content-grid-1 \
+  CONGRID_CHAIN_ID=congrid-main \
   CONGRID_NODE_RPC_URL=tcp://127.0.0.1:26657 \
   CONGRID_NODE_GRPC_ADDR=127.0.0.1:9090 \
   CONGRID_VERIFIER_KEY_MNEMONIC_FILE=$HOME/congrid-verifier.mnemonic \
@@ -96,7 +96,7 @@ fi
 : "${CONGRID_FORCE_BUILD:=false}"
 
 : "${CONGRID_HOME:=$HOME/.content-grid-d}"
-: "${CONGRID_CHAIN_ID:=content-grid-1}"
+: "${CONGRID_CHAIN_ID:=congrid-main}"
 : "${CONGRID_NODE_RPC_URL:=tcp://127.0.0.1:26657}"
 : "${CONGRID_NODE_GRPC_ADDR:=127.0.0.1:9090}"
 : "${CONGRID_WAIT_FOR_NODE:=true}"

@@ -6,7 +6,7 @@ source /usr/local/lib/congrid/common.sh
 load_env_or_file CONGRID_VERIFIER_KEY_MNEMONIC
 load_env_or_file CONGRID_VERIFIER_KEYRING_PASSPHRASE
 
-: "${CONGRID_CHAIN_ID:=content-grid-1}"
+: "${CONGRID_CHAIN_ID:=congrid-main}"
 : "${CONGRID_NODE_RPC_URL:=tcp://node:26657}"
 : "${CONGRID_NODE_GRPC_ADDR:=node:9090}"
 : "${CONGRID_INDEXERD_BASE_URL:=http://indexerd:9100}"

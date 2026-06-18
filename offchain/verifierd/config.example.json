@@ -15,7 +15,7 @@
   "indexerd_base_url": "http://127.0.0.1:9100",
   "submit": {
     "binary": "content-grid-d",
-    "chain_id": "content-grid-1",
+    "chain_id": "congrid-main",
     "node": "tcp://localhost:26657",
     "from": "verifier-key",
     "keyring_backend": "os",
