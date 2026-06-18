@@ -8,7 +8,7 @@
 ## 0. Environmental information (current recommended baseline)
 
 - Code directory: `/home/eking/workspace/congrid.net`
-- Chain node HOME: `/home/eking/.content-grid-d` (current default baseline)
+- Chain node HOME: `/home/eking/.content-grid` (current default baseline)
 - verifierd configuration: `/home/eking/workspace/congrid.net/offchain/verifierd/config.json`
 - drand-relayer configuration: `/home/eking/workspace/congrid.net/offchain/drandrelayer/config.json`
 - site configuration (env file recommended): `/home/eking/workspace/congrid.net/.env.site`
@@ -45,21 +45,21 @@ Person in charge (currently interim):
 Pre-check (required): `--home` must already contain `config/genesis.json`.
 
 ```bash
-ls -l /home/eking/.content-grid-d/config/genesis.json
+ls -l /home/eking/.content-grid/config/genesis.json
 ```
 
 If the file is missing, initialize first (single-node local baseline):
 
 ```bash
 cd /home/eking/workspace/congrid.net
-./content-grid-d devnet --home /home/eking/.content-grid-d --chain-id content-grid-dev-1
+./content-grid-d devnet --home /home/eking/.content-grid --chain-id content-grid-dev-1
 ```
 
 Then start:
 
 ```bash
 cd /home/eking/workspace/congrid.net
-./content-grid-d start --home /home/eking/.content-grid-d
+./content-grid-d start --home /home/eking/.content-grid
 ```
 
 ### Health Check
@@ -71,7 +71,7 @@ echo >/dev/tcp/127.0.0.1/26657
 echo >/dev/tcp/127.0.0.1/9090
 
 # 最新区块（应持续增长）
-./content-grid-d query block --type height --home /home/eking/.content-grid-d --node tcp://127.0.0.1:26657 -o json
+./content-grid-d query block --type height --home /home/eking/.content-grid --node tcp://127.0.0.1:26657 -o json
 ```
 
 Key checks:

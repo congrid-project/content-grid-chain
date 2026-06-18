@@ -47,7 +47,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	DefaultNodeHome = filepath.Join(home, ".content-grid-d")
+	DefaultNodeHome = filepath.Join(home, ".content-grid")
 
 	cfg := sdk.GetConfig()
 	cfg.SetBech32PrefixForAccount(DefaultChainIDPrefix, DefaultChainIDPrefix+"pub")

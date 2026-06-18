@@ -29,7 +29,7 @@ Common environment:
   CONGRID_CHAIN_ID=congrid-main
   CONGRID_NODE_RPC_URL=tcp://127.0.0.1:26657
   CONGRID_NODE_GRPC_ADDR=127.0.0.1:9090
-  CONGRID_HOME=$HOME/.content-grid-d
+  CONGRID_HOME=$HOME/.content-grid
 
   CONGRID_VERIFIER_KEY_NAME=verifier-key
   CONGRID_VERIFIER_KEYRING_BACKEND=file
@@ -95,7 +95,7 @@ fi
 : "${CONGRID_SKIP_BUILD:=false}"
 : "${CONGRID_FORCE_BUILD:=false}"
 
-: "${CONGRID_HOME:=$HOME/.content-grid-d}"
+: "${CONGRID_HOME:=$HOME/.content-grid}"
 : "${CONGRID_CHAIN_ID:=congrid-main}"
 : "${CONGRID_NODE_RPC_URL:=tcp://127.0.0.1:26657}"
 : "${CONGRID_NODE_GRPC_ADDR:=127.0.0.1:9090}"

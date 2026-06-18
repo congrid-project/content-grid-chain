@@ -41,14 +41,14 @@ rm -rf "$COORD_HOME"
 
 ```bash
 # val1 机器
-./content-grid-d init val1 --chain-id "$CHAIN_ID" --home ~/.content-grid-d
-./content-grid-d keys add val1 --home ~/.content-grid-d --keyring-backend file
-./content-grid-d keys show val1 --address --home ~/.content-grid-d --keyring-backend file
+./content-grid-d init val1 --chain-id "$CHAIN_ID" --home ~/.content-grid
+./content-grid-d keys add val1 --home ~/.content-grid --keyring-backend file
+./content-grid-d keys show val1 --address --home ~/.content-grid --keyring-backend file
 
 # val2 机器
-./content-grid-d init val2 --chain-id "$CHAIN_ID" --home ~/.content-grid-d
-./content-grid-d keys add val2 --home ~/.content-grid-d --keyring-backend file
-./content-grid-d keys show val2 --address --home ~/.content-grid-d --keyring-backend file
+./content-grid-d init val2 --chain-id "$CHAIN_ID" --home ~/.content-grid
+./content-grid-d keys add val2 --home ~/.content-grid --keyring-backend file
+./content-grid-d keys show val2 --address --home ~/.content-grid --keyring-backend file
 ```
 
 把两个 `congrid1...` 地址发给协调机。
@@ -63,7 +63,7 @@ rm -rf "$COORD_HOME"
 ### D. 分发母 genesis 并生成 gentx
 
 把 `$COORD_HOME/config/genesis.json` 分发到 val1/val2，覆盖各自：
-`~/.content-grid-d/config/genesis.json`
+`~/.content-grid/config/genesis.json`
 
 各节点生成 gentx：
 
@@ -71,17 +71,17 @@ rm -rf "$COORD_HOME"
 # val1
 ./content-grid-d genesis gentx val1 1000000ucongrid \
   --chain-id "$CHAIN_ID" \
-  --home ~/.content-grid-d \
+  --home ~/.content-grid \
   --keyring-backend file
 
 # val2
 ./content-grid-d genesis gentx val2 1000000ucongrid \
   --chain-id "$CHAIN_ID" \
-  --home ~/.content-grid-d \
+  --home ~/.content-grid \
   --keyring-backend file
 ```
 
-将 `~/.content-grid-d/config/gentx/*.json` 回传给协调机。
+将 `~/.content-grid/config/gentx/*.json` 回传给协调机。
 
 ### E. 协调机收集并生成 final genesis
 
@@ -99,9 +99,9 @@ sha256sum "$COORD_HOME/config/genesis.json"
 每个节点：
 
 ```bash
-cp /path/to/final-genesis.json ~/.content-grid-d/config/genesis.json
-sha256sum ~/.content-grid-d/config/genesis.json
-./content-grid-d start --home ~/.content-grid-d
+cp /path/to/final-genesis.json ~/.content-grid/config/genesis.json
+sha256sum ~/.content-grid/config/genesis.json
+./content-grid-d start --home ~/.content-grid
 ```
 
 ---
@@ -111,14 +111,14 @@ sha256sum ~/.content-grid-d/config/genesis.json
 先在作为 seed 的节点上拿 node id：
 
 ```bash
-./content-grid-d tendermint show-node-id --home ~/.content-grid-d
+./content-grid-d tendermint show-node-id --home ~/.content-grid
 ```
 
 设：
 - val1 为稳定可访问的 seed：`<NODE1_ID>@<VAL1_IP>:26656`
 - val2 为新加入节点
 
-两台机器的 `~/.content-grid-d/config/config.toml` 的 `[p2p]` 段都保持 PEX 开启：
+两台机器的 `~/.content-grid/config/config.toml` 的 `[p2p]` 段都保持 PEX 开启：
 
 ```toml
 pex = true

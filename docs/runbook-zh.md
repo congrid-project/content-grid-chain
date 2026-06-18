@@ -10,7 +10,7 @@
 ## 0.环境信息（当前推荐基线）
 
 - 代码目录：`/home/eking/workspace/congrid.net`
-- 链节点HOME：`/home/eking/.content-grid-d`（当前默认基线）
+- 链节点HOME：`/home/eking/.content-grid`（当前默认基线）
 - verifierd 配置：`/home/eking/workspace/congrid.net/offchain/verifierd/config.json`
 - drand 中继器配置：`/home/eking/workspace/congrid.net/offchain/drandrelayer/config.json`
 - 站点配置（推荐 env 文件）：`/home/eking/workspace/congrid.net/.env.site`
@@ -47,21 +47,21 @@
 启动前检查（必做）：`--home` 目录下必须已有 `config/genesis.json`。
 
 ```bash
-ls -l /home/eking/.content-grid-d/config/genesis.json
+ls -l /home/eking/.content-grid/config/genesis.json
 ```
 
 如果文件不存在，先初始化（单节点本地基线）：
 
 ```bash
 cd /home/eking/workspace/congrid.net
-./content-grid-d devnet --home /home/eking/.content-grid-d --chain-id content-grid-dev-1
+./content-grid-d devnet --home /home/eking/.content-grid --chain-id content-grid-dev-1
 ```
 
 再启动：
 
 ```bash
 cd /home/eking/workspace/congrid.net
-./content-grid-d start --home /home/eking/.content-grid-d
+./content-grid-d start --home /home/eking/.content-grid
 ```
 
 ### 健康检查
@@ -73,7 +73,7 @@ echo >/dev/tcp/127.0.0.1/26657
 echo >/dev/tcp/127.0.0.1/9090
 
 # 最新区块（应持续增长）
-./content-grid-d query block --type height --home /home/eking/.content-grid-d --node tcp://127.0.0.1:26657 -o json
+./content-grid-d query block --type height --home /home/eking/.content-grid --node tcp://127.0.0.1:26657 -o json
 ```
 
 关键检查：
