@@ -1,9 +1,10 @@
 # verifierd (off-chain) — chain-driven publisher verification
 
-`verifierd` is an off-chain agent that **polls the chain for assignments**, waits until scheduled start time, verifies content, and submits results on-chain via commit–reveal.
+`verifierd` is an off-chain agent that delivers the chain-required drand round, **polls the chain for assignments**, waits until scheduled start time, verifies content, and submits results on-chain via commit–reveal. The standalone `drand-relayer` has been removed.
 
 ## What it does
 
+- **Delivers required drand randomness** by querying `DrandRequirement` and fetching only the exact unfilled round.
 - **Polls assignments** using registry query `VerifierAssignments` for its verifier address.
   - New publisher registrations are queued for the **next round** (not verified immediately in the current round).
 - **Validates assignment determinism locally** (round seed + domain => expected start time) before submitting tx.
@@ -49,10 +50,13 @@ Fields:
 - `disable_assignment_check`: set `true` to bypass verifierd's local deterministic assignment validation (default `false`)
 - `retry_backoff_seconds`: backoff after retriable commit/reveal errors such as sequence mismatch, reveal window not open, or tx wait timeout
 - `tx_inclusion_timeout_seconds`: how long to wait for submitted tx inclusion and successful tx `code`
+- `drand`: embedded delivery settings (`disabled`, `api_base_url`, `request_timeout_seconds`, and optional message-specific `fee_granter`)
 - `submit`: tx submission settings for `content-grid-d`
   - `binary`
   - `chain_id`, `node`, `from`, `keyring_backend`, `keyring_dir`, `keyring_passphrase_env`, `home`
-  - `gas`, `gas_adjustment`, `fees`, `gas_prices`, `broadcast_mode`, `yes`
+  - `gas`, `gas_adjustment`, `fees`, `gas_prices`, `fee_granter`, `broadcast_mode`, `yes`
+
+See `docs/drand.md` for the exact-round mapping, strict on-chain validation, and feegrant guidance.
 
 For unattended container deployments with `keyring_backend=file`, set `submit.keyring_passphrase_env` to the name of an environment variable that holds the passphrase.
 
@@ -84,4 +88,4 @@ curl -fsS http://127.0.0.1:9200/healthz
 curl -s http://127.0.0.1:9200/readyz | jq .
 ```
 
-The readiness body includes operator-facing state such as `last_poll_error`, `consecutive_errors`, `last_scan_assignments`, `in_flight_assignments`, `pending_reveals`, and the latest assignment worker error.
+The readiness body includes operator-facing state such as `last_poll_error`, `consecutive_errors`, `last_scan_assignments`, `in_flight_assignments`, `pending_reveals`, the latest assignment worker error, and `drand_*` requirement/submission fields.

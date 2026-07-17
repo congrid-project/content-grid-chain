@@ -1,6 +1,6 @@
 # 生产运行手册（Runbook）
 
-> 适用于：`content-grid-d`、`verifierd`、`drand-relayer`、`congrid-site`。
+> 适用于：`content-grid-d`、`verifierd`、`congrid-site`。
 > 目标：出现问题时，值班学生5分钟内定位方向，15分钟内实施缓解措施。
 
 > 术语说明：`validator` 指 Cosmos 共识验证人；`verifier` 指 ConGrid 的发布者核验角色及其 `verifierd` 代理。
@@ -12,7 +12,6 @@
 - 代码目录：`/home/eking/workspace/congrid.net`
 - 链节点HOME：`/home/eking/.content-grid`（当前默认基线）
 - verifierd 配置：`/home/eking/workspace/congrid.net/offchain/verifierd/config.json`
-- drand 中继器配置：`/home/eking/workspace/congrid.net/offchain/drandrelayer/config.json`
 - 站点配置（推荐 env 文件）：`/home/eking/workspace/congrid.net/.env.site`
 - 日志目录（推荐）：`/home/eking/workspace/congrid.net/logs/`
 - 时区：`America/Toronto`
@@ -30,9 +29,7 @@
 - 链节点：`content-grid-d`
 - 职责：共识、状态执行、gRPC/RPC 提供
 - verifier 代理：`verifierd`
-- 职责：拉动分配、提交/揭示、站点验证
-- 随机信标中继：`drand-relayer`
-- 职责：拉取最新的drand信标并上传到链上提交
+- 职责：投递链上指定的 drand round、拉取分配、提交/揭示、站点验证
 - 官方网站/市场：`congrid-site`
 - 职责：链上展示和用户入口、槽位/租约提交
 
@@ -132,28 +129,19 @@ cd /home/eking/workspace/congrid.net
 ```
 
 关键日志关键字：
+- `submitted required drand beacon round=`
 - `submitted commit`
 - `revealed result (passed=true|false)`
 - `commit failed` / `reveal failed`
 
-## 2.3 drand-relayer
+检查 drand 状态：
 
-### 启动（手动模式）
 ```bash
-cd /home/eking/workspace/congrid.net
-./drand-relayer --config /home/eking/workspace/congrid.net/offchain/drandrelayer/config.json
+./content-grid-d query registry drand-requirement
+curl -s http://127.0.0.1:9200/readyz | jq '{status,reasons,drand_enabled,drand_pending,drand_required_round,drand_submitted,last_drand_error}'
 ```
 
-### 单轮探索
-```bash
-./drand-relayer --config /home/eking/workspace/congrid.net/offchain/drandrelayer/config.json --once
-```
-
-关键日志关键字：
-- `submitted beacon round=`
-- `sync error`
-
-## 2.4 congrid-site
+## 2.3 congrid-site
 
 ### 开始（示例）
 ```bash
@@ -180,7 +168,7 @@ go run ./cmd/congrid-site \
 
 - [ ] 链高正常增长
 - [ ] verifierd 最近 15 分钟 commit/reveal 成功率符合标准
-- [ ] drand信标缠绕轮数持续增加（无长期停滞）
+- [ ] verifierd `/readyz` 中已发布的 required drand round 没有长期 pending
 - [ ] 发布者已验证 比例没有异常下降
 - [ ] 租赁违约（VIOLATED）比率未异常上升
 - [ ]站点可用，提交路径可用

@@ -123,11 +123,16 @@ fi
 : "${CONGRID_VERIFIER_RETRY_BACKOFF_SECONDS:=30}"
 : "${CONGRID_VERIFIER_TX_INCLUSION_TIMEOUT_SECONDS:=120}"
 : "${CONGRID_INDEXERD_BASE_URL:=}"
+: "${CONGRID_DRAND_DELIVERY_DISABLED:=false}"
+: "${CONGRID_DRAND_API_BASE_URL:=https://api.drand.sh}"
+: "${CONGRID_DRAND_REQUEST_TIMEOUT_SECONDS:=10}"
+: "${CONGRID_DRAND_FEE_GRANTER:=}"
 
-: "${CONGRID_VERIFIER_GAS:=200000}"
+: "${CONGRID_VERIFIER_GAS:=250000}"
 : "${CONGRID_VERIFIER_GAS_ADJUSTMENT:=1}"
 : "${CONGRID_VERIFIER_FEES:=5000ucongrid}"
 : "${CONGRID_VERIFIER_GAS_PRICES:=}"
+: "${CONGRID_VERIFIER_FEE_GRANTER:=}"
 : "${CONGRID_VERIFIER_BROADCAST_MODE:=sync}"
 : "${CONGRID_VERIFIER_BOND_AMOUNT:=}"
 : "${CONGRID_VERIFIER_BOND_DENOM:=ucongrid}"
@@ -388,9 +393,11 @@ render_verifier_config() {
   local verifier_address="$1"
   local keyring_passphrase_env=""
   local disable_assignment_check
+  local drand_delivery_disabled
   local tmp
 
   disable_assignment_check="$(json_bool CONGRID_VERIFIER_DISABLE_ASSIGNMENT_CHECK "$CONGRID_VERIFIER_DISABLE_ASSIGNMENT_CHECK")"
+  drand_delivery_disabled="$(json_bool CONGRID_DRAND_DELIVERY_DISABLED "$CONGRID_DRAND_DELIVERY_DISABLED")"
   if [ "$CONGRID_VERIFIER_KEYRING_BACKEND" = "file" ]; then
     keyring_passphrase_env="CONGRID_VERIFIER_KEYRING_PASSPHRASE"
   fi
@@ -413,6 +420,12 @@ render_verifier_config() {
   "retry_backoff_seconds": $CONGRID_VERIFIER_RETRY_BACKOFF_SECONDS,
   "tx_inclusion_timeout_seconds": $CONGRID_VERIFIER_TX_INCLUSION_TIMEOUT_SECONDS,
   "indexerd_base_url": "$(json_escape "$CONGRID_INDEXERD_BASE_URL")",
+  "drand": {
+    "disabled": $drand_delivery_disabled,
+    "api_base_url": "$(json_escape "$CONGRID_DRAND_API_BASE_URL")",
+    "request_timeout_seconds": $CONGRID_DRAND_REQUEST_TIMEOUT_SECONDS,
+    "fee_granter": "$(json_escape "$CONGRID_DRAND_FEE_GRANTER")"
+  },
   "submit": {
     "binary": "$(json_escape "$CONTENT_GRID_BIN")",
     "chain_id": "$(json_escape "$CONGRID_CHAIN_ID")",
@@ -426,6 +439,7 @@ render_verifier_config() {
     "gas_adjustment": $CONGRID_VERIFIER_GAS_ADJUSTMENT,
     "fees": "$(json_escape "$CONGRID_VERIFIER_FEES")",
     "gas_prices": "$(json_escape "$CONGRID_VERIFIER_GAS_PRICES")",
+    "fee_granter": "$(json_escape "$CONGRID_VERIFIER_FEE_GRANTER")",
     "broadcast_mode": "$(json_escape "$CONGRID_VERIFIER_BROADCAST_MODE")",
     "yes": true
   }

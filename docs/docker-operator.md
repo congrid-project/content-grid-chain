@@ -12,8 +12,7 @@ Terminology in this document:
 - `node`: `content-grid-d` full node
 - `chromad`: vector DB + embedding helper used by `indexerd`
 - `indexerd`: publisher indexing and similarity API
-- `verifierd`: chain-driven verifier agent
-- `drand-relayer`: optional profile for drand beacon submission
+- `verifierd`: chain-driven verifier agent with exact-round drand delivery
 
 `verifierd` here is the Congrid publisher-verification agent. It is separate from a Cosmos consensus validator, though the same node container can also be used as a consensus validator if you provide the right staking/validator keys.
 
@@ -49,13 +48,9 @@ Terminology in this document:
    docker compose --env-file .env.operator -f docker-compose.operator.yml up -d --build
    ```
 
-5. If this operator should also run `drand-relayer`, start with the profile enabled:
+drand delivery is enabled inside `verifierd`; no additional compose profile is required.
 
-   ```bash
-   docker compose --env-file .env.operator -f docker-compose.operator.yml --profile drand up -d --build
-   ```
-
-If you only want a local full node and do not need `chromad`, `indexerd`, `verifierd`, or `drand-relayer`, build and start only the `node` service:
+If you only want a local full node and do not need `chromad`, `indexerd`, or `verifierd`, build and start only the `node` service:
 
 ```bash
 docker compose --env-file .env.operator -f docker-compose.operator.yml build node
@@ -67,15 +62,16 @@ The `node` service now uses a lightweight `node-runtime` build target that conta
 ## Keyring Notes
 
 - The compose example defaults to `CONGRID_KEYRING_BACKEND=file`.
-- `verifierd` and `drand-relayer` support unattended `file` keyring signing by reading the passphrase from a file-backed environment variable.
-- Use separate keyring directories for the validator, verifier, and drand-relayer accounts, such as `CONGRID_VALIDATOR_KEYRING_DIR`, `CONGRID_VERIFIER_KEYRING_DIR`, and `CONGRID_DRAND_KEYRING_DIR`. This avoids sharing one `file` keyring passphrase and import flow across unrelated accounts.
+- `verifierd` supports unattended `file` keyring signing by reading the passphrase from a file-backed environment variable.
+- Use separate validator and verifier keyrings. drand delivery reuses the verifier signer and no longer needs a separate keyring.
 - For disposable local testing only, you can switch to `CONGRID_KEYRING_BACKEND=test` and set mnemonic values directly in the env file instead of using secret files.
 
-## drand-relayer Long-Running Cadence
+## Embedded drand Delivery
 
-- Defaults are `CONGRID_DRAND_POLL_INTERVAL_SECONDS=60` and `CONGRID_DRAND_MIN_SUBMIT_INTERVAL_SECONDS=300`, so the relayer checks once per minute and submits at most once every 5 minutes.
-- For account sequence mismatch or tx cache races, defaults are `CONGRID_DRAND_RETRY_BACKOFF_SECONDS=30` and `CONGRID_DRAND_MAX_SUBMIT_RETRIES=1` to avoid repeatedly signing with a stale account sequence.
-- If block inclusion is slow, increase `CONGRID_DRAND_TX_INCLUSION_TIMEOUT_SECONDS`; the default is `120` seconds.
+- `CONGRID_DRAND_DELIVERY_DISABLED=false` enables delivery by default.
+- `verifierd` queries the chain's one pending `DrandRequirement` on its normal poll cadence; it never streams latest beacons.
+- `CONGRID_DRAND_API_BASE_URL` defaults to `https://api.drand.sh`.
+- Set `CONGRID_DRAND_FEE_GRANTER` to sponsor only drand submissions; see `docs/drand.md`.
 
 ## verifierd Submission Cadence
 
@@ -139,7 +135,6 @@ podman exec -it congridnet_node_1 \
 - Node gRPC: host port `${CONGRID_GRPC_PORT}` -> container `9090`
 - Indexerd HTTP: host port `${CONGRID_INDEXER_PORT}` -> container `9100`
 - verifierd readiness HTTP: host port `${CONGRID_VERIFIER_HEALTH_PORT}` -> container `9200`
-- drand-relayer readiness HTTP: host port `${CONGRID_DRAND_HEALTH_PORT}` -> container `9201` when the `drand` profile is enabled
 - Chroma stays internal to the compose network by default
 
 Endpoint conventions:
@@ -148,8 +143,6 @@ Endpoint conventions:
 curl -fsS http://127.0.0.1:${CONGRID_INDEXER_PORT:-9100}/healthz
 curl -fsS http://127.0.0.1:${CONGRID_VERIFIER_HEALTH_PORT:-9200}/healthz
 curl -s http://127.0.0.1:${CONGRID_VERIFIER_HEALTH_PORT:-9200}/readyz | jq .
-curl -fsS http://127.0.0.1:${CONGRID_DRAND_HEALTH_PORT:-9201}/healthz
-curl -s http://127.0.0.1:${CONGRID_DRAND_HEALTH_PORT:-9201}/readyz | jq .
 ```
 
-`/healthz` is process liveness. `/readyz` is dependency/work readiness for signer agents and returns `503` with a JSON `reasons` list when the last poll/sync failed, no successful poll/sync has happened yet, or the last success is stale. The compose healthchecks use `/readyz` for `verifierd` and `drand-relayer`, and `/healthz` for `indexerd` and `chromad`.
+`/healthz` is process liveness. `/readyz` is dependency/work readiness for the signer agent and returns `503` when polling is stale/failing or a published required drand round cannot be delivered. Its JSON includes `drand_*` state. Compose uses `/readyz` for `verifierd` and `/healthz` for `indexerd` and `chromad`.

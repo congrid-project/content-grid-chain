@@ -6,6 +6,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	registrypb "content-grid-chain/x/registry/typespb"
 )
 
 type daemonHealth struct {
@@ -23,6 +25,17 @@ type daemonHealth struct {
 	lastAssignmentEndedAt   time.Time
 	lastAssignmentKey       string
 	lastAssignmentError     string
+
+	drandEnabled             bool
+	drandPending             bool
+	drandSubmitted           bool
+	drandChainHash           string
+	drandRoundStartUnix      int64
+	drandRequiredRound       uint64
+	drandRequiredBeaconUnix  int64
+	lastDrandSubmissionAt    time.Time
+	lastDrandSubmissionRound uint64
+	lastDrandError           string
 }
 
 type verifierHealthSnapshot struct {
@@ -52,6 +65,18 @@ type verifierHealthSnapshot struct {
 	LastAssignmentEndedAt   string `json:"last_assignment_ended_at,omitempty"`
 	LastAssignmentKey       string `json:"last_assignment_key,omitempty"`
 	LastAssignmentError     string `json:"last_assignment_error,omitempty"`
+
+	DrandRelayDisabled       bool   `json:"drand_relay_disabled"`
+	DrandEnabled             bool   `json:"drand_enabled"`
+	DrandPending             bool   `json:"drand_pending"`
+	DrandSubmitted           bool   `json:"drand_submitted"`
+	DrandChainHash           string `json:"drand_chain_hash,omitempty"`
+	DrandRoundStartUnix      int64  `json:"drand_round_start_unix,omitempty"`
+	DrandRequiredRound       uint64 `json:"drand_required_round,omitempty"`
+	DrandRequiredBeaconUnix  int64  `json:"drand_required_beacon_unix,omitempty"`
+	LastDrandSubmissionAt    string `json:"last_drand_submission_at,omitempty"`
+	LastDrandSubmissionRound uint64 `json:"last_drand_submission_round,omitempty"`
+	LastDrandError           string `json:"last_drand_error,omitempty"`
 }
 
 func newDaemonHealth(pollInterval time.Duration) *daemonHealth {
@@ -107,6 +132,41 @@ func (h *daemonHealth) recordAssignmentFinished(key string, err error) {
 	h.lastAssignmentError = ""
 }
 
+func (h *daemonHealth) recordDrandRequirement(requirement *registrypb.QueryDrandRequirementResponse) {
+	if requirement == nil {
+		return
+	}
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.drandEnabled = requirement.GetEnabled()
+	h.drandPending = requirement.GetPending()
+	h.drandSubmitted = requirement.GetSubmitted()
+	h.drandChainHash = requirement.GetDrandChainHash()
+	h.drandRoundStartUnix = requirement.GetRoundStartUnix()
+	h.drandRequiredRound = requirement.GetRequiredDrandRound()
+	h.drandRequiredBeaconUnix = requirement.GetRequiredBeaconUnix()
+	if !h.drandPending || h.drandSubmitted {
+		h.lastDrandError = ""
+	}
+}
+
+func (h *daemonHealth) recordDrandSubmission(round uint64, err error) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.lastDrandSubmissionAt = time.Now().UTC()
+	if round > 0 {
+		h.lastDrandSubmissionRound = round
+	}
+	if err != nil {
+		h.lastDrandError = err.Error()
+		return
+	}
+	h.lastDrandError = ""
+	if round > 0 && round == h.drandRequiredRound {
+		h.drandSubmitted = true
+	}
+}
+
 func (h *daemonHealth) snapshot(cfg Config, inFlight, pending int, pendingErr error) (verifierHealthSnapshot, int) {
 	now := time.Now().UTC()
 	h.mu.Lock()
@@ -121,28 +181,39 @@ func (h *daemonHealth) snapshot(cfg Config, inFlight, pending int, pendingErr er
 		httpStatus = http.StatusServiceUnavailable
 	}
 	out := verifierHealthSnapshot{
-		Service:                 "verifierd",
-		Status:                  status,
-		Reasons:                 reasons,
-		StartedAt:               formatHealthTime(h.startedAt),
-		UptimeSeconds:           int64(now.Sub(h.startedAt).Seconds()),
-		CheckedAt:               formatHealthTime(now),
-		StaleAfterSeconds:       int64(staleAfter.Seconds()),
-		GRPCAddr:                cfg.GRPCAddr,
-		VerifierAddress:         cfg.VerifierAddress,
-		IndexerdBaseURL:         cfg.IndexerdBaseURL,
-		PollIntervalSeconds:     cfg.PollIntervalSec,
-		LastPollAttemptAt:       formatHealthTime(h.lastPollAttemptAt),
-		LastPollSuccessAt:       formatHealthTime(h.lastPollSuccessAt),
-		LastPollError:           h.lastPollError,
-		ConsecutiveErrors:       h.consecutiveErrors,
-		LastScanAssignments:     h.lastAssignmentScan,
-		InFlightAssignments:     inFlight,
-		PendingReveals:          pending,
-		LastAssignmentStartedAt: formatHealthTime(h.lastAssignmentStartedAt),
-		LastAssignmentEndedAt:   formatHealthTime(h.lastAssignmentEndedAt),
-		LastAssignmentKey:       h.lastAssignmentKey,
-		LastAssignmentError:     h.lastAssignmentError,
+		Service:                  "verifierd",
+		Status:                   status,
+		Reasons:                  reasons,
+		StartedAt:                formatHealthTime(h.startedAt),
+		UptimeSeconds:            int64(now.Sub(h.startedAt).Seconds()),
+		CheckedAt:                formatHealthTime(now),
+		StaleAfterSeconds:        int64(staleAfter.Seconds()),
+		GRPCAddr:                 cfg.GRPCAddr,
+		VerifierAddress:          cfg.VerifierAddress,
+		IndexerdBaseURL:          cfg.IndexerdBaseURL,
+		PollIntervalSeconds:      cfg.PollIntervalSec,
+		LastPollAttemptAt:        formatHealthTime(h.lastPollAttemptAt),
+		LastPollSuccessAt:        formatHealthTime(h.lastPollSuccessAt),
+		LastPollError:            h.lastPollError,
+		ConsecutiveErrors:        h.consecutiveErrors,
+		LastScanAssignments:      h.lastAssignmentScan,
+		InFlightAssignments:      inFlight,
+		PendingReveals:           pending,
+		LastAssignmentStartedAt:  formatHealthTime(h.lastAssignmentStartedAt),
+		LastAssignmentEndedAt:    formatHealthTime(h.lastAssignmentEndedAt),
+		LastAssignmentKey:        h.lastAssignmentKey,
+		LastAssignmentError:      h.lastAssignmentError,
+		DrandRelayDisabled:       cfg.Drand.Disabled,
+		DrandEnabled:             h.drandEnabled,
+		DrandPending:             h.drandPending,
+		DrandSubmitted:           h.drandSubmitted,
+		DrandChainHash:           h.drandChainHash,
+		DrandRoundStartUnix:      h.drandRoundStartUnix,
+		DrandRequiredRound:       h.drandRequiredRound,
+		DrandRequiredBeaconUnix:  h.drandRequiredBeaconUnix,
+		LastDrandSubmissionAt:    formatHealthTime(h.lastDrandSubmissionAt),
+		LastDrandSubmissionRound: h.lastDrandSubmissionRound,
+		LastDrandError:           h.lastDrandError,
 	}
 	if pendingErr != nil {
 		out.PendingRevealError = pendingErr.Error()
@@ -164,6 +235,9 @@ func (h *daemonHealth) readinessReasons(now time.Time, staleAfter time.Duration)
 	}
 	if !h.lastPollSuccessAt.IsZero() && now.Sub(h.lastPollSuccessAt) > staleAfter {
 		reasons = append(reasons, "last successful poll is stale")
+	}
+	if h.lastDrandError != "" {
+		reasons = append(reasons, "required drand delivery failed: "+h.lastDrandError)
 	}
 	return reasons
 }

@@ -195,7 +195,7 @@ func executeDevnetCommand(home string, in io.Reader, args ...string) (string, er
 	root.SetErr(buf)
 	fullArgs := append([]string{"--home", home}, args...)
 	root.SetArgs(fullArgs)
-	err := svrcmd.Execute(root, devnetEnvPrefix, app.DefaultNodeHome)
+	err := svrcmd.Execute(root, devnetEnvPrefix, resolveHomeArg(fullArgs, app.DefaultNodeHome))
 	return buf.String(), err
 }
 

@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"sort"
@@ -22,10 +23,11 @@ import (
 )
 
 type Agent struct {
-	Cfg      Config
-	Chain    *ChainClient
-	Verifier registryoffchain.HTTPContentVerifier
-	Health   *daemonHealth
+	Cfg        Config
+	Chain      *ChainClient
+	Verifier   registryoffchain.HTTPContentVerifier
+	Health     *daemonHealth
+	HTTPClient *http.Client
 
 	mu       sync.Mutex
 	inFlight map[string]struct{}
@@ -34,6 +36,12 @@ type Agent struct {
 }
 
 func (a *Agent) PollOnce(ctx context.Context) error {
+	if err := a.relayRequiredDrand(ctx); err != nil {
+		log.Printf("drand delivery error: %v", err)
+		if a.Health != nil {
+			a.Health.recordDrandSubmission(0, err)
+		}
+	}
 	assignments, err := a.Chain.VerifierAssignments(ctx, a.Cfg.VerifierAddress)
 	if err != nil {
 		return err
@@ -298,27 +306,7 @@ func (a *Agent) submitCommit(ctx context.Context, assignment *registrypb.Publish
 		"--broadcast-mode", a.Cfg.Submit.BroadcastMode,
 		"--output", "json",
 	}
-	if a.Cfg.Submit.KeyringDir != "" {
-		args = append(args, "--keyring-dir", a.Cfg.Submit.KeyringDir)
-	}
-	if a.Cfg.Submit.Home != "" {
-		args = append(args, "--home", a.Cfg.Submit.Home)
-	}
-	if a.Cfg.Submit.Gas != "" {
-		args = append(args, "--gas", a.Cfg.Submit.Gas)
-	}
-	if a.Cfg.Submit.GasAdjustment > 0 {
-		args = append(args, "--gas-adjustment", fmt.Sprintf("%.2f", a.Cfg.Submit.GasAdjustment))
-	}
-	if a.Cfg.Submit.Fees != "" {
-		args = append(args, "--fees", a.Cfg.Submit.Fees)
-	}
-	if a.Cfg.Submit.GasPrices != "" {
-		args = append(args, "--gas-prices", a.Cfg.Submit.GasPrices)
-	}
-	if a.Cfg.Submit.Yes {
-		args = append(args, "-y")
-	}
+	args = a.appendSubmitFlags(args)
 
 	a.txMu.Lock()
 	defer a.txMu.Unlock()
@@ -353,27 +341,7 @@ func (a *Agent) submitReveal(ctx context.Context, assignment *registrypb.Publish
 	if strings.TrimSpace(evidenceHash) != "" {
 		args = append(args, "--evidence-hash", evidenceHash)
 	}
-	if a.Cfg.Submit.KeyringDir != "" {
-		args = append(args, "--keyring-dir", a.Cfg.Submit.KeyringDir)
-	}
-	if a.Cfg.Submit.Home != "" {
-		args = append(args, "--home", a.Cfg.Submit.Home)
-	}
-	if a.Cfg.Submit.Gas != "" {
-		args = append(args, "--gas", a.Cfg.Submit.Gas)
-	}
-	if a.Cfg.Submit.GasAdjustment > 0 {
-		args = append(args, "--gas-adjustment", fmt.Sprintf("%.2f", a.Cfg.Submit.GasAdjustment))
-	}
-	if a.Cfg.Submit.Fees != "" {
-		args = append(args, "--fees", a.Cfg.Submit.Fees)
-	}
-	if a.Cfg.Submit.GasPrices != "" {
-		args = append(args, "--gas-prices", a.Cfg.Submit.GasPrices)
-	}
-	if a.Cfg.Submit.Yes {
-		args = append(args, "-y")
-	}
+	args = a.appendSubmitFlags(args)
 
 	a.txMu.Lock()
 	defer a.txMu.Unlock()

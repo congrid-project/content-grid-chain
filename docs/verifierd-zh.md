@@ -2,10 +2,11 @@
 
 术语说明：这里的 `verifierd` 服务于 ConGrid 的 `verifier` 角色，不是 Cosmos 共识验证人（`validator`）进程。
 
-`verifierd` 是一个链下代理。它会**轮询链上的 assignment**，等待计划开始时间，核验内容，然后通过 commit-reveal 将结果提交到链上。
+`verifierd` 是一个链下代理。它会投递链上指定的 drand round，并**轮询链上的 assignment**，等待计划开始时间，核验内容，然后通过 commit-reveal 将结果提交到链上。独立的 `drand-relayer` 已移除。
 
 ## 它做什么
 
+- 查询 `DrandRequirement`，仅抓取并提交链上当前指定且尚未满足的 drand round。
 - 通过注册表查询 `VerifierAssignments`，为自己的 `verifier_address` 拉取 assignment。
   - 新注册的 publisher 会排到**下一轮**，不会在当前轮立即核验。
 - 在发交易前，本地验证 assignment 的确定性（round seed + domain => 期望开始时间）。
@@ -51,10 +52,16 @@ cp offchain/verifierd/config.example.json offchain/verifierd/config.json
 - `disable_assignment_check`：设为 `true` 可跳过 verifierd 的本地确定性校验（默认 `false`）
 - `retry_backoff_seconds`：commit/reveal 遇到 sequence mismatch、窗口未打开、tx 等待超时等可重试错误后的退避时间
 - `tx_inclusion_timeout_seconds`：提交交易后等待进块并检查 tx `code` 的最长时间
+- `drand`：内置 drand 投递配置
+  - `disabled`：是否关闭本实例的投递职责；不影响 assignment 核验
+  - `api_base_url`、`request_timeout_seconds`
+  - `fee_granter`：可选的 drand 消息手续费代付账户
 - `submit`：`content-grid-d` 的交易提交配置
   - `binary`
   - `chain_id`、`node`、`from`、`keyring_backend`、`keyring_dir`、`keyring_passphrase_env`、`home`
-  - `gas`、`gas_adjustment`、`fees`、`gas_prices`、`broadcast_mode`、`yes`
+  - `gas`、`gas_adjustment`、`fees`、`gas_prices`、`fee_granter`、`broadcast_mode`、`yes`
+
+drand 的链上参数、严格验签、指定 round 算法及 feegrant 建议见 `docs/drand-zh.md`。
 
 如果是容器里的无人值守部署，并且使用 `keyring_backend=file`，请把 `submit.keyring_passphrase_env` 设置为一个环境变量名；该环境变量的值就是 keyring 口令。
 

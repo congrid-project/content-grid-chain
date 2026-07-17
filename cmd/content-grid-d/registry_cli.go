@@ -257,7 +257,7 @@ func registrySubmitDrandBeaconTxCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "submit-drand-beacon",
-		Short: "Submit a drand beacon for randomness mixing",
+		Short: "Submit the exact drand beacon required by the next verification round",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)
@@ -269,6 +269,9 @@ func registrySubmitDrandBeaconTxCmd() *cobra.Command {
 			}
 			if strings.TrimSpace(randomnessHex) == "" {
 				return fmt.Errorf("--randomness-hex required")
+			}
+			if strings.TrimSpace(signatureHex) == "" {
+				return fmt.Errorf("--signature-hex required")
 			}
 			msg := &typespb.MsgSubmitDrandBeacon{
 				Submitter:     clientCtx.GetFromAddress().String(),
@@ -285,7 +288,7 @@ func registrySubmitDrandBeaconTxCmd() *cobra.Command {
 
 	cmd.Flags().Uint64Var(&round, "round", 0, "drand round")
 	cmd.Flags().StringVar(&randomnessHex, "randomness-hex", "", "drand randomness hex")
-	cmd.Flags().StringVar(&signatureHex, "signature-hex", "", "drand signature hex (optional, recommended)")
+	cmd.Flags().StringVar(&signatureHex, "signature-hex", "", "drand signature hex")
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }
@@ -300,6 +303,7 @@ func registryQueryCmd() *cobra.Command {
 		registryQueryRoundMetaCmd(),
 		registryQueryDrandBeaconCmd(),
 		registryQueryLatestDrandBeaconCmd(),
+		registryQueryDrandRequirementCmd(),
 		registryQuerySlotsCmd(),
 		registryQueryLeasesCmd(),
 	)
@@ -399,6 +403,28 @@ func registryQueryLatestDrandBeaconCmd() *cobra.Command {
 			}
 			queryClient := typespb.NewQueryClient(qctx)
 			resp, err := queryClient.LatestDrandBeacon(cmd.Context(), &typespb.QueryLatestDrandBeaconRequest{})
+			if err != nil {
+				return err
+			}
+			return qctx.PrintProto(resp)
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+func registryQueryDrandRequirementCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "drand-requirement",
+		Short: "Query the exact drand round required for the next verification round",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			qctx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+			queryClient := typespb.NewQueryClient(qctx)
+			resp, err := queryClient.DrandRequirement(cmd.Context(), &typespb.QueryDrandRequirementRequest{})
 			if err != nil {
 				return err
 			}

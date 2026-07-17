@@ -13,6 +13,12 @@
   "retry_backoff_seconds": 30,
   "tx_inclusion_timeout_seconds": 120,
   "indexerd_base_url": "http://127.0.0.1:9100",
+  "drand": {
+    "disabled": false,
+    "api_base_url": "https://api.drand.sh",
+    "request_timeout_seconds": 10,
+    "fee_granter": ""
+  },
   "submit": {
     "binary": "content-grid-d",
     "chain_id": "congrid-main",
@@ -22,10 +28,11 @@
     "keyring_dir": "",
     "keyring_passphrase_env": "",
     "home": "",
-    "gas": "200000",
+    "gas": "250000",
     "gas_adjustment": 1.0,
     "fees": "5000ucongrid",
     "gas_prices": "",
+    "fee_granter": "",
     "broadcast_mode": "sync",
     "yes": true
   }

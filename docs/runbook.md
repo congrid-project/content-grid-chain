@@ -1,6 +1,6 @@
 # Production runbook (Runbook)
 
-> Applies to: `content-grid-d`, `verifierd`, `drand-relayer`, `congrid-site`.
+> Applies to: `content-grid-d`, `verifierd`, `congrid-site`.
 > Goal: When a problem occurs, students on duty will locate the direction within 5 minutes and implement mitigating actions within 15 minutes.
 
 ---
@@ -10,7 +10,6 @@
 - Code directory: `/home/eking/workspace/congrid.net`
 - Chain node HOME: `/home/eking/.content-grid` (current default baseline)
 - verifierd configuration: `/home/eking/workspace/congrid.net/offchain/verifierd/config.json`
-- drand-relayer configuration: `/home/eking/workspace/congrid.net/offchain/drandrelayer/config.json`
 - site configuration (env file recommended): `/home/eking/workspace/congrid.net/.env.site`
 - Log directory (recommended): `/home/eking/workspace/congrid.net/logs/`
 - Time zone: `America/Toronto`
@@ -28,9 +27,7 @@ Person in charge (currently interim):
 - Chain node: `content-grid-d`
 - Responsibilities: consensus, state execution, gRPC/RPC provision
 - Verification agent: `verifierd`
-- Responsibilities: pull assignment, commit/reveal, site verification
-- Random beacon relay: `drand-relayer`
-- Responsibility: Pull the latest beacon of drand and upload it to the chain for submission
+- Responsibilities: deliver the chain-required drand round, pull assignments, commit/reveal, and verify sites
 - Official website/market: `congrid-site`
 - Responsibility: display and user entrance, slot/lease submission on the chain
 
@@ -101,6 +98,7 @@ curl -s http://127.0.0.1:9200/readyz | jq .
 ```
 
 Key log keywords:
+- `submitted required drand beacon round=`
 - `submitted commit`
 - `revealed result (passed=true|false)`
 - `commit failed` / `reveal failed`
@@ -110,40 +108,16 @@ Key readiness fields:
 - `last_poll_error`, `consecutive_errors`: chain polling failures
 - `in_flight_assignments`, `pending_reveals`: active and persisted commit/reveal work
 - `last_assignment_error`: latest worker-level commit/reveal/state failure
+- `drand_pending`, `drand_required_round`, `drand_submitted`, `last_drand_error`: embedded drand delivery state
 
-## 2.3 drand-relayer
+Inspect the current exact-round requirement with:
 
-### Start (manual mode)
 ```bash
-cd /home/eking/workspace/congrid.net
-./drand-relayer --config /home/eking/workspace/congrid.net/offchain/drandrelayer/config.json
+./content-grid-d query registry drand-requirement
+curl -s http://127.0.0.1:9200/readyz | jq '{status,reasons,drand_enabled,drand_pending,drand_required_round,drand_submitted,last_drand_error}'
 ```
 
-### Single round exploration
-```bash
-./drand-relayer --config /home/eking/workspace/congrid.net/offchain/drandrelayer/config.json --once
-```
-
-### Health Check
-```bash
-# Liveness
-curl -fsS http://127.0.0.1:9201/healthz
-
-# Readiness and operator state
-curl -s http://127.0.0.1:9201/readyz | jq .
-```
-
-Key log keywords:
-- `submitted beacon round=`
-- `sync error`
-
-Key readiness fields:
-- `status` / `reasons`: `ready` or why `/readyz` returned `503`
-- `last_sync_error`, `consecutive_errors`: chain or drand API sync failures
-- `on_chain_round`, `latest_drand_round`: whether the relayer is observing fresh drand data
-- `last_submitted_round`, `next_submit_try_at`, `throttled_until`: submission/backoff state
-
-## 2.4 congrid-site
+## 2.3 congrid-site
 
 ### Start (example)
 ```bash
@@ -171,9 +145,8 @@ Health check:
 
 - [ ] Chain height grows normally
 - [ ] `verifierd` `/readyz` is `ready`
-- [ ] `drand-relayer` `/readyz` is `ready` when enabled
 - [ ] verifierd The commit/reveal success rate in the last 15 minutes meets the standard
-- [ ] The number of drand beacon winding rounds continues to increase (no long-term stagnation)
+- [ ] Published required drand rounds do not remain pending in verifierd `/readyz`
 - [ ] publisher VERIFIED There is no abnormal decrease in the ratio
 - [ ] Lease default (VIOLATED) ratio has not increased abnormally
 - [ ] site is available, submission path is available

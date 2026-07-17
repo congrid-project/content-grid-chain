@@ -25,6 +25,7 @@ const (
 	Query_RoundMeta_FullMethodName             = "/contentgrid.registry.v1.Query/RoundMeta"
 	Query_DrandBeacon_FullMethodName           = "/contentgrid.registry.v1.Query/DrandBeacon"
 	Query_LatestDrandBeacon_FullMethodName     = "/contentgrid.registry.v1.Query/LatestDrandBeacon"
+	Query_DrandRequirement_FullMethodName      = "/contentgrid.registry.v1.Query/DrandRequirement"
 	Query_PublisherSimilarStats_FullMethodName = "/contentgrid.registry.v1.Query/PublisherSimilarStats"
 	Query_Slots_FullMethodName                 = "/contentgrid.registry.v1.Query/Slots"
 	Query_Leases_FullMethodName                = "/contentgrid.registry.v1.Query/Leases"
@@ -40,6 +41,7 @@ type QueryClient interface {
 	RoundMeta(ctx context.Context, in *QueryRoundMetaRequest, opts ...grpc.CallOption) (*QueryRoundMetaResponse, error)
 	DrandBeacon(ctx context.Context, in *QueryDrandBeaconRequest, opts ...grpc.CallOption) (*QueryDrandBeaconResponse, error)
 	LatestDrandBeacon(ctx context.Context, in *QueryLatestDrandBeaconRequest, opts ...grpc.CallOption) (*QueryLatestDrandBeaconResponse, error)
+	DrandRequirement(ctx context.Context, in *QueryDrandRequirementRequest, opts ...grpc.CallOption) (*QueryDrandRequirementResponse, error)
 	// Latest similar-site verification settlement for a publisher.
 	PublisherSimilarStats(ctx context.Context, in *QueryPublisherSimilarStatsRequest, opts ...grpc.CallOption) (*QueryPublisherSimilarStatsResponse, error)
 	Slots(ctx context.Context, in *QuerySlotsRequest, opts ...grpc.CallOption) (*QuerySlotsResponse, error)
@@ -114,6 +116,16 @@ func (c *queryClient) LatestDrandBeacon(ctx context.Context, in *QueryLatestDran
 	return out, nil
 }
 
+func (c *queryClient) DrandRequirement(ctx context.Context, in *QueryDrandRequirementRequest, opts ...grpc.CallOption) (*QueryDrandRequirementResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryDrandRequirementResponse)
+	err := c.cc.Invoke(ctx, Query_DrandRequirement_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *queryClient) PublisherSimilarStats(ctx context.Context, in *QueryPublisherSimilarStatsRequest, opts ...grpc.CallOption) (*QueryPublisherSimilarStatsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(QueryPublisherSimilarStatsResponse)
@@ -154,6 +166,7 @@ type QueryServer interface {
 	RoundMeta(context.Context, *QueryRoundMetaRequest) (*QueryRoundMetaResponse, error)
 	DrandBeacon(context.Context, *QueryDrandBeaconRequest) (*QueryDrandBeaconResponse, error)
 	LatestDrandBeacon(context.Context, *QueryLatestDrandBeaconRequest) (*QueryLatestDrandBeaconResponse, error)
+	DrandRequirement(context.Context, *QueryDrandRequirementRequest) (*QueryDrandRequirementResponse, error)
 	// Latest similar-site verification settlement for a publisher.
 	PublisherSimilarStats(context.Context, *QueryPublisherSimilarStatsRequest) (*QueryPublisherSimilarStatsResponse, error)
 	Slots(context.Context, *QuerySlotsRequest) (*QuerySlotsResponse, error)
@@ -185,6 +198,9 @@ func (UnimplementedQueryServer) DrandBeacon(context.Context, *QueryDrandBeaconRe
 }
 func (UnimplementedQueryServer) LatestDrandBeacon(context.Context, *QueryLatestDrandBeaconRequest) (*QueryLatestDrandBeaconResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method LatestDrandBeacon not implemented")
+}
+func (UnimplementedQueryServer) DrandRequirement(context.Context, *QueryDrandRequirementRequest) (*QueryDrandRequirementResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DrandRequirement not implemented")
 }
 func (UnimplementedQueryServer) PublisherSimilarStats(context.Context, *QueryPublisherSimilarStatsRequest) (*QueryPublisherSimilarStatsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method PublisherSimilarStats not implemented")
@@ -324,6 +340,24 @@ func _Query_LatestDrandBeacon_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_DrandRequirement_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryDrandRequirementRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).DrandRequirement(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_DrandRequirement_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).DrandRequirement(ctx, req.(*QueryDrandRequirementRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Query_PublisherSimilarStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QueryPublisherSimilarStatsRequest)
 	if err := dec(in); err != nil {
@@ -408,6 +442,10 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "LatestDrandBeacon",
 			Handler:    _Query_LatestDrandBeacon_Handler,
+		},
+		{
+			MethodName: "DrandRequirement",
+			Handler:    _Query_DrandRequirement_Handler,
 		},
 		{
 			MethodName: "PublisherSimilarStats",

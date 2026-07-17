@@ -27,7 +27,17 @@ type Config struct {
 	// Example: "http://127.0.0.1:9100".
 	IndexerdBaseURL string `json:"indexerd_base_url"`
 
-	Submit SubmitConfig `json:"submit"`
+	Drand  DrandRelayConfig `json:"drand"`
+	Submit SubmitConfig     `json:"submit"`
+}
+
+// DrandRelayConfig controls the drand delivery responsibility embedded in
+// verifierd. The chain tells verifierd which exact round to fetch.
+type DrandRelayConfig struct {
+	Disabled          bool   `json:"disabled"`
+	APIBaseURL        string `json:"api_base_url"`
+	RequestTimeoutSec int    `json:"request_timeout_seconds"`
+	FeeGranter        string `json:"fee_granter"`
 }
 
 type SubmitConfig struct {
@@ -43,6 +53,7 @@ type SubmitConfig struct {
 	GasAdjustment  float64 `json:"gas_adjustment"`
 	Fees           string  `json:"fees"`
 	GasPrices      string  `json:"gas_prices"`
+	FeeGranter     string  `json:"fee_granter"`
 	BroadcastMode  string  `json:"broadcast_mode"`
 	Yes            bool    `json:"yes"`
 }
@@ -68,6 +79,8 @@ func (c *Config) normalize() {
 	c.StateDir = strings.TrimSpace(c.StateDir)
 	c.VerifyScheme = strings.TrimSpace(c.VerifyScheme)
 	c.IndexerdBaseURL = strings.TrimSpace(c.IndexerdBaseURL)
+	c.Drand.APIBaseURL = strings.TrimSpace(c.Drand.APIBaseURL)
+	c.Drand.FeeGranter = strings.TrimSpace(c.Drand.FeeGranter)
 	c.Submit.Binary = strings.TrimSpace(c.Submit.Binary)
 	c.Submit.ChainID = strings.TrimSpace(c.Submit.ChainID)
 	c.Submit.Node = strings.TrimSpace(c.Submit.Node)
@@ -79,6 +92,7 @@ func (c *Config) normalize() {
 	c.Submit.Gas = strings.TrimSpace(c.Submit.Gas)
 	c.Submit.Fees = strings.TrimSpace(c.Submit.Fees)
 	c.Submit.GasPrices = strings.TrimSpace(c.Submit.GasPrices)
+	c.Submit.FeeGranter = strings.TrimSpace(c.Submit.FeeGranter)
 	c.Submit.BroadcastMode = strings.TrimSpace(c.Submit.BroadcastMode)
 }
 
@@ -116,6 +130,12 @@ func (c *Config) applyDefaults() {
 	if c.TxInclusionTimeoutSeconds <= 0 {
 		c.TxInclusionTimeoutSeconds = 120
 	}
+	if c.Drand.APIBaseURL == "" {
+		c.Drand.APIBaseURL = "https://api.drand.sh"
+	}
+	if c.Drand.RequestTimeoutSec <= 0 {
+		c.Drand.RequestTimeoutSec = 10
+	}
 	if c.Submit.Binary == "" {
 		c.Submit.Binary = "content-grid-d"
 	}
@@ -126,7 +146,7 @@ func (c *Config) applyDefaults() {
 		c.Submit.KeyringBackend = "os"
 	}
 	if c.Submit.Gas == "" {
-		c.Submit.Gas = "200000"
+		c.Submit.Gas = "250000"
 	}
 	if c.Submit.GasAdjustment <= 0 {
 		c.Submit.GasAdjustment = 1
@@ -167,6 +187,14 @@ func (c Config) Validate() error {
 	}
 	if c.TxInclusionTimeoutSeconds <= 0 {
 		return fmt.Errorf("tx_inclusion_timeout_seconds must be positive")
+	}
+	if !c.Drand.Disabled {
+		if c.Drand.APIBaseURL == "" {
+			return fmt.Errorf("drand.api_base_url required")
+		}
+		if c.Drand.RequestTimeoutSec <= 0 {
+			return fmt.Errorf("drand.request_timeout_seconds must be positive")
+		}
 	}
 	if c.Submit.ChainID == "" {
 		return fmt.Errorf("submit.chain_id required")

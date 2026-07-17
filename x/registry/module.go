@@ -86,6 +86,22 @@ func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 func (a AppModule) RegisterServices(cfg module.Configurator) {
 	typespb.RegisterMsgServer(cfg.MsgServer(), NewMsgServerImpl(a.keeper))
 	typespb.RegisterQueryServer(cfg.QueryServer(), NewQueryServer(a.keeper))
+	if err := cfg.RegisterMigration(ModuleName, 1, a.migrate1To2); err != nil {
+		panic(err)
+	}
+}
+
+func (a AppModule) migrate1To2(ctx sdk.Context) error {
+	params := a.keeper.GetParams(ctx)
+	params.DrandChainHash = params.EffectiveDrandChainHash()
+	params.DrandPublicKeyHex = params.EffectiveDrandPublicKeyHex()
+	params.DrandGenesisTimeUnix = params.EffectiveDrandGenesisTimeUnix()
+	params.DrandPeriodSeconds = params.EffectiveDrandPeriodSeconds()
+	params.DrandRoundOffsetSeconds = params.EffectiveDrandRoundOffsetSeconds()
+	if params.DrandEnabled {
+		params.DrandStrictMode = true
+	}
+	return a.keeper.SetParams(ctx, params)
 }
 
 // EndBlock runs verification round processing after transactions.
@@ -139,4 +155,4 @@ func (a AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) stdjson.R
 }
 
 // ConsensusVersion returns the module consensus version.
-func (AppModule) ConsensusVersion() uint64 { return 1 }
+func (AppModule) ConsensusVersion() uint64 { return 2 }

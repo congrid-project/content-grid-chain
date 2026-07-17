@@ -117,6 +117,11 @@ func TestPublisherParamsValidate(t *testing.T) {
 	params = DefaultPublisherParams()
 	params.VerifierRewardBaseShareBps = 10001
 	require.Error(t, params.Validate())
+
+	params = DefaultPublisherParams()
+	params.DrandEnabled = true
+	params.DrandRoundOffsetSeconds = params.RoundIntervalSeconds + 1
+	require.Error(t, params.Validate())
 }
 
 func TestRoundEmissionPools(t *testing.T) {

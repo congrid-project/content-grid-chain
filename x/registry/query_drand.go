@@ -30,3 +30,21 @@ func (q queryServer) LatestDrandBeacon(ctx context.Context, req *typespb.QueryLa
 	}
 	return &typespb.QueryLatestDrandBeaconResponse{Beacon: beacon.ToProto()}, nil
 }
+
+func (q queryServer) DrandRequirement(ctx context.Context, req *typespb.QueryDrandRequirementRequest) (*typespb.QueryDrandRequirementResponse, error) {
+	_ = req
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	requirement, err := q.keeper.PendingDrandRequirement(sdkCtx)
+	if err != nil {
+		return nil, err
+	}
+	return &typespb.QueryDrandRequirementResponse{
+		Enabled:            requirement.Enabled,
+		Pending:            requirement.Pending,
+		RoundStartUnix:     requirement.RoundStartUnix,
+		RequiredDrandRound: requirement.RequiredDrandRound,
+		RequiredBeaconUnix: requirement.RequiredBeaconUnix,
+		Submitted:          requirement.Submitted,
+		DrandChainHash:     requirement.DrandChainHash,
+	}, nil
+}

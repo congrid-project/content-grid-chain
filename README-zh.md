@@ -208,8 +208,7 @@ verifier 以普通账户地址（`congrid1...`）参与验证网络，首先将�
 
 ## 链下组件
 - `offchain/indexerd`：发布者主页索引 + 嵌入 + 相似性签名（请参阅`docs/indexerd-zh.md`）。
-- `offchain/verifierd`：链驱动的发布者核验代理（请参阅`docs/verifierd-zh.md`）。
-- `offchain/drandrelayer`：drand 信标中继用于随机数接入（请参阅`docs/drand-relayer-zh.md`）。
+- `offchain/verifierd`：链驱动的发布者核验代理，并负责指定 round 的 drand 信标投递（请参阅`docs/verifierd-zh.md`和`docs/drand-zh.md`）。
 
 ## 项目状态
 第一阶段骨架。 `app/` 包为 Cosmos SDK v0.53 提供模块基础知识、编码和默认创世帮助程序。

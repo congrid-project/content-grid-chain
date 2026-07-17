@@ -95,6 +95,33 @@ func TestDevnetCommand(t *testing.T) {
 	require.NotEmpty(t, accounts, "expected validator account in genesis")
 }
 
+func TestResolveHomeArg(t *testing.T) {
+	require.Equal(t, "/custom/home", resolveHomeArg([]string{"--home", "/custom/home", "version"}, "/default/home"))
+	require.Equal(t, "/custom/home", resolveHomeArg([]string{"version", "--home=/custom/home"}, "/default/home"))
+	require.Equal(t, "/default/home", resolveHomeArg([]string{"version"}, "/default/home"))
+}
+
+func TestExplicitHomeDoesNotCreateDefaultHome(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping CLI smoke test in short mode")
+	}
+
+	baseDir := t.TempDir()
+	defaultHome := filepath.Join(baseDir, "default-home")
+	explicitHome := filepath.Join(baseDir, "explicit-home")
+
+	cmd := NewRootCmd()
+	buf := new(bytes.Buffer)
+	cmd.SetOut(buf)
+	cmd.SetErr(buf)
+	args := []string{"--home", explicitHome, "init", "home-priority-node", "--chain-id", "home-priority-test"}
+	cmd.SetArgs(args)
+
+	require.NoError(t, svrcmd.Execute(cmd, "CONTENT_GRID", resolveHomeArg(args, defaultHome)), "command failed: %v", args)
+	require.DirExists(t, explicitHome)
+	require.NoDirExists(t, defaultHome)
+}
+
 func readFile(t *testing.T, path string) []byte {
 	data, err := os.ReadFile(path)
 	require.NoError(t, err)
@@ -108,6 +135,6 @@ func runCLI(t *testing.T, homeDir string, args ...string) string {
 	cmd.SetErr(buf)
 	fullArgs := append([]string{"--home", homeDir}, args...)
 	cmd.SetArgs(fullArgs)
-	require.NoError(t, svrcmd.Execute(cmd, "CONTENT_GRID", app.DefaultNodeHome), "command failed: %v", fullArgs)
+	require.NoError(t, svrcmd.Execute(cmd, "CONTENT_GRID", resolveHomeArg(fullArgs, app.DefaultNodeHome)), "command failed: %v", fullArgs)
 	return buf.String()
 }

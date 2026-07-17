@@ -62,6 +62,14 @@ func (c *ChainClient) RoundMeta(ctx context.Context, roundStartUnix int64) (*reg
 	return resp.GetMeta(), nil
 }
 
+func (c *ChainClient) DrandRequirement(ctx context.Context) (*registrypb.QueryDrandRequirementResponse, error) {
+	resp, err := c.regqry.DrandRequirement(ctx, &registrypb.QueryDrandRequirementRequest{})
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
 func (c *ChainClient) PublisherOwner(ctx context.Context, domain string) (string, error) {
 	resp, err := c.regqry.Publisher(ctx, &registrypb.QueryPublisherRequest{Domain: domain})
 	if err != nil {

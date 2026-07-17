@@ -49,8 +49,7 @@ func (k Keeper) assignNewRound(ctx sdk.Context) error {
 	}
 	// Always schedule newly-created assignments for the NEXT round boundary,
 	// so publisher registration never triggers immediate same-round verification.
-	roundStart := ctx.BlockTime().UTC().Truncate(time.Duration(intervalSeconds) * time.Second).Add(time.Duration(intervalSeconds) * time.Second)
-	roundStartUnix := roundStart.Unix()
+	roundStartUnix := nextVerificationRoundStartUnix(ctx.BlockTime(), intervalSeconds)
 	if roundStartUnix <= 0 {
 		return nil
 	}
@@ -92,37 +91,29 @@ func (k Keeper) assignNewRound(ctx sdk.Context) error {
 	var usedDrandRound uint64
 	var usedDrandRandomnessHex string
 	if params.EffectiveDrandEnabled() {
-		beacon, found := k.GetLatestDrandBeacon(ctx)
-		if !found {
-			if params.EffectiveDrandStrictMode() {
-				ctx.EventManager().EmitEvent(
-					sdk.NewEvent(
-						EventTypeDrandBeaconSkipped,
-						sdk.NewAttribute(AttributeKeyRoundStart, fmt.Sprintf("%d", roundStartUnix)),
-						sdk.NewAttribute(AttributeKeyStatus, "missing_latest_beacon"),
-					),
-				)
-				return nil
-			}
-		} else {
-			randomness, err := hex.DecodeString(strings.TrimSpace(beacon.RandomnessHex))
-			if err != nil {
-				if params.EffectiveDrandStrictMode() {
-					ctx.EventManager().EmitEvent(
-						sdk.NewEvent(
-							EventTypeDrandBeaconSkipped,
-							sdk.NewAttribute(AttributeKeyRoundStart, fmt.Sprintf("%d", roundStartUnix)),
-							sdk.NewAttribute(AttributeKeyStatus, "invalid_latest_beacon"),
-						),
-					)
-					return nil
-				}
-			} else {
-				roundSeed = registrypb.ComputeRoundSeedWithDrand(ctx.ChainID(), roundStartUnix, anchorHeight, anchorHash, beacon.Round, randomness)
-				usedDrandRound = beacon.Round
-				usedDrandRandomnessHex = strings.TrimSpace(beacon.RandomnessHex)
-			}
+		requiredRound, _, err := requiredDrandRound(params, roundStartUnix)
+		if err != nil {
+			return err
 		}
+		beacon, found := k.GetDrandBeacon(ctx, requiredRound)
+		if !found {
+			ctx.EventManager().EmitEvent(
+				sdk.NewEvent(
+					EventTypeDrandBeaconSkipped,
+					sdk.NewAttribute(AttributeKeyRoundStart, fmt.Sprintf("%d", roundStartUnix)),
+					sdk.NewAttribute(AttributeKeyDrandRound, fmt.Sprintf("%d", requiredRound)),
+					sdk.NewAttribute(AttributeKeyStatus, "missing_required_beacon"),
+				),
+			)
+			return nil
+		}
+		randomness, err := hex.DecodeString(strings.TrimSpace(beacon.RandomnessHex))
+		if err != nil {
+			return fmt.Errorf("decode stored drand beacon round %d: %w", requiredRound, err)
+		}
+		roundSeed = registrypb.ComputeRoundSeedWithDrand(ctx.ChainID(), roundStartUnix, anchorHeight, anchorHash, requiredRound, randomness)
+		usedDrandRound = requiredRound
+		usedDrandRandomnessHex = strings.TrimSpace(beacon.RandomnessHex)
 	}
 
 	if _, found := k.GetRoundMeta(ctx, roundStartUnix); !found {

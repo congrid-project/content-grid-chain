@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -27,7 +28,14 @@ const (
 	StatusRevoked     WebsiteStatus = 3
 )
 
-const DefaultDrandSchemeID = "bls-unchained-g1-rfc9380"
+const (
+	DefaultDrandSchemeID              = "bls-unchained-g1-rfc9380"
+	DefaultDrandChainHash             = "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971"
+	DefaultDrandPublicKeyHex          = "83cf0f2896adee7eb8b5f01fcad3912212c437e0073e911fb90022d3e760183c8c4b450b6a0a6c3ac6a5776a2d1064510d1fec758c921cc22b0e17e63aaf4bcb5ed66304de9cf809bd274ca73bab4af5a6e9c76a4bc09e76eae8991ef5ece45a"
+	DefaultDrandGenesisTimeUnix int64 = 1_692_803_367
+	DefaultDrandPeriodSeconds   int64 = 3
+	DefaultDrandRoundOffsetSec  int64 = 60
+)
 
 func (s WebsiteStatus) String() string {
 	switch s {
@@ -258,6 +266,10 @@ type PublisherParams struct {
 	DrandStrictMode                    bool                  `json:"drand_strict_mode"`
 	DrandSchemeID                      string                `json:"drand_scheme_id"`
 	DrandPublicKeyHex                  string                `json:"drand_public_key_hex"`
+	DrandChainHash                     string                `json:"drand_chain_hash"`
+	DrandGenesisTimeUnix               int64                 `json:"drand_genesis_time_unix"`
+	DrandPeriodSeconds                 int64                 `json:"drand_period_seconds"`
+	DrandRoundOffsetSeconds            int64                 `json:"drand_round_offset_seconds"`
 }
 
 // DefaultPublisherParams returns reference values aligned with the economic blueprint.
@@ -300,7 +312,11 @@ func DefaultPublisherParams() PublisherParams {
 		DrandEnabled:                       false,
 		DrandStrictMode:                    false,
 		DrandSchemeID:                      DefaultDrandSchemeID,
-		DrandPublicKeyHex:                  "",
+		DrandPublicKeyHex:                  DefaultDrandPublicKeyHex,
+		DrandChainHash:                     DefaultDrandChainHash,
+		DrandGenesisTimeUnix:               DefaultDrandGenesisTimeUnix,
+		DrandPeriodSeconds:                 DefaultDrandPeriodSeconds,
+		DrandRoundOffsetSeconds:            DefaultDrandRoundOffsetSec,
 	}
 }
 
@@ -401,17 +417,38 @@ func (pp PublisherParams) Validate() error {
 	if schemeID != "" && !isSupportedDrandSchemeID(schemeID) {
 		return fmt.Errorf("unsupported drand scheme id: %s", schemeID)
 	}
-	pubKeyHex := strings.TrimSpace(pp.DrandPublicKeyHex)
+	pubKeyHex := pp.EffectiveDrandPublicKeyHex()
 	if pubKeyHex != "" {
 		if _, err := hex.DecodeString(pubKeyHex); err != nil {
 			return fmt.Errorf("invalid drand public key hex: %w", err)
 		}
 	}
-	if pp.DrandStrictMode && !pp.DrandEnabled {
-		return fmt.Errorf("drand_strict_mode requires drand_enabled")
+	chainHash := pp.EffectiveDrandChainHash()
+	if chainHash != "" {
+		decoded, err := hex.DecodeString(chainHash)
+		if err != nil || len(decoded) != sha256.Size {
+			return fmt.Errorf("drand_chain_hash must be 32-byte hex")
+		}
 	}
-	if pp.DrandStrictMode && pubKeyHex == "" {
-		return fmt.Errorf("drand_strict_mode requires drand_public_key_hex")
+	if pp.DrandEnabled {
+		if pubKeyHex == "" {
+			return fmt.Errorf("drand_enabled requires drand_public_key_hex")
+		}
+		if chainHash == "" {
+			return fmt.Errorf("drand_enabled requires drand_chain_hash")
+		}
+		if pp.EffectiveDrandGenesisTimeUnix() <= 0 {
+			return fmt.Errorf("drand_enabled requires positive drand_genesis_time_unix")
+		}
+		if pp.EffectiveDrandPeriodSeconds() <= 0 {
+			return fmt.Errorf("drand_enabled requires positive drand_period_seconds")
+		}
+		if pp.EffectiveDrandRoundOffsetSeconds() <= 0 {
+			return fmt.Errorf("drand_enabled requires positive drand_round_offset_seconds")
+		}
+		if pp.EffectiveDrandRoundOffsetSeconds() > pp.RoundIntervalSeconds {
+			return fmt.Errorf("drand_round_offset_seconds must be <= round_interval_seconds")
+		}
 	}
 	return nil
 }
@@ -524,10 +561,10 @@ func (pp PublisherParams) EffectiveDrandEnabled() bool {
 }
 
 func (pp PublisherParams) EffectiveDrandStrictMode() bool {
-	if pp.DrandStrictMode {
-		return true
-	}
-	return DefaultPublisherParams().DrandStrictMode
+	// Drand delivery is always strict when enabled. Keeping the legacy field in
+	// genesis JSON avoids breaking existing configurations while removing the
+	// submit-or-fallback choice that could bias assignments.
+	return pp.EffectiveDrandEnabled()
 }
 
 func (pp PublisherParams) EffectiveDrandSchemeID() string {
@@ -538,7 +575,38 @@ func (pp PublisherParams) EffectiveDrandSchemeID() string {
 }
 
 func (pp PublisherParams) EffectiveDrandPublicKeyHex() string {
-	return strings.TrimSpace(pp.DrandPublicKeyHex)
+	if strings.TrimSpace(pp.DrandPublicKeyHex) != "" {
+		return strings.TrimSpace(pp.DrandPublicKeyHex)
+	}
+	return DefaultDrandPublicKeyHex
+}
+
+func (pp PublisherParams) EffectiveDrandChainHash() string {
+	if strings.TrimSpace(pp.DrandChainHash) != "" {
+		return strings.ToLower(strings.TrimSpace(pp.DrandChainHash))
+	}
+	return DefaultDrandChainHash
+}
+
+func (pp PublisherParams) EffectiveDrandGenesisTimeUnix() int64 {
+	if pp.DrandGenesisTimeUnix > 0 {
+		return pp.DrandGenesisTimeUnix
+	}
+	return DefaultDrandGenesisTimeUnix
+}
+
+func (pp PublisherParams) EffectiveDrandPeriodSeconds() int64 {
+	if pp.DrandPeriodSeconds > 0 {
+		return pp.DrandPeriodSeconds
+	}
+	return DefaultDrandPeriodSeconds
+}
+
+func (pp PublisherParams) EffectiveDrandRoundOffsetSeconds() int64 {
+	if pp.DrandRoundOffsetSeconds > 0 {
+		return pp.DrandRoundOffsetSeconds
+	}
+	return DefaultDrandRoundOffsetSec
 }
 
 // PublisherRewardSplit controls how the publisher bucket is shared each epoch.

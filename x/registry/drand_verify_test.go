@@ -73,6 +73,24 @@ func TestVerifyDrandBeaconSignature_RFC9380G1(t *testing.T) {
 	}
 }
 
+func TestVerifyDrandBeaconSignature_QuicknetRound42(t *testing.T) {
+	const signatureHex = "95a9f9f5b231b7714de1553105d8ffdf3dcda24cfdb1e689319bccf79a9c8ce430a91b811fbfaf763900bc998b5d686a"
+	signature, err := hex.DecodeString(signatureHex)
+	if err != nil {
+		t.Fatalf("decode signature: %v", err)
+	}
+	randomness := sha256.Sum256(signature)
+	if err := verifyDrandBeaconSignature(
+		42,
+		signatureHex,
+		hex.EncodeToString(randomness[:]),
+		DefaultDrandPublicKeyHex,
+		DefaultDrandSchemeID,
+	); err != nil {
+		t.Fatalf("expected official quicknet round 42 to verify, got err: %v", err)
+	}
+}
+
 func TestVerifyDrandBeaconSignature_InvalidRandomness(t *testing.T) {
 	pairing := bls12381.NewBLS12381SuiteWithDST(
 		[]byte("BLS_SIG_BLS12381G1_XMD:SHA-256_SSWU_RO_NUL_"),

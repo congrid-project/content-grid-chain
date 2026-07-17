@@ -13,7 +13,7 @@ func main() {
 	const envPrefix = "CONTENT_GRID"
 
 	rootCmd := NewRootCmd()
-	if err := svrcmd.Execute(rootCmd, envPrefix, app.DefaultNodeHome); err != nil {
+	if err := svrcmd.Execute(rootCmd, envPrefix, resolveHomeArg(os.Args[1:], app.DefaultNodeHome)); err != nil {
 		fmt.Fprintln(rootCmd.ErrOrStderr(), err)
 		os.Exit(1)
 	}

@@ -247,10 +247,11 @@ func (m *MsgSubmitDrandBeacon) ValidateBasic() error {
 		return fmt.Errorf("invalid randomness_hex: %w", err)
 	}
 	s := strings.TrimSpace(strings.ToLower(m.SignatureHex))
-	if s != "" {
-		if _, err := hex.DecodeString(s); err != nil {
-			return fmt.Errorf("invalid signature_hex: %w", err)
-		}
+	if s == "" {
+		return fmt.Errorf("signature_hex required")
+	}
+	if _, err := hex.DecodeString(s); err != nil {
+		return fmt.Errorf("invalid signature_hex: %w", err)
 	}
 	return nil
 }

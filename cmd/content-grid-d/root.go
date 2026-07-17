@@ -135,8 +135,6 @@ func ProvideClientContext(
 		WithHomeDir(app.DefaultNodeHome).
 		WithViper("")
 
-	clientCtx, _ = config.ReadFromClientConfig(clientCtx)
-
 	txConfigOpts.TextualCoinMetadataQueryFn = authtxconfig.NewGRPCCoinMetadataQueryFn(clientCtx)
 	txCfg, err := authtx.NewTxConfigWithOptions(clientCtx.Codec, txConfigOpts)
 	if err != nil {

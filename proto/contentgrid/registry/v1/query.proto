@@ -34,6 +34,10 @@ service Query {
     option (google.api.http).get = "/content-grid/registry/v1/drand/latest";
   }
 
+  rpc DrandRequirement(QueryDrandRequirementRequest) returns (QueryDrandRequirementResponse) {
+    option (google.api.http).get = "/content-grid/registry/v1/drand/requirement";
+  }
+
   // Latest similar-site verification settlement for a publisher.
   rpc PublisherSimilarStats(QueryPublisherSimilarStatsRequest) returns (QueryPublisherSimilarStatsResponse) {
     option (google.api.http).get = "/content-grid/registry/v1/publishers/{domain}/similar-stats";
@@ -96,6 +100,18 @@ message QueryLatestDrandBeaconRequest {}
 
 message QueryLatestDrandBeaconResponse {
   DrandBeacon beacon = 1;
+}
+
+message QueryDrandRequirementRequest {}
+
+message QueryDrandRequirementResponse {
+  bool enabled = 1;
+  bool pending = 2;
+  int64 round_start_unix = 3;
+  uint64 required_drand_round = 4;
+  int64 required_beacon_unix = 5;
+  bool submitted = 6;
+  string drand_chain_hash = 7;
 }
 
 message QueryPublisherSimilarStatsRequest {

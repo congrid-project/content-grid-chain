@@ -12,8 +12,7 @@
 - `node`：`content-grid-d` 全节点
 - `chromad`：`indexerd` 使用的向量库和嵌入辅助服务
 - `indexerd`：发布者索引与相似站点 API
-- `verifierd`：链驱动的发布者核验代理
-- `drand-relayer`：可选 profile，用于上链 drand 信标
+- `verifierd`：链驱动的发布者核验代理，并投递链上指定的 drand 信标
 
 这里的 `verifierd` 指 ConGrid 的发布者核验代理，不是 Cosmos 共识验证人本身；不过同一个 `node` 容器也可以作为共识验证人节点使用，只要你提供正确的质押 / 共识验证人密钥。
 
@@ -49,13 +48,9 @@
    docker compose --env-file .env.operator -f docker-compose.operator.yml up -d --build
    ```
 
-5. 如果该节点还要运行 `drand-relayer`，带上 profile：
+drand 投递默认已经随 `verifierd` 启用，不需要额外的 compose profile。
 
-   ```bash
-   docker compose --env-file .env.operator -f docker-compose.operator.yml --profile drand up -d --build
-   ```
-
-如果你只想在本地运行一个全节点，而不启动 `chromad` / `indexerd` / `verifierd` / `drand-relayer`，可以只构建并启动 `node` 服务：
+如果你只想在本地运行一个全节点，而不启动 `chromad` / `indexerd` / `verifierd`，可以只构建并启动 `node` 服务：
 
 ```bash
 docker compose --env-file .env.operator -f docker-compose.operator.yml build node
@@ -67,15 +62,16 @@ docker compose --env-file .env.operator -f docker-compose.operator.yml up -d nod
 ## Keyring 说明
 
 - 样例默认使用 `CONGRID_KEYRING_BACKEND=file`。
-- `verifierd` 和 `drand-relayer` 已支持在容器里用 `file` keyring 无人值守签名：口令通过文件注入到环境变量，再由进程读取。
-- 建议给 validator、verifier、drand-relayer 使用不同的 keyring 目录，例如 `CONGRID_VALIDATOR_KEYRING_DIR`、`CONGRID_VERIFIER_KEYRING_DIR`、`CONGRID_DRAND_KEYRING_DIR`。这样可以避免多个账户共用同一个 `file` keyring 口令和导入流程。
+- `verifierd` 支持在容器里用 `file` keyring 无人值守签名：口令通过文件注入到环境变量，再由进程读取。
+- validator 和 verifier 应使用不同的 keyring 目录。drand 投递复用 verifier signer，不再需要单独的 drand keyring。
 - 仅在本地临时测试时，才建议改成 `CONGRID_KEYRING_BACKEND=test` 并把 mnemonic 直接写入 env。
 
-## drand-relayer 长期运行节奏
+## verifierd 内置 drand 投递
 
-- 默认 `CONGRID_DRAND_POLL_INTERVAL_SECONDS=60`，`CONGRID_DRAND_MIN_SUBMIT_INTERVAL_SECONDS=300`，也就是每分钟检查一次，最多每 5 分钟提交一次链上 beacon。
-- 如果遇到 account sequence mismatch 或 tx cache 竞争，默认 `CONGRID_DRAND_RETRY_BACKOFF_SECONDS=30` 且 `CONGRID_DRAND_MAX_SUBMIT_RETRIES=1`，避免短时间内重复签同一账户序号。
-- 如果链出块慢，可以提高 `CONGRID_DRAND_TX_INCLUSION_TIMEOUT_SECONDS`，默认是 `120` 秒。
+- `CONGRID_DRAND_DELIVERY_DISABLED=false` 默认开启投递。
+- `verifierd` 使用普通轮询周期查询链上的唯一 `DrandRequirement`，不会持续上传 latest beacon。
+- `CONGRID_DRAND_API_BASE_URL` 默认是 `https://api.drand.sh`。
+- 设置 `CONGRID_DRAND_FEE_GRANTER` 后，只有 drand 提交使用该代付账户；详见 `docs/drand-zh.md`。
 
 ## verifierd 提交节奏
 
@@ -138,4 +134,5 @@ podman exec -it congridnet_node_1 \
 - Node RPC：宿主机 `${CONGRID_RPC_PORT}` -> 容器 `26657`
 - Node gRPC：宿主机 `${CONGRID_GRPC_PORT}` -> 容器 `9090`
 - Indexerd HTTP：宿主机 `${CONGRID_INDEXER_PORT}` -> 容器 `9100`
+- verifierd readiness HTTP：宿主机 `${CONGRID_VERIFIER_HEALTH_PORT}` -> 容器 `9200`；响应包含 `drand_*` 状态
 - `chromad` 默认只在 compose 内网暴露，不映射到宿主机

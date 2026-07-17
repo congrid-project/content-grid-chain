@@ -37,10 +37,11 @@ func main() {
 	verifier := registryoffchain.HTTPContentVerifier{Scheme: cfg.VerifyScheme}
 	health := newDaemonHealth(time.Duration(cfg.PollIntervalSec) * time.Second)
 	agent := &Agent{
-		Cfg:      cfg,
-		Chain:    client,
-		Verifier: verifier,
-		Health:   health,
+		Cfg:        cfg,
+		Chain:      client,
+		Verifier:   verifier,
+		Health:     health,
+		HTTPClient: &http.Client{Timeout: time.Duration(cfg.Drand.RequestTimeoutSec) * time.Second},
 	}
 
 	ctx := context.Background()
@@ -64,8 +65,8 @@ func main() {
 		}
 	}()
 
-	log.Printf("verifierd started (verifier=%s, poll=%ds, listen=%s, commit_start_buffer=%ds, tx_inclusion_timeout=%ds, retry_backoff=%ds)",
-		cfg.VerifierAddress, cfg.PollIntervalSec, cfg.ListenAddr, cfg.CommitStartBufferSeconds, cfg.TxInclusionTimeoutSeconds, cfg.RetryBackoffSeconds)
+	log.Printf("verifierd started (verifier=%s, poll=%ds, listen=%s, drand_delivery=%t, commit_start_buffer=%ds, tx_inclusion_timeout=%ds, retry_backoff=%ds)",
+		cfg.VerifierAddress, cfg.PollIntervalSec, cfg.ListenAddr, !cfg.Drand.Disabled, cfg.CommitStartBufferSeconds, cfg.TxInclusionTimeoutSeconds, cfg.RetryBackoffSeconds)
 	ticker := time.NewTicker(time.Duration(cfg.PollIntervalSec) * time.Second)
 	defer ticker.Stop()
 	for {

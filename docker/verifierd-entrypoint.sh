@@ -27,11 +27,16 @@ load_env_or_file CONGRID_VERIFIER_KEYRING_PASSPHRASE
 : "${CONGRID_VERIFIER_DISABLE_ASSIGNMENT_CHECK:=false}"
 : "${CONGRID_VERIFIER_RETRY_BACKOFF_SECONDS:=30}"
 : "${CONGRID_VERIFIER_TX_INCLUSION_TIMEOUT_SECONDS:=120}"
-: "${CONGRID_VERIFIER_GAS:=200000}"
+: "${CONGRID_VERIFIER_GAS:=250000}"
 : "${CONGRID_VERIFIER_GAS_ADJUSTMENT:=1}"
 : "${CONGRID_VERIFIER_FEES:=5000ucongrid}"
 : "${CONGRID_VERIFIER_GAS_PRICES:=}"
+: "${CONGRID_VERIFIER_FEE_GRANTER:=}"
 : "${CONGRID_VERIFIER_BROADCAST_MODE:=sync}"
+: "${CONGRID_DRAND_DELIVERY_DISABLED:=false}"
+: "${CONGRID_DRAND_API_BASE_URL:=https://api.drand.sh}"
+: "${CONGRID_DRAND_REQUEST_TIMEOUT_SECONDS:=10}"
+: "${CONGRID_DRAND_FEE_GRANTER:=}"
 
 ensure_automated_tx_backend "$CONGRID_VERIFIER_KEYRING_BACKEND" "${CONGRID_VERIFIER_KEYRING_PASSPHRASE:-}" "verifierd"
 ensure_key_present \
@@ -73,7 +78,10 @@ jq -n \
   --arg gas "$CONGRID_VERIFIER_GAS" \
   --arg fees "$CONGRID_VERIFIER_FEES" \
   --arg gas_prices "$CONGRID_VERIFIER_GAS_PRICES" \
+  --arg fee_granter "$CONGRID_VERIFIER_FEE_GRANTER" \
   --arg broadcast_mode "$CONGRID_VERIFIER_BROADCAST_MODE" \
+  --arg drand_api_base_url "$CONGRID_DRAND_API_BASE_URL" \
+  --arg drand_fee_granter "$CONGRID_DRAND_FEE_GRANTER" \
   --arg keyring_passphrase_env "$keyring_passphrase_env" \
   --argjson poll_interval_seconds "$CONGRID_VERIFIER_POLL_INTERVAL_SECONDS" \
   --argjson commit_start_buffer_seconds "$CONGRID_VERIFIER_COMMIT_START_BUFFER_SECONDS" \
@@ -83,6 +91,8 @@ jq -n \
   --argjson disable_assignment_check "$CONGRID_VERIFIER_DISABLE_ASSIGNMENT_CHECK" \
   --argjson retry_backoff_seconds "$CONGRID_VERIFIER_RETRY_BACKOFF_SECONDS" \
   --argjson tx_inclusion_timeout_seconds "$CONGRID_VERIFIER_TX_INCLUSION_TIMEOUT_SECONDS" \
+  --argjson drand_delivery_disabled "$CONGRID_DRAND_DELIVERY_DISABLED" \
+  --argjson drand_request_timeout_seconds "$CONGRID_DRAND_REQUEST_TIMEOUT_SECONDS" \
   --argjson gas_adjustment "$CONGRID_VERIFIER_GAS_ADJUSTMENT" \
   '
   {
@@ -100,6 +110,12 @@ jq -n \
     retry_backoff_seconds: $retry_backoff_seconds,
     tx_inclusion_timeout_seconds: $tx_inclusion_timeout_seconds,
     indexerd_base_url: $indexerd_base_url,
+    drand: {
+      disabled: $drand_delivery_disabled,
+      api_base_url: $drand_api_base_url,
+      request_timeout_seconds: $drand_request_timeout_seconds,
+      fee_granter: $drand_fee_granter
+    },
     submit: {
       binary: $binary,
       chain_id: $chain_id,
@@ -113,6 +129,7 @@ jq -n \
       gas_adjustment: $gas_adjustment,
       fees: $fees,
       gas_prices: $gas_prices,
+      fee_granter: $fee_granter,
       broadcast_mode: $broadcast_mode,
       yes: true
     }
