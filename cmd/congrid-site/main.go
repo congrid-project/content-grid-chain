@@ -41,6 +41,7 @@ func main() {
 		addr       = flag.String("addr", ":8080", "listen address")
 		baseURL    = flag.String("base-url", "https://congrid.net", "public base URL used in copyable snippets")
 		requestLog = flag.Bool("request-log", true, "log requests")
+		downloads  = flag.String("downloads-dir", defaultDownloadsDir(), "directory containing public release downloads")
 
 		airdropEnabled = flag.Bool("airdrop", false, "enable airdrop endpoint (requires funded faucet key)")
 		airdropDB      = flag.String("airdrop-db", "./congrid-airdrop.db", "path to airdrop claim database")
@@ -150,9 +151,15 @@ func main() {
 		walletCfg: walletCfg,
 		regCfg:    regCfg,
 	}
+	downloadHandler, err := newDownloadHandler(*downloads)
+	if err != nil {
+		log.Fatalf("downloads init: %v", err)
+	}
+	log.Printf("congrid-site downloads served from %s", downloadHandler.root)
 
 	mux := http.NewServeMux()
 	mux.Handle("GET /static/", http.StripPrefix("/static/", s.static))
+	mux.Handle("GET /downloads/{filename}", downloadHandler)
 	if walletRPCProxy != nil {
 		mux.Handle(walletRPCProxyPath, walletRPCProxy)
 		mux.Handle(walletRPCProxyPath+"/", walletRPCProxy)

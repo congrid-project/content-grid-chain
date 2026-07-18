@@ -23,6 +23,9 @@ to 2, fills missing quicknet metadata, and forces `drand_enabled=true` and
 
 3. Publish per-platform archives. The node archive must contain an executable
    named `content-grid-d`. Put `?checksum=sha256:<hex>` on each download URL.
+   The official site can serve the amd64 archive from
+   `cmd/congrid-site/downloads` at
+   `https://congrid.net/downloads/content-grid-d-linux-amd64.tar.gz`.
 4. Prepare the new verifierd with `drand.disabled=false` and sufficient fees or
    a message-restricted fee grant.
 5. Submit and pass the proposal:
@@ -30,7 +33,7 @@ to 2, fills missing quicknet metadata, and forces `drand_enabled=true` and
    ```bash
    export UPGRADE_NAME=drand-strict-v2
    export UPGRADE_HEIGHT=<future-height>
-   export NODE_ARCHIVE_URL='https://downloads.example.org/content-grid-d-linux-amd64.tar.gz?checksum=sha256:<sha256>'
+   export NODE_ARCHIVE_URL='https://congrid.net/downloads/content-grid-d-linux-amd64.tar.gz?checksum=sha256:<sha256>'
    export UPGRADE_INFO="$(jq -nc --arg url "$NODE_ARCHIVE_URL" '{binaries:{"linux/amd64":$url}}')"
 
    content-grid-d tx upgrade software-upgrade "$UPGRADE_NAME" \

@@ -46,6 +46,15 @@ sha256sum build/content-grid-d build/verifierd
 为每个验证人平台发布归档文件。节点归档中必须包含名为
 `content-grid-d` 的可执行文件。所有运营方应独立核对 Git commit 和 SHA-256。
 
+官网可以直接托管 Linux amd64 归档：
+
+```bash
+cp content-grid-d-linux-amd64.tar.gz cmd/congrid-site/downloads/
+curl -fI https://congrid.net/downloads/content-grid-d-linux-amd64.tar.gz
+```
+
+下载目录和生产持久化配置见 [`../cmd/congrid-site/README-zh.md`](../cmd/congrid-site/README-zh.md)。
+
 如果使用 Cosmovisor，把节点二进制预置到：
 
 ```text
@@ -79,7 +88,7 @@ $DAEMON_HOME/cosmovisor/upgrades/drand-strict-v2/bin/content-grid-d
 `?checksum=sha256:<hex>`：
 
 ```bash
-export NODE_ARCHIVE_URL='https://downloads.example.org/content-grid-d-linux-amd64.tar.gz?checksum=sha256:<sha256>'
+export NODE_ARCHIVE_URL='https://congrid.net/downloads/content-grid-d-linux-amd64.tar.gz?checksum=sha256:<sha256>'
 export UPGRADE_INFO="$(jq -nc --arg url "$NODE_ARCHIVE_URL" '{binaries:{"linux/amd64":$url}}')"
 
 content-grid-d tx upgrade software-upgrade "$UPGRADE_NAME" \

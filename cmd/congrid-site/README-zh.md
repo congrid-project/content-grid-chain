@@ -16,6 +16,7 @@ go run ./cmd/congrid-site --addr :8080 --base-url http://localhost:8080
 go run ./cmd/congrid-site \
   --addr :8080 \
   --base-url http://localhost:8080 \
+  --downloads-dir ./cmd/congrid-site/downloads \
   --slots-store chain \
   --chain-id <chain-id> \
   --node <rpc-url> \
@@ -27,6 +28,31 @@ go run ./cmd/congrid-site \
 服务端注册和空投交易需要调用 `content-grid-d`。默认会从 `PATH` 查找 `content-grid-d`；生产环境建议安装到 `/usr/local/bin/content-grid-d`，或通过 `--content-grid-bin /path/to/content-grid-d` / `CONTENT_GRID_BIN` 显式指定。
 
 打开： <http://localhost:8080>
+
+## 发布文件下载
+
+网站通过 `/downloads/{filename}` 提供发布归档。默认文件目录是
+`cmd/congrid-site/downloads`，也可以使用 `--downloads-dir` 或环境变量
+`CONGRID_SITE_DOWNLOADS_DIR` 指定持久化目录。
+
+例如：
+
+```bash
+cp content-grid-d-linux-amd64.tar.gz cmd/congrid-site/downloads/
+chmod 0644 cmd/congrid-site/downloads/content-grid-d-linux-amd64.tar.gz
+
+curl -fI http://localhost:8080/downloads/content-grid-d-linux-amd64.tar.gz
+```
+
+生产下载地址：
+
+```text
+https://congrid.net/downloads/content-grid-d-linux-amd64.tar.gz
+```
+
+文件在每次请求时从目录读取，复制完成后不需要重新编译或重启网站。归档文件默认被
+`.gitignore` 排除；请通过发布流程复制到网站服务器。目录本身不会列出文件，只允许
+下载顶层的普通文件；隐藏文件、子目录、符号链接和不安全文件名会返回 404。
 
 ## 为什么要去？
 
@@ -44,3 +70,4 @@ go run ./cmd/congrid-site \
 - `/airdrop` — 验证主页徽章并为每个主域发送一次性可选启动空投（启用时）
 - `/badge.png` — 可嵌入验证徽章（保留查询参数以供将来归因）
 - `/static/*` — CSS + 资源
+- `/downloads/{filename}` — 发布归档下载（支持 HEAD 和 Range，不提供目录列表）

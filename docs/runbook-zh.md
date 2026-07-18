@@ -149,6 +149,7 @@ cd /home/eking/workspace/congrid.net
 go run ./cmd/congrid-site \
   --addr :8080 \
   --base-url https://congrid.net \
+  --downloads-dir /var/lib/congrid-site/downloads \
   --slots-store chain \
   --chain-id congrid-main \
   --node tcp://127.0.0.1:26657 \
@@ -160,6 +161,7 @@ go run ./cmd/congrid-site \
 
 健康检查：
 - `/`、`/marketplace`、`/publisher/dashboard` 可访问
+- `curl -fI https://congrid.net/downloads/content-grid-d-linux-amd64.tar.gz` 返回 200，且 checksum 与发布记录一致
 - 提交slot/lease时，tx成功返回，有txhash
 
 ---

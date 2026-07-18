@@ -125,6 +125,7 @@ cd /home/eking/workspace/congrid.net
 go run ./cmd/congrid-site \
   --addr :8080 \
   --base-url https://congrid.net \
+  --downloads-dir /var/lib/congrid-site/downloads \
   --slots-store chain \
   --chain-id congrid-main \
   --node tcp://127.0.0.1:26657 \
@@ -137,6 +138,7 @@ Optional: set `--keyring-dir` if the content-grid-d keyring lives outside the de
 Health check:
 - `curl -fsS http://127.0.0.1:8080/healthz`
 - `/`, `/marketplace`, `/publisher/dashboard` are accessible
+- `curl -fI https://congrid.net/downloads/content-grid-d-linux-amd64.tar.gz` returns 200 and its checksum matches the release record
 - When submitting slot/lease, tx returns successfully and has txhash
 
 ---
