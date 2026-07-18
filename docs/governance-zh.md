@@ -13,7 +13,7 @@
 
 1. **启动**：起草提案内容（Markdown/JSON）并收集链下反馈。
 2. **参数审核**：针对建议的参数运行 `go run ./cmd/tokenomics simulate ...` 以记录预期的供应影响。
-3. **提交**：治理布线落地后使用 CLI（占位符命令 `content-grid-d tx gov submit-proposal`）。
+3. **提交**：按提案类型使用 CLI；软件升级使用 `content-grid-d tx upgrade software-upgrade`。
 4. **投票**：共识验证人传达理由，观察者验证参数安全性，社区频道主持辩论。
 5. **颁布**：投票期和存款通过后，事后总结将进入治理档案库。
 
@@ -50,3 +50,4 @@
 
 - 将提案草稿、模拟和审核注释存储在 `gov-records/` 目录中（运行时接线完成后添加）。
 - 与任何治理模块升级一起更新此剧本。
+- drand v2 软件升级见 [`upgrade-drand-strict-v2-zh.md`](upgrade-drand-strict-v2-zh.md)。

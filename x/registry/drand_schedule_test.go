@@ -28,6 +28,33 @@ func TestRequiredDrandRound(t *testing.T) {
 	require.Equal(t, int64(1_080), beaconUnix)
 }
 
+func TestMigrate1To2EnablesStrictDrand(t *testing.T) {
+	keeper, ctx := setupKeeper(t)
+	params := DefaultPublisherParams()
+	params.DrandEnabled = false
+	params.DrandStrictMode = false
+	params.DrandSchemeID = ""
+	params.DrandPublicKeyHex = ""
+	params.DrandChainHash = ""
+	params.DrandGenesisTimeUnix = 0
+	params.DrandPeriodSeconds = 0
+	params.DrandRoundOffsetSeconds = 0
+	require.NoError(t, keeper.SetParams(ctx, params))
+
+	module := NewAppModule(keeper)
+	require.NoError(t, module.migrate1To2(ctx))
+
+	got := keeper.GetParams(ctx)
+	require.True(t, got.DrandEnabled)
+	require.True(t, got.DrandStrictMode)
+	require.Equal(t, DefaultDrandSchemeID, got.DrandSchemeID)
+	require.Equal(t, DefaultDrandPublicKeyHex, got.DrandPublicKeyHex)
+	require.Equal(t, DefaultDrandChainHash, got.DrandChainHash)
+	require.Equal(t, DefaultDrandGenesisTimeUnix, got.DrandGenesisTimeUnix)
+	require.Equal(t, DefaultDrandPeriodSeconds, got.DrandPeriodSeconds)
+	require.Equal(t, DefaultDrandRoundOffsetSec, got.DrandRoundOffsetSeconds)
+}
+
 func TestSubmitDrandBeacon_ExactStrictAndSingle(t *testing.T) {
 	keeper, ctx := setupKeeper(t)
 	ctx = ctx.WithBlockTime(time.Unix(1_050, 0).UTC())

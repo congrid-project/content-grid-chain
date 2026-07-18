@@ -9,6 +9,7 @@ import (
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/log"
 	storetypes "cosmossdk.io/store/types"
+	upgradekeeper "cosmossdk.io/x/upgrade/keeper"
 
 	tmtypes "github.com/cometbft/cometbft/types"
 	dbm "github.com/cosmos/cosmos-db"
@@ -68,6 +69,7 @@ type App struct {
 	BankKeeper        bankkeeper.Keeper
 	AccountKeeper     authante.AccountKeeper
 	FeeGrantKeeper    authante.FeegrantKeeper
+	UpgradeKeeper     *upgradekeeper.Keeper
 
 	RegistryKeeper   registry.Keeper
 	TokenomicsKeeper tokenomics.Keeper
@@ -111,6 +113,7 @@ func NewApp(
 		&application.BankKeeper,
 		&application.AccountKeeper,
 		&application.FeeGrantKeeper,
+		&application.UpgradeKeeper,
 	); err != nil {
 		panic(err)
 	}
@@ -123,7 +126,9 @@ func NewApp(
 	}
 
 	registerCustomModules(application)
+	application.UpgradeKeeper.SetInitVersionMap(application.ModuleManager.GetVersionMap())
 	registerCustomModuleOrders(application)
+	registerUpgradeHandlers(application)
 
 	if err := application.Load(loadLatest); err != nil {
 		panic(err)

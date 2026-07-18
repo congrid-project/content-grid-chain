@@ -53,5 +53,5 @@ Do not make arbitrary beacon transactions unconditionally fee-free: invalid BLS 
 1. Stop and remove the old `drand-relayer` service, signer, and health port.
 2. Add the `drand` section to `verifierd` configuration.
 3. Configure a fee grant if delivery should be sponsored.
-4. Ensure registry params contain the chain hash, public key, genesis time, period, and offset.
+4. Upgrade an existing chain with the fixed `drand-strict-v2` software plan; follow [`upgrade-drand-strict-v2.md`](upgrade-drand-strict-v2.md).
 5. Start `verifierd` and inspect the `drand_*` fields in `/readyz`.

@@ -93,14 +93,7 @@ func (a AppModule) RegisterServices(cfg module.Configurator) {
 
 func (a AppModule) migrate1To2(ctx sdk.Context) error {
 	params := a.keeper.GetParams(ctx)
-	params.DrandChainHash = params.EffectiveDrandChainHash()
-	params.DrandPublicKeyHex = params.EffectiveDrandPublicKeyHex()
-	params.DrandGenesisTimeUnix = params.EffectiveDrandGenesisTimeUnix()
-	params.DrandPeriodSeconds = params.EffectiveDrandPeriodSeconds()
-	params.DrandRoundOffsetSeconds = params.EffectiveDrandRoundOffsetSeconds()
-	if params.DrandEnabled {
-		params.DrandStrictMode = true
-	}
+	params = params.WithStrictDrandEnabled()
 	return a.keeper.SetParams(ctx, params)
 }
 

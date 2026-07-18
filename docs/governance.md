@@ -13,7 +13,7 @@ This playbook documents how the Content Grid chain manages monetary policy and o
 
 1. **Initiate**: Draft proposal content (Markdown/JSON) and gather off-chain feedback.
 2. **Parameter audit**: Run `go run ./cmd/tokenomics simulate ...` for the proposed parameters to document expected supply impact.
-3. **Submit**: Use the CLI once governance wiring lands (placeholder command `content-grid-d tx gov submit-proposal`).
+3. **Submit**: Use the CLI for the proposal type; software upgrades use `content-grid-d tx upgrade software-upgrade`.
 4. **Voting**: Validators communicate rationale, watchers verify parameter safety, and community channels host debates.
 5. **Enactment**: After the voting period and deposit pass, post-mortem summary goes to the governance archive repo.
 
@@ -47,3 +47,4 @@ This playbook documents how the Content Grid chain manages monetary policy and o
 
 - Store proposal drafts, simulations, and audit notes in the `gov-records/` directory (to be added once runtime wiring is complete).
 - Update this playbook alongside any governance module upgrades.
+- See [`upgrade-drand-strict-v2.md`](upgrade-drand-strict-v2.md) for the drand v2 software upgrade.

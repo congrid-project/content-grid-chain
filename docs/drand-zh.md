@@ -74,5 +74,5 @@ content-grid-d query registry drand-requirement
 1. 停止并删除旧 `drand-relayer` 服务、密钥和健康端口。
 2. 更新 `verifierd` 配置，加入 `drand` 段。
 3. 如需代付，建立 fee grant 并设置 `drand.fee_granter`。
-4. 确认 genesis/升级后的 registry params 包含 chain hash、public key、genesis time、period 和 offset。
+4. 已运行的链执行固定名称为 `drand-strict-v2` 的软件升级；完整步骤见 [`upgrade-drand-strict-v2-zh.md`](upgrade-drand-strict-v2-zh.md)。
 5. 启动 `verifierd`，检查 `/readyz` 中的 `drand_*` 字段。

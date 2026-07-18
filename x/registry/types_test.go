@@ -124,6 +124,13 @@ func TestPublisherParamsValidate(t *testing.T) {
 	require.Error(t, params.Validate())
 }
 
+func TestDefaultPublisherParamsEnableStrictDrand(t *testing.T) {
+	params := DefaultPublisherParams()
+	require.True(t, params.DrandEnabled)
+	require.True(t, params.EffectiveDrandStrictMode())
+	require.NoError(t, params.Validate())
+}
+
 func TestRoundEmissionPools(t *testing.T) {
 	params := DefaultPublisherParams()
 	publisher, verifier, err := params.RoundEmissionPools(3600)

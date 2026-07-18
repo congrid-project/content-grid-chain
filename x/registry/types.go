@@ -309,8 +309,8 @@ func DefaultPublisherParams() PublisherParams {
 		PublisherRevokeFailureThreshold:    3,
 		VerifierPenaltySuspendThreshold:    3,
 		VerifierPenaltySuspendRounds:       3,
-		DrandEnabled:                       false,
-		DrandStrictMode:                    false,
+		DrandEnabled:                       true,
+		DrandStrictMode:                    true,
 		DrandSchemeID:                      DefaultDrandSchemeID,
 		DrandPublicKeyHex:                  DefaultDrandPublicKeyHex,
 		DrandChainHash:                     DefaultDrandChainHash,
@@ -554,10 +554,7 @@ func (pp PublisherParams) EffectiveVerifierPenaltySuspendRounds() int64 {
 }
 
 func (pp PublisherParams) EffectiveDrandEnabled() bool {
-	if pp.DrandEnabled {
-		return true
-	}
-	return DefaultPublisherParams().DrandEnabled
+	return pp.DrandEnabled
 }
 
 func (pp PublisherParams) EffectiveDrandStrictMode() bool {
@@ -607,6 +604,20 @@ func (pp PublisherParams) EffectiveDrandRoundOffsetSeconds() int64 {
 		return pp.DrandRoundOffsetSeconds
 	}
 	return DefaultDrandRoundOffsetSec
+}
+
+// WithStrictDrandEnabled fills missing quicknet metadata and enables the
+// fail-closed exact-round behavior used by the drand-strict-v2 upgrade.
+func (pp PublisherParams) WithStrictDrandEnabled() PublisherParams {
+	pp.DrandSchemeID = pp.EffectiveDrandSchemeID()
+	pp.DrandPublicKeyHex = pp.EffectiveDrandPublicKeyHex()
+	pp.DrandChainHash = pp.EffectiveDrandChainHash()
+	pp.DrandGenesisTimeUnix = pp.EffectiveDrandGenesisTimeUnix()
+	pp.DrandPeriodSeconds = pp.EffectiveDrandPeriodSeconds()
+	pp.DrandRoundOffsetSeconds = pp.EffectiveDrandRoundOffsetSeconds()
+	pp.DrandEnabled = true
+	pp.DrandStrictMode = true
+	return pp
 }
 
 // PublisherRewardSplit controls how the publisher bucket is shared each epoch.
