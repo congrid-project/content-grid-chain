@@ -219,3 +219,9 @@ Phase 1 skeleton. The `app/` package provides module basics, encoding, and defau
 3) [x] Publisher registry + verifier reward parameters
 4) [x] Economics/Governance: rewards, slashing, parameters, proposals
 5) Testnet: reproducible genesis, docs, and CI
+
+## Licensing
+
+Source code and documentation are licensed under the [MIT License](LICENSE).
+
+Distinct non-code ecosystem intellectual property is made available under the [Chain Inspiring License v1.0](CHAIN-INSPIRING-LICENSE.md). Within its legal scope, CIL-1.0 requires an Inspired Project to use the same ecosystem license and allocate at least 0.01% of each Project Token's Issued Supply to the source project. It also provides an eighteen-month protection period against operating a Simple Operational Fork. Use of MIT-licensed code or documentation alone does not trigger CIL-1.0. CIL-1.0 is a custom ecosystem intellectual-property license, not an OSI-approved open-source software license.
