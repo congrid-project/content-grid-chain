@@ -71,6 +71,9 @@ The `node` service now uses a lightweight `node-runtime` build target that conta
 - `CONGRID_DRAND_DELIVERY_DISABLED=false` enables delivery by default.
 - `verifierd` queries the chain's one pending `DrandRequirement` on its normal poll cadence; it never streams latest beacons.
 - `CONGRID_DRAND_API_BASE_URL` defaults to `https://api.drand.sh`.
+- `CONGRID_DRAND_RELAY_STAGGER_SECONDS=60` and
+  `CONGRID_DRAND_RELAY_MAX_DELAY_SECONDS=180` control deterministic primary and
+  fallback eligibility.
 - Set `CONGRID_DRAND_FEE_GRANTER` to sponsor only drand submissions; see `docs/drand.md`.
 
 ## verifierd Submission Cadence
@@ -79,6 +82,10 @@ The `node` service now uses a lightweight `node-runtime` build target that conta
 - `CONGRID_VERIFIER_TX_INCLUSION_TIMEOUT_SECONDS=120` makes `verifierd` wait for tx inclusion and validate the returned tx `code`, so an included-but-failed tx is not treated as successful.
 - `CONGRID_VERIFIER_RETRY_BACKOFF_SECONDS=30` backs off after retriable errors such as sequence mismatch, reveal window not open, or tx wait timeout.
 - `CONGRID_VERIFIER_STATE_DIR=/var/lib/congrid/verifierd-state` persists commit nonces in the node volume so reveal can continue with the same nonce after tx timeouts or process restarts.
+- `CONGRID_VERIFIER_FEES` is empty and
+  `CONGRID_VERIFIER_GAS_PRICES=0.001ucongrid` by default. They are mutually
+  exclusive; existing `.env.operator` files with fixed `5000ucongrid` fees must
+  be changed manually.
 
 ## Consensus Validator Notes
 

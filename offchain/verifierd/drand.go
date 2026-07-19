@@ -1,11 +1,16 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/big"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -40,6 +45,23 @@ func (a *Agent) relayRequiredDrand(ctx context.Context) error {
 		return nil
 	}
 
+	active, err := a.Chain.ActiveVerifierRelayCandidates(ctx)
+	if err != nil {
+		return fmt.Errorf("query active verifiers for drand relay: %w", err)
+	}
+	rank, total, err := drandRelayRank(requirement.GetRequiredDrandRound(), a.Cfg.VerifierAddress, active)
+	if err != nil {
+		return err
+	}
+	delaySeconds := drandRelayDelaySeconds(rank, a.Cfg.Drand.RelayStaggerSec, a.Cfg.Drand.RelayMaxDelaySec)
+	notBeforeUnix := requirement.GetRequiredBeaconUnix() + delaySeconds
+	if a.Health != nil {
+		a.Health.recordDrandRelaySchedule(rank, total, notBeforeUnix)
+	}
+	if time.Now().UTC().Unix() < notBeforeUnix {
+		return nil
+	}
+
 	beacon, err := a.fetchDrandRound(ctx, requirement.GetDrandChainHash(), requirement.GetRequiredDrandRound())
 	if err != nil {
 		if a.Health != nil {
@@ -66,8 +88,112 @@ func (a *Agent) relayRequiredDrand(ctx context.Context) error {
 	if a.Health != nil {
 		a.Health.recordDrandSubmission(requirement.GetRequiredDrandRound(), nil)
 	}
-	log.Printf("verifierd: submitted required drand beacon round=%d content_round=%d", requirement.GetRequiredDrandRound(), requirement.GetRoundStartUnix())
+	log.Printf("verifierd: submitted required drand beacon round=%d content_round=%d relay_rank=%d relay_total=%d", requirement.GetRequiredDrandRound(), requirement.GetRoundStartUnix(), rank, total)
 	return nil
+}
+
+func drandRelayDelaySeconds(rank int, staggerSeconds, maxDelaySeconds int64) int64 {
+	if rank <= 0 || staggerSeconds <= 0 {
+		return 0
+	}
+	delay := int64(rank) * staggerSeconds
+	if maxDelaySeconds > 0 && delay > maxDelaySeconds {
+		return maxDelaySeconds
+	}
+	return delay
+}
+
+// drandRelayRank chooses a bond-weighted deterministic primary for each round,
+// then deterministically orders the remaining active verifiers as fallbacks.
+// Ranks whose delay reaches relay_max_delay_seconds may race, deliberately
+// preferring liveness over fee efficiency in a degraded network.
+func drandRelayRank(round uint64, verifier string, active []drandRelayCandidate) (int, int, error) {
+	verifier = strings.TrimSpace(verifier)
+	if round == 0 || verifier == "" {
+		return 0, 0, fmt.Errorf("drand relay round and verifier required")
+	}
+
+	type candidate struct {
+		address string
+		weight  *big.Int
+	}
+	seen := make(map[string]struct{}, len(active))
+	candidates := make([]candidate, 0, len(active))
+	verifierFound := false
+	for _, entry := range active {
+		address := strings.TrimSpace(entry.Address)
+		if address == "" {
+			continue
+		}
+		if _, found := seen[address]; found {
+			continue
+		}
+		seen[address] = struct{}{}
+		if address == verifier {
+			verifierFound = true
+		}
+		weight, ok := new(big.Int).SetString(strings.TrimSpace(entry.BondAmount), 10)
+		if !ok || weight.Sign() <= 0 {
+			weight = big.NewInt(1)
+		}
+		candidates = append(candidates, candidate{address: address, weight: weight})
+	}
+	if len(candidates) == 0 {
+		return 0, 0, fmt.Errorf("no active verifiers available for drand relay")
+	}
+	if !verifierFound {
+		return 0, len(candidates), fmt.Errorf("verifier %s is not active and cannot relay drand", verifier)
+	}
+	totalCandidates := len(candidates)
+	sort.Slice(candidates, func(i, j int) bool { return candidates[i].address < candidates[j].address })
+	var roundBytes [8]byte
+	binary.BigEndian.PutUint64(roundBytes[:], round)
+	primarySeed := append([]byte("content-grid/drand-relay/v2/primary"), roundBytes[:]...)
+	primaryHash := sha256.Sum256(primarySeed)
+	totalWeight := big.NewInt(0)
+	for _, entry := range candidates {
+		totalWeight.Add(totalWeight, entry.weight)
+	}
+	pick := new(big.Int).SetBytes(primaryHash[:])
+	pick.Mod(pick, totalWeight)
+	running := big.NewInt(0)
+	primaryIndex := len(candidates) - 1
+	for i, entry := range candidates {
+		running.Add(running, entry.weight)
+		if running.Cmp(pick) == 1 {
+			primaryIndex = i
+			break
+		}
+	}
+	if candidates[primaryIndex].address == verifier {
+		return 0, totalCandidates, nil
+	}
+
+	type fallbackCandidate struct {
+		address string
+		score   [sha256.Size]byte
+	}
+	fallbacks := make([]fallbackCandidate, 0, len(candidates)-1)
+	for i, entry := range candidates {
+		if i == primaryIndex {
+			continue
+		}
+		material := append([]byte("content-grid/drand-relay/v2/fallback"), roundBytes[:]...)
+		material = append(material, entry.address...)
+		fallbacks = append(fallbacks, fallbackCandidate{address: entry.address, score: sha256.Sum256(material)})
+	}
+	sort.Slice(fallbacks, func(i, j int) bool {
+		if cmp := bytes.Compare(fallbacks[i].score[:], fallbacks[j].score[:]); cmp != 0 {
+			return cmp < 0
+		}
+		return fallbacks[i].address < fallbacks[j].address
+	})
+	for i, entry := range fallbacks {
+		if entry.address == verifier {
+			return i + 1, totalCandidates, nil
+		}
+	}
+	return 0, totalCandidates, fmt.Errorf("verifier %s relay rank unavailable", verifier)
 }
 
 func (a *Agent) fetchDrandRound(ctx context.Context, chainHash string, round uint64) (*drandHTTPResponse, error) {

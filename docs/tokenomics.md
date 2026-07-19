@@ -60,6 +60,19 @@ Where referral factor uses active referred publishers (minimum factor 1).
 
 ## Important Scope Notes
 
+### Verifier operating fees
+
+Drand delivery now uses a bond-weighted deterministic per-round primary with staggered
+fallbacks, so a healthy network normally produces one drand transaction per
+round. At hourly cadence with `gas=250000` and
+`gas_prices=0.001ucongrid`, network-wide drand cost is approximately
+`6000ucongrid` (0.006 CONGRID) per day. This removes the O(N) duplicate-delivery
+cost as verifier count grows without changing total issuance or the
+publisher/verifier emission split.
+At the same gas settings, commit plus reveal costs approximately
+`500ucongrid` (0.0005 CONGRID) per successful assignment, excluding abnormal
+retries.
+
 - Tokenomics params for fixed issuance split (operator/publisher/verifier), fee routing, and slash routing exist and are validated.
 - Some whitepaper-level flows (full consumer payment rail, full slash compensation rail, and automated operator reserve distribution) are still partially modeled and not yet fully wired into end-to-end production settlement paths.
 

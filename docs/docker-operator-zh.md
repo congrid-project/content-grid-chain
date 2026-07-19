@@ -71,6 +71,8 @@ docker compose --env-file .env.operator -f docker-compose.operator.yml up -d nod
 - `CONGRID_DRAND_DELIVERY_DISABLED=false` 默认开启投递。
 - `verifierd` 使用普通轮询周期查询链上的唯一 `DrandRequirement`，不会持续上传 latest beacon。
 - `CONGRID_DRAND_API_BASE_URL` 默认是 `https://api.drand.sh`。
+- `CONGRID_DRAND_RELAY_STAGGER_SECONDS=60` 和
+  `CONGRID_DRAND_RELAY_MAX_DELAY_SECONDS=180` 控制确定性主投递者与后备等待。
 - 设置 `CONGRID_DRAND_FEE_GRANTER` 后，只有 drand 提交使用该代付账户；详见 `docs/drand-zh.md`。
 
 ## verifierd 提交节奏
@@ -79,6 +81,8 @@ docker compose --env-file .env.operator -f docker-compose.operator.yml up -d nod
 - 默认 `CONGRID_VERIFIER_TX_INCLUSION_TIMEOUT_SECONDS=120`，`verifierd` 会等待交易进块并检查 tx `code`，不会再把“进块但执行失败”的交易误判为成功。
 - 默认 `CONGRID_VERIFIER_RETRY_BACKOFF_SECONDS=30`，遇到 sequence mismatch、窗口未打开、tx 等待超时等可重试错误时会退避重试。
 - 默认 `CONGRID_VERIFIER_STATE_DIR=/var/lib/congrid/verifierd-state`，commit 的 nonce 会持久化到节点 volume，方便 reveal 在 tx 超时或进程重启后继续使用同一 nonce。
+- 默认 `CONGRID_VERIFIER_FEES` 为空，`CONGRID_VERIFIER_GAS_PRICES=0.001ucongrid`；
+  两者不能同时设置。已有 `.env.operator` 中的固定 `5000ucongrid` 需要手工清空。
 
 ## 共识验证人说明
 

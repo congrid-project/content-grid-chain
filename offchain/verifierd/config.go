@@ -37,6 +37,8 @@ type DrandRelayConfig struct {
 	Disabled          bool   `json:"disabled"`
 	APIBaseURL        string `json:"api_base_url"`
 	RequestTimeoutSec int    `json:"request_timeout_seconds"`
+	RelayStaggerSec   int64  `json:"relay_stagger_seconds"`
+	RelayMaxDelaySec  int64  `json:"relay_max_delay_seconds"`
 	FeeGranter        string `json:"fee_granter"`
 }
 
@@ -136,6 +138,12 @@ func (c *Config) applyDefaults() {
 	if c.Drand.RequestTimeoutSec <= 0 {
 		c.Drand.RequestTimeoutSec = 10
 	}
+	if c.Drand.RelayStaggerSec <= 0 {
+		c.Drand.RelayStaggerSec = 60
+	}
+	if c.Drand.RelayMaxDelaySec <= 0 {
+		c.Drand.RelayMaxDelaySec = 180
+	}
 	if c.Submit.Binary == "" {
 		c.Submit.Binary = "content-grid-d"
 	}
@@ -147,6 +155,9 @@ func (c *Config) applyDefaults() {
 	}
 	if c.Submit.Gas == "" {
 		c.Submit.Gas = "250000"
+	}
+	if c.Submit.Fees == "" && c.Submit.GasPrices == "" {
+		c.Submit.GasPrices = "0.001ucongrid"
 	}
 	if c.Submit.GasAdjustment <= 0 {
 		c.Submit.GasAdjustment = 1
@@ -195,6 +206,15 @@ func (c Config) Validate() error {
 		if c.Drand.RequestTimeoutSec <= 0 {
 			return fmt.Errorf("drand.request_timeout_seconds must be positive")
 		}
+		if c.Drand.RelayStaggerSec <= 0 {
+			return fmt.Errorf("drand.relay_stagger_seconds must be positive")
+		}
+		if c.Drand.RelayMaxDelaySec < c.Drand.RelayStaggerSec {
+			return fmt.Errorf("drand.relay_max_delay_seconds must be >= relay_stagger_seconds")
+		}
+	}
+	if c.Submit.Fees != "" && c.Submit.GasPrices != "" {
+		return fmt.Errorf("submit.fees and submit.gas_prices are mutually exclusive")
 	}
 	if c.Submit.ChainID == "" {
 		return fmt.Errorf("submit.chain_id required")

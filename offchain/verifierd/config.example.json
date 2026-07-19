@@ -17,6 +17,8 @@
     "disabled": false,
     "api_base_url": "https://api.drand.sh",
     "request_timeout_seconds": 10,
+    "relay_stagger_seconds": 60,
+    "relay_max_delay_seconds": 180,
     "fee_granter": ""
   },
   "submit": {
@@ -30,8 +32,8 @@
     "home": "",
     "gas": "250000",
     "gas_adjustment": 1.0,
-    "fees": "5000ucongrid",
-    "gas_prices": "",
+    "fees": "",
+    "gas_prices": "0.001ucongrid",
     "fee_granter": "",
     "broadcast_mode": "sync",
     "yes": true

@@ -126,12 +126,14 @@ fi
 : "${CONGRID_DRAND_DELIVERY_DISABLED:=false}"
 : "${CONGRID_DRAND_API_BASE_URL:=https://api.drand.sh}"
 : "${CONGRID_DRAND_REQUEST_TIMEOUT_SECONDS:=10}"
+: "${CONGRID_DRAND_RELAY_STAGGER_SECONDS:=60}"
+: "${CONGRID_DRAND_RELAY_MAX_DELAY_SECONDS:=180}"
 : "${CONGRID_DRAND_FEE_GRANTER:=}"
 
 : "${CONGRID_VERIFIER_GAS:=250000}"
 : "${CONGRID_VERIFIER_GAS_ADJUSTMENT:=1}"
-: "${CONGRID_VERIFIER_FEES:=5000ucongrid}"
-: "${CONGRID_VERIFIER_GAS_PRICES:=}"
+: "${CONGRID_VERIFIER_FEES:=}"
+: "${CONGRID_VERIFIER_GAS_PRICES:=0.001ucongrid}"
 : "${CONGRID_VERIFIER_FEE_GRANTER:=}"
 : "${CONGRID_VERIFIER_BROADCAST_MODE:=sync}"
 : "${CONGRID_VERIFIER_BOND_AMOUNT:=}"
@@ -424,6 +426,8 @@ render_verifier_config() {
     "disabled": $drand_delivery_disabled,
     "api_base_url": "$(json_escape "$CONGRID_DRAND_API_BASE_URL")",
     "request_timeout_seconds": $CONGRID_DRAND_REQUEST_TIMEOUT_SECONDS,
+    "relay_stagger_seconds": $CONGRID_DRAND_RELAY_STAGGER_SECONDS,
+    "relay_max_delay_seconds": $CONGRID_DRAND_RELAY_MAX_DELAY_SECONDS,
     "fee_granter": "$(json_escape "$CONGRID_DRAND_FEE_GRANTER")"
   },
   "submit": {

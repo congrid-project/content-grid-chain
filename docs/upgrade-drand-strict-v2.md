@@ -25,9 +25,20 @@ to 2, fills missing quicknet metadata, and forces `drand_enabled=true` and
    named `content-grid-d`. Put `?checksum=sha256:<hex>` on each download URL.
    The official site can serve the amd64 archive from
    `cmd/congrid-site/downloads` at
-   `https://congrid.net/downloads/content-grid-d-linux-amd64.tar.gz`.
-4. Prepare the new verifierd with `drand.disabled=false` and sufficient fees or
-   a message-restricted fee grant.
+   `https://congrid.net/downloads/content-grid-d-linux-amd64.tar.gz`; publish
+   the coordinated verifier release at
+   `https://congrid.net/downloads/verifierd-linux-amd64.tar.gz`.
+4. Prepare the new verifierd with `drand.disabled=false`,
+   `relay_stagger_seconds=60`, `relay_max_delay_seconds=180`, `gas=250000`,
+   empty `fees`, and `gas_prices=0.001ucongrid` (or the higher minimum actually
+   enforced by validators). Existing fixed `fees=5000ucongrid` configurations
+   must be changed explicitly. A message-restricted fee grant remains optional.
+   This release does not lower the validators' global minimum gas price; it
+   removes healthy-network duplicate drand submissions and pays the configured
+   minimum instead.
+   Every drand-capable verifierd must be upgraded; an older instance ignores the
+   local relay order and can still create racing fees even though on-chain
+   single acceptance preserves correctness.
 5. Submit and pass the proposal:
 
    ```bash

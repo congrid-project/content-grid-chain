@@ -33,6 +33,9 @@ type daemonHealth struct {
 	drandRoundStartUnix      int64
 	drandRequiredRound       uint64
 	drandRequiredBeaconUnix  int64
+	drandRelayRank           int
+	drandRelayTotal          int
+	drandRelayNotBeforeUnix  int64
 	lastDrandSubmissionAt    time.Time
 	lastDrandSubmissionRound uint64
 	lastDrandError           string
@@ -74,6 +77,9 @@ type verifierHealthSnapshot struct {
 	DrandRoundStartUnix      int64  `json:"drand_round_start_unix,omitempty"`
 	DrandRequiredRound       uint64 `json:"drand_required_round,omitempty"`
 	DrandRequiredBeaconUnix  int64  `json:"drand_required_beacon_unix,omitempty"`
+	DrandRelayRank           int    `json:"drand_relay_rank"`
+	DrandRelayTotal          int    `json:"drand_relay_total,omitempty"`
+	DrandRelayNotBeforeUnix  int64  `json:"drand_relay_not_before_unix,omitempty"`
 	LastDrandSubmissionAt    string `json:"last_drand_submission_at,omitempty"`
 	LastDrandSubmissionRound uint64 `json:"last_drand_submission_round,omitempty"`
 	LastDrandError           string `json:"last_drand_error,omitempty"`
@@ -147,7 +153,18 @@ func (h *daemonHealth) recordDrandRequirement(requirement *registrypb.QueryDrand
 	h.drandRequiredBeaconUnix = requirement.GetRequiredBeaconUnix()
 	if !h.drandPending || h.drandSubmitted {
 		h.lastDrandError = ""
+		h.drandRelayRank = 0
+		h.drandRelayTotal = 0
+		h.drandRelayNotBeforeUnix = 0
 	}
+}
+
+func (h *daemonHealth) recordDrandRelaySchedule(rank, total int, notBeforeUnix int64) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.drandRelayRank = rank
+	h.drandRelayTotal = total
+	h.drandRelayNotBeforeUnix = notBeforeUnix
 }
 
 func (h *daemonHealth) recordDrandSubmission(round uint64, err error) {
@@ -211,6 +228,9 @@ func (h *daemonHealth) snapshot(cfg Config, inFlight, pending int, pendingErr er
 		DrandRoundStartUnix:      h.drandRoundStartUnix,
 		DrandRequiredRound:       h.drandRequiredRound,
 		DrandRequiredBeaconUnix:  h.drandRequiredBeaconUnix,
+		DrandRelayRank:           h.drandRelayRank,
+		DrandRelayTotal:          h.drandRelayTotal,
+		DrandRelayNotBeforeUnix:  h.drandRelayNotBeforeUnix,
 		LastDrandSubmissionAt:    formatHealthTime(h.lastDrandSubmissionAt),
 		LastDrandSubmissionRound: h.lastDrandSubmissionRound,
 		LastDrandError:           h.lastDrandError,

@@ -50,7 +50,9 @@ sha256sum build/content-grid-d build/verifierd
 
 ```bash
 cp content-grid-d-linux-amd64.tar.gz cmd/congrid-site/downloads/
+cp verifierd-linux-amd64.tar.gz cmd/congrid-site/downloads/
 curl -fI https://congrid.net/downloads/content-grid-d-linux-amd64.tar.gz
+curl -fI https://congrid.net/downloads/verifierd-linux-amd64.tar.gz
 ```
 
 下载目录和生产持久化配置见 [`../cmd/congrid-site/README-zh.md`](../cmd/congrid-site/README-zh.md)。
@@ -73,12 +75,30 @@ $DAEMON_HOME/cosmovisor/upgrades/drand-strict-v2/bin/content-grid-d
     "disabled": false,
     "api_base_url": "https://api.drand.sh",
     "request_timeout_seconds": 10,
+    "relay_stagger_seconds": 60,
+    "relay_max_delay_seconds": 180,
     "fee_granter": ""
+  },
+  "submit": {
+    "gas": "250000",
+    "fees": "",
+    "gas_prices": "0.001ucongrid"
   }
 }
 ```
 
-确认 verifier signer 有足够 `ucongrid` 支付交易费，或已经获得只允许
+本次发布不降低验证人节点的全局 `minimum-gas-prices`，而是让 verifierd 只按
+最低 gas price 付费，并把正常 drand 投递从每个 verifier 一笔降为全网每轮一笔。
+小时轮次下正常全网费用约为每天 `6000ucongrid`（0.006 CONGRID）。已有配置中的
+`fees=5000ucongrid` 不会被程序覆盖，运营方必须按上例显式修改；`fees` 与
+`gas_prices` 不能同时设置。
+
+所有承担 drand 投递的 verifierd 都必须升级；继续运行旧版实例会绕过本地排序并重新
+产生竞争费用。链上严格验签和单次接收仍能保证结果正确，但不能替旧实例节省手续费。
+
+确认4个验证人节点的 `minimum-gas-prices` 均不高于 `0.001ucongrid`。如果实际
+最小值更高，统一把 verifierd 的 `gas_prices` 调整到该值。确认 verifier signer
+有足够 `ucongrid` 支付交易费，或已经获得只允许
 `/contentgrid.registry.v1.MsgSubmitDrandBeacon` 的 fee grant。新版 verifierd
 可以在链完成升级后启动；不必继续运行旧 `drand-relayer`。
 
@@ -134,6 +154,7 @@ content-grid-d query upgrade plan
 - 确认至少 2/3 投票权的验证人已准备相同 checksum 的二进制。
 - 确认监控能识别升级高度的预期停机。
 - 确认新版 verifierd、keyring、手续费/feegrant 和 drand HTTP 出口已经准备好。
+- 确认 verifierd 使用空 `fees`、正确的 `gas_prices` 和 60/180 秒后备投递参数。
 - 不要配置 `--unsafe-skip-upgrades`；跳过 handler 会导致状态版本不一致或共识分叉。
 
 ## 6. 在升级高度切换二进制

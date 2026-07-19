@@ -44,6 +44,25 @@ See the official [quicknet announcement](https://docs.drand.love/blog/2023/10/16
 
 On every normal poll, `verifierd` queries `DrandRequirement`. It fetches `/{chain-hash}/public/{round}` only after the required round's publication time and only while that exact requirement is unfilled. It never submits a `latest` beacon.
 
+Instances no longer race by default. Every verifierd computes the same
+a bond-weighted deterministic primary from `required_drand_round` plus the
+active on-chain verifier addresses and bonds, then deterministically orders the
+remaining fallbacks. This aligns primary-relay probability with the reward
+system's Sybil-resistant weight. Rank zero submits immediately; fallbacks become eligible at
+`relay_stagger_seconds` intervals (60 seconds by default). Once
+`relay_max_delay_seconds` is reached (180 seconds by default), remaining
+fallbacks may race so an offline primary cannot stall assignment creation
+indefinitely. Strict signature verification and single acceptance remain
+enforced on-chain.
+
+The default tx settings are `gas=250000` and
+`gas_prices=0.001ucongrid`, or `250ucongrid` per transaction. With hourly
+rounds, normal network-wide drand cost is approximately `6000ucongrid` (0.006
+CONGRID) per day and does not grow linearly with verifier count. Existing
+configs using `fees=5000ucongrid` should set `fees` to empty and set
+`gas_prices` to the validator minimum instead. `fees` and `gas_prices` are
+mutually exclusive.
+
 To keep drand delivery from spending the verifier account's balance, grant a message-restricted Cosmos SDK fee allowance for `/contentgrid.registry.v1.MsgSubmitDrandBeacon` and set the grantor address in `drand.fee_granter` (`CONGRID_DRAND_FEE_GRANTER` in Docker). Limit the allowance by grantee, expiry, and spend cap.
 
 Do not make arbitrary beacon transactions unconditionally fee-free: invalid BLS proofs would still consume verification CPU.

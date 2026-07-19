@@ -29,13 +29,15 @@ load_env_or_file CONGRID_VERIFIER_KEYRING_PASSPHRASE
 : "${CONGRID_VERIFIER_TX_INCLUSION_TIMEOUT_SECONDS:=120}"
 : "${CONGRID_VERIFIER_GAS:=250000}"
 : "${CONGRID_VERIFIER_GAS_ADJUSTMENT:=1}"
-: "${CONGRID_VERIFIER_FEES:=5000ucongrid}"
-: "${CONGRID_VERIFIER_GAS_PRICES:=}"
+: "${CONGRID_VERIFIER_FEES:=}"
+: "${CONGRID_VERIFIER_GAS_PRICES:=0.001ucongrid}"
 : "${CONGRID_VERIFIER_FEE_GRANTER:=}"
 : "${CONGRID_VERIFIER_BROADCAST_MODE:=sync}"
 : "${CONGRID_DRAND_DELIVERY_DISABLED:=false}"
 : "${CONGRID_DRAND_API_BASE_URL:=https://api.drand.sh}"
 : "${CONGRID_DRAND_REQUEST_TIMEOUT_SECONDS:=10}"
+: "${CONGRID_DRAND_RELAY_STAGGER_SECONDS:=60}"
+: "${CONGRID_DRAND_RELAY_MAX_DELAY_SECONDS:=180}"
 : "${CONGRID_DRAND_FEE_GRANTER:=}"
 
 ensure_automated_tx_backend "$CONGRID_VERIFIER_KEYRING_BACKEND" "${CONGRID_VERIFIER_KEYRING_PASSPHRASE:-}" "verifierd"
@@ -93,6 +95,8 @@ jq -n \
   --argjson tx_inclusion_timeout_seconds "$CONGRID_VERIFIER_TX_INCLUSION_TIMEOUT_SECONDS" \
   --argjson drand_delivery_disabled "$CONGRID_DRAND_DELIVERY_DISABLED" \
   --argjson drand_request_timeout_seconds "$CONGRID_DRAND_REQUEST_TIMEOUT_SECONDS" \
+  --argjson drand_relay_stagger_seconds "$CONGRID_DRAND_RELAY_STAGGER_SECONDS" \
+  --argjson drand_relay_max_delay_seconds "$CONGRID_DRAND_RELAY_MAX_DELAY_SECONDS" \
   --argjson gas_adjustment "$CONGRID_VERIFIER_GAS_ADJUSTMENT" \
   '
   {
@@ -114,6 +118,8 @@ jq -n \
       disabled: $drand_delivery_disabled,
       api_base_url: $drand_api_base_url,
       request_timeout_seconds: $drand_request_timeout_seconds,
+      relay_stagger_seconds: $drand_relay_stagger_seconds,
+      relay_max_delay_seconds: $drand_relay_max_delay_seconds,
       fee_granter: $drand_fee_granter
     },
     submit: {

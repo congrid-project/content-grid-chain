@@ -166,11 +166,28 @@ func (c *ChainClient) listLeases(ctx context.Context, publisher, slotID string, 
 }
 
 func (c *ChainClient) ActiveVerifierAddresses(ctx context.Context) ([]string, error) {
+	candidates, err := c.ActiveVerifierRelayCandidates(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]string, 0, len(candidates))
+	for _, candidate := range candidates {
+		out = append(out, candidate.Address)
+	}
+	return out, nil
+}
+
+type drandRelayCandidate struct {
+	Address    string
+	BondAmount string
+}
+
+func (c *ChainClient) ActiveVerifierRelayCandidates(ctx context.Context) ([]drandRelayCandidate, error) {
 	resp, err := c.verqry.Verifiers(ctx, &verifierspb.QueryVerifiersRequest{})
 	if err != nil {
 		return nil, err
 	}
-	out := make([]string, 0, len(resp.GetVerifiers()))
+	out := make([]drandRelayCandidate, 0, len(resp.GetVerifiers()))
 	for _, v := range resp.GetVerifiers() {
 		if v.GetStatus() != verifierspb.VerifierStatus_VERIFIER_STATUS_ACTIVE {
 			continue
@@ -179,9 +196,9 @@ func (c *ChainClient) ActiveVerifierAddresses(ctx context.Context) ([]string, er
 		if addr == "" {
 			continue
 		}
-		out = append(out, addr)
+		out = append(out, drandRelayCandidate{Address: addr, BondAmount: strings.TrimSpace(v.GetBondAmount())})
 	}
-	sort.Strings(out)
+	sort.Slice(out, func(i, j int) bool { return out[i].Address < out[j].Address })
 	return out, nil
 }
 

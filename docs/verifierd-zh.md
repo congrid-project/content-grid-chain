@@ -55,13 +55,22 @@ cp offchain/verifierd/config.example.json offchain/verifierd/config.json
 - `drand`：内置 drand 投递配置
   - `disabled`：是否关闭本实例的投递职责；不影响 assignment 核验
   - `api_base_url`、`request_timeout_seconds`
+  - `relay_stagger_seconds`：确定性主投递者之后，每个后备排名的等待间隔（默认 `60`）
+  - `relay_max_delay_seconds`：后备等待上限（默认 `180`）；达到后优先保证可用性
   - `fee_granter`：可选的 drand 消息手续费代付账户
 - `submit`：`content-grid-d` 的交易提交配置
   - `binary`
   - `chain_id`、`node`、`from`、`keyring_backend`、`keyring_dir`、`keyring_passphrase_env`、`home`
   - `gas`、`gas_adjustment`、`fees`、`gas_prices`、`fee_granter`、`broadcast_mode`、`yes`
 
+生产建议使用 `gas=250000`、`fees=""`、`gas_prices="0.001ucongrid"`。
+这会按节点最低 gas price 支付约 `250ucongrid/tx`，而不是固定支付
+`5000ucongrid/tx`。如果验证人节点配置了更高的 `minimum-gas-prices`，这里也必须
+相应提高。`fees` 和 `gas_prices` 不可同时非空。
+
 drand 的链上参数、严格验签、指定 round 算法及 feegrant 建议见 `docs/drand-zh.md`。
+关于是否把进程并入链节点的边界与推荐方案，见
+[`verifierd-node-integration-zh.md`](verifierd-node-integration-zh.md)。
 
 如果是容器里的无人值守部署，并且使用 `keyring_backend=file`，请把 `submit.keyring_passphrase_env` 设置为一个环境变量名；该环境变量的值就是 keyring 口令。
 
@@ -123,3 +132,6 @@ go run ./offchain/verifierd --config offchain/verifierd/config.json --once
 ```bash
 go run ./offchain/verifierd --config offchain/verifierd/config.json
 ```
+
+`GET /readyz` 会公开当前 `drand_relay_rank`、`drand_relay_total` 和
+`drand_relay_not_before_unix`，便于区分“本实例正在按后备顺序等待”和真正的投递故障。

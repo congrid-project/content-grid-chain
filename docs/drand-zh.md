@@ -55,7 +55,35 @@ content-grid-d query registry drand-requirement
 
 `verifierd` 每次普通轮询时都会查询 `DrandRequirement`。只有当链上有待满足的需求、指定 drand round 已到发布时间且尚未提交时，才请求 `/{chain-hash}/public/{round}` 并发交易；它不会轮询或上传 `latest` 信标。
 
-多个 `verifierd` 可以安全并行运行。重复交易会被链拒绝；为了减少竞争费用，应让实例使用相同轮询周期但设置少量启动抖动，或只给一部分 verifier 配置 drand fee grant。
+多个 `verifierd` 可以安全并行运行，但不再默认同时抢跑。每个实例会根据
+`required_drand_round`、链上活跃 verifier 地址及其 bond 计算相同的质押加权主
+投递者，再确定性排列其余后备：排名 0 立即投递，后备实例按
+`relay_stagger_seconds`（默认 60 秒）依次获得投递资格。质押加权使主投递概率与
+奖励中的 Sybil 抵抗权重保持一致。
+等待时间达到 `relay_max_delay_seconds`（默认 180 秒）后，剩余后备可以竞速，
+以便主投递者离线时最终仍能恢复 assignment 创建。链上仍执行严格验签和单次接收。
+
+默认交易配置使用 `gas=250000` 和 `gas_prices=0.001ucongrid`，即每笔按
+`250ucongrid` 计算。小时轮次正常情况下全网每天只有约 24 笔 drand 交易，费用约
+`6000ucongrid`（0.006 CONGRID），不会随 verifier 数量线性增长。已有配置如果仍是
+`fees=5000ucongrid`，需要显式改成：
+
+```json
+{
+  "drand": {
+    "relay_stagger_seconds": 60,
+    "relay_max_delay_seconds": 180
+  },
+  "submit": {
+    "gas": "250000",
+    "fees": "",
+    "gas_prices": "0.001ucongrid"
+  }
+}
+```
+
+`fees` 与 `gas_prices` 只能设置一个。`gas_prices` 不得低于验证人节点实际配置的
+`minimum-gas-prices`。
 
 ## 让 verifierd 不承担 drand 交易费
 

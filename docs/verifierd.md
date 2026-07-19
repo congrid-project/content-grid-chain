@@ -50,13 +50,21 @@ Fields:
 - `disable_assignment_check`: set `true` to bypass verifierd's local deterministic assignment validation (default `false`)
 - `retry_backoff_seconds`: backoff after retriable commit/reveal errors such as sequence mismatch, reveal window not open, or tx wait timeout
 - `tx_inclusion_timeout_seconds`: how long to wait for submitted tx inclusion and successful tx `code`
-- `drand`: embedded delivery settings (`disabled`, `api_base_url`, `request_timeout_seconds`, and optional message-specific `fee_granter`)
+- `drand`: embedded delivery settings (`disabled`, `api_base_url`, `request_timeout_seconds`, deterministic fallback controls `relay_stagger_seconds` / `relay_max_delay_seconds`, and optional message-specific `fee_granter`)
 - `submit`: tx submission settings for `content-grid-d`
   - `binary`
   - `chain_id`, `node`, `from`, `keyring_backend`, `keyring_dir`, `keyring_passphrase_env`, `home`
   - `gas`, `gas_adjustment`, `fees`, `gas_prices`, `fee_granter`, `broadcast_mode`, `yes`
 
+For production, use `gas=250000`, empty `fees`, and
+`gas_prices=0.001ucongrid`. This pays approximately `250ucongrid/tx` at the
+documented validator minimum instead of a fixed `5000ucongrid/tx`. Increase the
+gas price if validators enforce a higher minimum. `fees` and `gas_prices` are
+mutually exclusive.
+
 See `docs/drand.md` for the exact-round mapping, strict on-chain validation, and feegrant guidance.
+See [`verifierd-node-integration.md`](verifierd-node-integration.md) for the
+node-process integration assessment.
 
 For unattended container deployments with `keyring_backend=file`, set `submit.keyring_passphrase_env` to the name of an environment variable that holds the passphrase.
 
@@ -88,4 +96,4 @@ curl -fsS http://127.0.0.1:9200/healthz
 curl -s http://127.0.0.1:9200/readyz | jq .
 ```
 
-The readiness body includes operator-facing state such as `last_poll_error`, `consecutive_errors`, `last_scan_assignments`, `in_flight_assignments`, `pending_reveals`, the latest assignment worker error, and `drand_*` requirement/submission fields.
+The readiness body includes operator-facing state such as `last_poll_error`, `consecutive_errors`, `last_scan_assignments`, `in_flight_assignments`, `pending_reveals`, the latest assignment worker error, and `drand_*` requirement/submission fields. `drand_relay_rank`, `drand_relay_total`, and `drand_relay_not_before_unix` distinguish an intentional fallback wait from a delivery failure.

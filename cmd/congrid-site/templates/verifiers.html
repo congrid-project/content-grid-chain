@@ -100,7 +100,8 @@ CONGRID_VERIFIER_KEYRING_BACKEND=file
 CONGRID_VERIFIER_KEY_MNEMONIC_FILE=$HOME/.congrid-verifier.mnemonic
 CONGRID_VERIFIER_KEYRING_PASSPHRASE_FILE=$HOME/.congrid-verifier.pass
 
-CONGRID_VERIFIER_FEES=5000{{if .WalletConfig.FeeDenom}}{{.WalletConfig.FeeDenom}}{{else}}ucongrid{{end}}
+CONGRID_VERIFIER_FEES=
+CONGRID_VERIFIER_GAS_PRICES=0.001{{if .WalletConfig.FeeDenom}}{{.WalletConfig.FeeDenom}}{{else}}ucongrid{{end}}
 EOF
 
 # Build, configure, and start verifierd in the background.

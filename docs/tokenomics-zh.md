@@ -60,6 +60,16 @@
 
 ## 范围说明
 
+### verifier 运行费用
+
+drand 的主投递者现在按 round 和活跃 verifier 的 bond 加权确定性轮换，并使用分级后备；正常
+情况下每轮只产生一笔 drand 交易。按小时轮次、`gas=250000` 和
+`gas_prices=0.001ucongrid` 计算，全网 drand 费用约为每天 `6000ucongrid`
+（0.006 CONGRID），而不是每个 verifier 都承担一笔。这个调整消除了 verifier
+数量增长时的 O(N) 重复投递成本，不改变发行总量或 publisher/verifier 排放比例。
+同一 gas 配置下，每个成功 assignment 的 commit + reveal 基础费用约为
+`500ucongrid`（0.0005 CONGRID），不含异常重试。
+
 - 固定发行拆分（operator / publisher / verifier）、费用路由和 slash 路由相关的 tokenomics 参数已经存在并经过校验。
 - 一些白皮书层面的流程，例如完整的消费者支付路径、完整的 slash 补偿路径，以及自动化的 operator reserve 分发，仍处于部分建模状态，尚未完全接入端到端生产结算。
 
