@@ -30,6 +30,68 @@ Server-side registration and airdrop transactions invoke `content-grid-d`. By de
 
 Open: <http://localhost:8080>
 
+## Airdrop service
+
+The airdrop endpoint performs a direct server-side homepage check. It does not
+wait for the on-chain verifier assignment/commit/reveal flow. After a successful
+check, the site atomically reserves the website in SQL, queues one bank transfer
+from the configured faucet key, and confirms the transaction in the background.
+
+Website uniqueness intentionally follows `registry.GetPrimaryDomain`: the last
+two DNS labels are the key. For example, `www.example.com` and `api.example.com`
+share `example.com`, while `example.co.uk` retains the existing simplified key
+`co.uk`. There is no unique-wallet rule, so one wallet may receive airdrops for
+multiple distinct website keys.
+
+SQLite is the default:
+
+```bash
+export CONGRID_FAUCET_KEYRING_PASSPHRASE='<file-keyring-passphrase>'
+
+go run ./cmd/congrid-site \
+  --airdrop \
+  --airdrop-db ./congrid-airdrop.db \
+  --chain-id <chain-id> \
+  --node <rpc-url> \
+  --slots-grpc <grpc-host:port> \
+  --keyring-backend file \
+  --keyring-dir <keyring-dir> \
+  --keyring-passphrase-env CONGRID_FAUCET_KEYRING_PASSPHRASE \
+  --faucet-key faucet \
+  --gas-prices 0.001ucongrid
+```
+
+If the SQLite path still contains the former JSON claim map, startup validates
+and imports it, retaining the original as `<path>.json.bak`. Invalid legacy JSON
+causes startup to fail instead of silently treating the claim set as empty.
+
+PostgreSQL can be selected for a shared deployment:
+
+```bash
+export CONGRID_AIRDROP_DB_DRIVER=postgres
+export CONGRID_AIRDROP_DB_DSN='postgres://user:pass@db/airdrop?sslmode=require'
+```
+
+Only one process per faucet key may run the transfer worker. In a multi-instance
+deployment, use `--airdrop-worker=true` on one instance and
+`--airdrop-worker=false` on the others. All instances may serve and reserve
+claims through the shared PostgreSQL database.
+
+Claims progress through `verified`, `submitting`, `broadcast`, and `confirmed`.
+A rejected transaction becomes `failed`. A process interruption, ambiguous CLI
+result, or confirmation timeout becomes `needs_reconcile`; these rows remain
+reserved and are never resent automatically. Operators should compare the stored
+transaction hash/note and recipient balance with chain history before manually
+changing such a row.
+
+Production verification is HTTPS-only, restricts redirects to the original host
+(with a `www` alias exception), and rejects private, loopback, link-local, and
+special-use resolved addresses. The `--airdrop-allow-http-verification`,
+`--airdrop-allow-private-targets`, and
+`--airdrop-allow-insecure-test-keyring` flags are development escape hatches and
+must not be enabled in production. Use a dedicated low-balance faucet key and
+enforce per-IP rate limits/CAPTCHA at the trusted reverse proxy.
+
 ## Release downloads
 
 The site serves release artifacts at `/downloads/{filename}`. The default

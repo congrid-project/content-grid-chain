@@ -29,6 +29,61 @@ go run ./cmd/congrid-site \
 
 打开： <http://localhost:8080>
 
+## 空投服务
+
+空投接口由官网后台直接访问网站首页完成验证，不等待链上 verifier 的
+assignment/commit/reveal 流程。验证成功后，服务先在 SQL 中原子占用网站唯一键，
+再把一次 bank 转账交给后台单线程 worker，并在后台确认交易是否进块。
+
+网站唯一键刻意沿用 `registry.GetPrimaryDomain` 的“最后两段”规则：
+`www.example.com` 与 `api.example.com` 共用 `example.com`；
+`example.co.uk` 仍按现有简化规则使用 `co.uk`。钱包地址没有唯一约束，因此同一个
+钱包可以代表多个不同的网站唯一键领取。
+
+默认使用 SQLite：
+
+```bash
+export CONGRID_FAUCET_KEYRING_PASSPHRASE='<file-keyring-passphrase>'
+
+go run ./cmd/congrid-site \
+  --airdrop \
+  --airdrop-db ./congrid-airdrop.db \
+  --chain-id <chain-id> \
+  --node <rpc-url> \
+  --slots-grpc <grpc-host:port> \
+  --keyring-backend file \
+  --keyring-dir <keyring-dir> \
+  --keyring-passphrase-env CONGRID_FAUCET_KEYRING_PASSPHRASE \
+  --faucet-key faucet \
+  --gas-prices 0.001ucongrid
+```
+
+如果 SQLite 路径中仍是旧版 JSON claim map，启动时会严格校验并导入，同时把原文件
+保留为 `<path>.json.bak`。旧 JSON 损坏时服务会拒绝启动，不会把历史记录静默当成
+空库。
+
+共享部署可以改用 PostgreSQL：
+
+```bash
+export CONGRID_AIRDROP_DB_DRIVER=postgres
+export CONGRID_AIRDROP_DB_DSN='postgres://user:pass@db/airdrop?sslmode=require'
+```
+
+同一个 faucet key 只允许一个进程运行转账 worker。多实例部署时，一个实例使用
+`--airdrop-worker=true`，其余实例使用 `--airdrop-worker=false`；所有实例都可以通过
+共享 PostgreSQL 接收和原子占用 claim。
+
+claim 状态依次为 `verified`、`submitting`、`broadcast`、`confirmed`。明确被拒绝的
+交易进入 `failed`；进程中断、CLI 返回结果不确定或确认超时会进入
+`needs_reconcile`。这些记录仍保持占用且绝不会自动重发。人工修改状态前，运营人员
+必须根据已存交易哈希/备注、收款地址余额和链上历史完成核对。
+
+生产验证默认只允许 HTTPS，只允许跳转到原 host（例外为 `www` 别名），并拒绝解析
+到私网、回环、link-local 和特殊用途 IP。`--airdrop-allow-http-verification`、
+`--airdrop-allow-private-targets` 和 `--airdrop-allow-insecure-test-keyring` 仅用于开发，
+生产环境不得启用。请使用独立、低余额的 faucet key，并在可信反向代理上配置按 IP
+限流或 CAPTCHA。
+
 ## 发布文件下载
 
 网站通过 `/downloads/{filename}` 提供发布归档。默认文件目录是

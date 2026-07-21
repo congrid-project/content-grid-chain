@@ -43,20 +43,31 @@ func main() {
 		requestLog = flag.Bool("request-log", true, "log requests")
 		downloads  = flag.String("downloads-dir", defaultDownloadsDir(), "directory containing public release downloads")
 
-		airdropEnabled = flag.Bool("airdrop", false, "enable airdrop endpoint (requires funded faucet key)")
-		airdropDB      = flag.String("airdrop-db", "./congrid-airdrop.db", "path to airdrop claim database")
-		chainID        = flag.String("chain-id", "", "chain id")
-		nodeRPC        = flag.String("node", "", "rpc endpoint (e.g. tcp://127.0.0.1:26657)")
-		walletRPC      = flag.String("wallet-rpc", "", "public rpc endpoint used by browser wallets (defaults to base-url /rpc reverse proxy)")
-		walletREST     = flag.String("wallet-rest", "", "public rest endpoint used by browser wallets (defaults to base-url /rest reverse proxy)")
-		denom          = flag.String("denom", "ucongrid", "fee token denom")
-		amount         = flag.String("airdrop-amount", "25000", "amount (in denom base units) to send per domain")
-		faucetKeyName  = flag.String("faucet-key", "faucet", "local keyring key name used by content-grid-d")
-		contentGridBin = flag.String("content-grid-bin", defaultContentGridBin(), "content-grid-d executable path/name for server-side tx helpers (or CONTENT_GRID_BIN)")
-		keyringBackend = flag.String("keyring-backend", "test", "keyring backend for content-grid-d")
-		keyringDir     = flag.String("keyring-dir", "", "optional keyring directory for content-grid-d")
-		fees           = flag.String("fees", "", "optional explicit fees (e.g. 0ucongrid or 2000stake)")
-		gasPrices      = flag.String("gas-prices", "", "optional gas prices (e.g. 0.001ucongrid)")
+		airdropEnabled         = flag.Bool("airdrop", false, "enable airdrop endpoint (requires funded faucet key)")
+		airdropDB              = flag.String("airdrop-db", "./congrid-airdrop.db", "SQLite claim database path (legacy JSON at this path is migrated automatically)")
+		airdropDBDriver        = flag.String("airdrop-db-driver", envOrDefault("CONGRID_AIRDROP_DB_DRIVER", "sqlite"), "claim database driver (sqlite or postgres)")
+		airdropDBDSN           = flag.String("airdrop-db-dsn", os.Getenv("CONGRID_AIRDROP_DB_DSN"), "claim database DSN; when empty, sqlite uses --airdrop-db")
+		airdropConfirmInterval = flag.Duration("airdrop-confirm-interval", 5*time.Second, "interval for checking broadcast transaction inclusion")
+		airdropConfirmTimeout  = flag.Duration("airdrop-confirm-timeout", 2*time.Minute, "time before an unconfirmed transaction requires operator reconciliation")
+		airdropVerifyWorkers   = flag.Int("airdrop-verification-concurrency", 8, "maximum concurrent website verification requests")
+		airdropAllowHTTP       = flag.Bool("airdrop-allow-http-verification", false, "allow insecure HTTP website verification (development only)")
+		airdropAllowPrivate    = flag.Bool("airdrop-allow-private-targets", false, "allow verification targets resolving to private/special IPs (development only)")
+		airdropWorker          = flag.Bool("airdrop-worker", true, "process queued airdrop transfers; enable on exactly one instance per faucet key")
+		chainID                = flag.String("chain-id", "", "chain id")
+		nodeRPC                = flag.String("node", "", "rpc endpoint (e.g. tcp://127.0.0.1:26657)")
+		walletRPC              = flag.String("wallet-rpc", "", "public rpc endpoint used by browser wallets (defaults to base-url /rpc reverse proxy)")
+		walletREST             = flag.String("wallet-rest", "", "public rest endpoint used by browser wallets (defaults to base-url /rest reverse proxy)")
+		denom                  = flag.String("denom", "ucongrid", "fee token denom")
+		amount                 = flag.String("airdrop-amount", "25000", "amount (in denom base units) to send per domain")
+		faucetKeyName          = flag.String("faucet-key", "faucet", "local keyring key name used by content-grid-d")
+		contentGridBin         = flag.String("content-grid-bin", defaultContentGridBin(), "content-grid-d executable path/name for server-side tx helpers (or CONTENT_GRID_BIN)")
+		keyringBackend         = flag.String("keyring-backend", "test", "keyring backend for content-grid-d")
+		keyringDir             = flag.String("keyring-dir", "", "optional keyring directory for content-grid-d")
+		keyringPassEnv         = flag.String("keyring-passphrase-env", "", "environment variable containing a file-keyring passphrase")
+		chainHome              = flag.String("chain-home", "", "optional content-grid-d home directory for server-side commands")
+		allowTestKeyring       = flag.Bool("airdrop-allow-insecure-test-keyring", false, "allow test keyring for airdrop (development only)")
+		fees                   = flag.String("fees", "", "optional explicit fees (e.g. 0ucongrid or 2000stake)")
+		gasPrices              = flag.String("gas-prices", "", "optional gas prices (e.g. 0.001ucongrid)")
 
 		slotsStore       = flag.String("slots-store", "chain", "slot store backend (chain)")
 		slotsGRPC        = flag.String("slots-grpc", "", "grpc endpoint for chain slot queries (e.g. localhost:9090)")
@@ -184,24 +195,39 @@ func main() {
 		_, _ = w.Write([]byte("ok"))
 	})
 
+	var air *airdropper
 	if *airdropEnabled {
 		cfg := airdropConfig{
-			DBPath:         *airdropDB,
-			ChainID:        *chainID,
-			NodeRPC:        *nodeRPC,
-			Denom:          *denom,
-			Amount:         *amount,
-			FaucetKeyName:  *faucetKeyName,
-			ContentGridBin: strings.TrimSpace(*contentGridBin),
-			Keyring:        *keyringBackend,
-			KeyringDir:     strings.TrimSpace(*keyringDir),
-			Fees:           *fees,
-			GasPrices:      *gasPrices,
-			BaseURL:        *baseURL,
+			DBDriver:              strings.TrimSpace(*airdropDBDriver),
+			DBDSN:                 strings.TrimSpace(*airdropDBDSN),
+			DBPath:                strings.TrimSpace(*airdropDB),
+			ChainID:               strings.TrimSpace(*chainID),
+			NodeRPC:               strings.TrimSpace(*nodeRPC),
+			Denom:                 strings.TrimSpace(*denom),
+			Amount:                strings.TrimSpace(*amount),
+			FaucetKeyName:         strings.TrimSpace(*faucetKeyName),
+			ContentGridBin:        strings.TrimSpace(*contentGridBin),
+			Keyring:               strings.TrimSpace(*keyringBackend),
+			KeyringDir:            strings.TrimSpace(*keyringDir),
+			KeyringPassEnv:        strings.TrimSpace(*keyringPassEnv),
+			Home:                  strings.TrimSpace(*chainHome),
+			Fees:                  strings.TrimSpace(*fees),
+			GasPrices:             strings.TrimSpace(*gasPrices),
+			BaseURL:               strings.TrimSpace(*baseURL),
+			AllowInsecureKeyring:  *allowTestKeyring,
+			AllowHTTPVerification: *airdropAllowHTTP,
+			AllowPrivateTargets:   *airdropAllowPrivate,
+			WorkerEnabled:         *airdropWorker,
+			ConfirmInterval:       *airdropConfirmInterval,
+			ConfirmTimeout:        *airdropConfirmTimeout,
+			VerificationWorkers:   *airdropVerifyWorkers,
 		}
-		air, err := newAirdropper(s, cfg)
+		air, err = newAirdropper(s, cfg)
 		if err != nil {
 			log.Fatalf("airdrop init: %v", err)
+		}
+		if err := air.Start(context.Background()); err != nil {
+			log.Fatalf("airdrop worker init: %v", err)
 		}
 		mux.HandleFunc("GET /airdrop", air.handleAirdropGet())
 		mux.HandleFunc("POST /airdrop", air.handleAirdropPost())
@@ -232,13 +258,22 @@ func main() {
 	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
 	<-stop
 
-	if slotCloser != nil {
-		_ = slotCloser.Close()
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	_ = httpServer.Shutdown(ctx)
+	if air != nil {
+		_ = air.Close(ctx)
+	}
+	if slotCloser != nil {
+		_ = slotCloser.Close()
+	}
+}
+
+func envOrDefault(name, fallback string) string {
+	if value := strings.TrimSpace(os.Getenv(name)); value != "" {
+		return value
+	}
+	return fallback
 }
 
 func buildPageTemplates(efs embed.FS) (map[string]*template.Template, error) {
