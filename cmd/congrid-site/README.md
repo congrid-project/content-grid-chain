@@ -111,6 +111,19 @@ The public production URL is:
 https://congrid.net/downloads/content-grid-d-linux-amd64.tar.gz
 ```
 
+The complete native operator stack also has an interactive Linux/macOS
+installer that does not use containers:
+
+```bash
+curl -fsSL https://congrid.net/downloads/install.sh | bash
+```
+
+The installer downloads the versioned network bootstrap list from
+`/downloads/seeds.txt` and verifies it against `/downloads/seeds.txt.sha256`.
+
+The release procedure for the installer and its amd64/arm64 native bundles is
+documented in `docs/native-operator-install-zh.md`.
+
 Files are read on each request, so adding a file does not require rebuilding or
 restarting the site. Release archives are gitignored and must be copied by the
 deployment process. Directory listings are disabled; only top-level regular

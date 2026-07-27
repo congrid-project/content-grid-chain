@@ -59,7 +59,11 @@ func (h *downloadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	disposition := mime.FormatMediaType("attachment", map[string]string{"filename": filename})
 	w.Header().Set("Content-Disposition", disposition)
-	w.Header().Set("Cache-Control", "public, max-age=300")
+	if filename == "seeds.txt" || filename == "seeds.txt.sha256" {
+		w.Header().Set("Cache-Control", "no-cache")
+	} else {
+		w.Header().Set("Cache-Control", "public, max-age=300")
+	}
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	http.ServeContent(w, r, filename, info.ModTime(), file)
 }

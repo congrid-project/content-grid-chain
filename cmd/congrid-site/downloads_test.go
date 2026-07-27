@@ -29,6 +29,7 @@ func TestDownloadHandlerServesReleaseAndRanges(t *testing.T) {
 	require.Equal(t, http.StatusOK, recorder.Code)
 	require.Equal(t, contents, recorder.Body.Bytes())
 	require.Equal(t, `attachment; filename=content-grid-d-linux-amd64.tar.gz`, recorder.Header().Get("Content-Disposition"))
+	require.Equal(t, "public, max-age=300", recorder.Header().Get("Cache-Control"))
 	require.Equal(t, "nosniff", recorder.Header().Get("X-Content-Type-Options"))
 
 	rangeReq := httptest.NewRequest(http.MethodGet, "/downloads/"+filename, nil)
@@ -96,4 +97,22 @@ func TestDownloadHandlerRejectsSymlinks(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	handler.ServeHTTP(recorder, req)
 	require.Equal(t, http.StatusNotFound, recorder.Code)
+}
+
+func TestDownloadHandlerRevalidatesSeedFiles(t *testing.T) {
+	dir := t.TempDir()
+	handler, err := newDownloadHandler(dir)
+	require.NoError(t, err)
+
+	for _, filename := range []string{"seeds.txt", "seeds.txt.sha256"} {
+		t.Run(filename, func(t *testing.T) {
+			require.NoError(t, os.WriteFile(filepath.Join(dir, filename), []byte("seed-data"), 0o644))
+			req := httptest.NewRequest(http.MethodGet, "/downloads/"+filename, nil)
+			req.SetPathValue("filename", filename)
+			recorder := httptest.NewRecorder()
+			handler.ServeHTTP(recorder, req)
+			require.Equal(t, http.StatusOK, recorder.Code)
+			require.Equal(t, "no-cache", recorder.Header().Get("Cache-Control"))
+		})
+	}
 }

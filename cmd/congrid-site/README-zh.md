@@ -105,6 +105,18 @@ curl -fI http://localhost:8080/downloads/content-grid-d-linux-amd64.tar.gz
 https://congrid.net/downloads/content-grid-d-linux-amd64.tar.gz
 ```
 
+完整原生 operator 栈还提供 Linux/macOS 交互式一键安装器（不使用容器）：
+
+```bash
+curl -fsSL https://congrid.net/downloads/install.sh | bash
+```
+
+安装器会从 `/downloads/seeds.txt` 下载网络引导节点列表，并使用
+`/downloads/seeds.txt.sha256` 校验内容。
+
+发布安装器及其 `amd64` / `arm64` 原生发布包的流程见
+`docs/native-operator-install-zh.md`。
+
 文件在每次请求时从目录读取，复制完成后不需要重新编译或重启网站。归档文件默认被
 `.gitignore` 排除；请通过发布流程复制到网站服务器。目录本身不会列出文件，只允许
 下载顶层的普通文件；隐藏文件、子目录、符号链接和不安全文件名会返回 404。

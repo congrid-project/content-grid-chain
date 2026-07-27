@@ -3,157 +3,134 @@
 {{define "main"}}
 <section class="section">
   <div class="container">
-    <h1>Verifiers</h1>
+    <h1>Run a Congrid Verifier</h1>
     <p class="lead">
-      Verifiers secure publisher quality by checking homepage badge ownership against on-chain records.
-      Good verifier performance improves registry trust and can qualify for rewards.
+      Install a full Congrid node and verifier stack with one interactive command.
+      The official installer supports Linux and macOS, uses native binaries, and does not require Docker.
     </p>
 
     <div class="grid two">
       <div class="card">
-        <h2>Network values you'll use</h2>
+        <h2>What the installer deploys</h2>
+        <ul>
+          <li><code>content-grid-d</code> full node</li>
+          <li><code>verifierd</code> assignment worker</li>
+          <li><code>indexerd</code> publisher index service</li>
+          <li>Chroma vector service</li>
+          <li>systemd services on Linux or launchd services on macOS</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>Network configuration</h2>
         <ul>
           <li><strong>Chain ID:</strong> <code>{{.WalletConfig.ChainID}}</code></li>
-          <li><strong>RPC:</strong> <code>{{.WalletConfig.RPC}}</code></li>
-          <li><strong>gRPC (example):</strong> <code>127.0.0.1:9090</code></li>
+          <li><strong>Public RPC:</strong> <code>{{.WalletConfig.RPC}}</code></li>
+          <li><strong>Local RPC after install:</strong> <code>tcp://127.0.0.1:26657</code></li>
           <li><strong>Fee denom:</strong> <code>{{if .WalletConfig.FeeDenom}}{{.WalletConfig.FeeDenom}}{{else}}ucongrid{{end}}</code></li>
           <li><strong>Suggested gas price:</strong> <code>{{if .WalletConfig.GasPrice}}{{.WalletConfig.GasPrice}}{{else}}0.001ucongrid{{end}}</code></li>
         </ul>
       </div>
-      <div class="card">
-        <h2>What verifiers do</h2>
-        <ul>
-          <li>Pull on-chain verification assignments.</li>
-          <li>Fetch publisher homepages and inspect Congrid badge link.</li>
-          <li>Submit accurate results in time windows.</li>
-          <li>Maintain high availability and consistent response latency.</li>
-        </ul>
-      </div>
     </div>
 
-    <h2>Step 1 — Prepare wallet + stake</h2>
+    <h2>Step 1 — Install the native verifier stack</h2>
     <p>
-      Use a dedicated verifier account. Keep enough balance for bonding and tx fees.
+      Run this as a normal login user with sudo access on Linux. On macOS, run it as your
+      normal user without sudo. The installer downloads checksum-verified binaries and the
+      current network seed list, then asks for the required settings through your terminal.
     </p>
 
     <div class="code">
-<pre><code># Bond (example amount)
-./content-grid-d verifier bond 1000000 \
-  --denom {{if .WalletConfig.FeeDenom}}{{.WalletConfig.FeeDenom}}{{else}}ucongrid{{end}} \
-  --from &lt;local-key-name&gt; \
-  --chain-id {{.WalletConfig.ChainID}} \
-  --node {{.WalletConfig.RPC}} \
-  --gas-prices {{if .WalletConfig.GasPrice}}{{.WalletConfig.GasPrice}}{{else}}0.001ucongrid{{end}} \
-  -y
+<pre><code>curl -fsSL https://congrid.net/downloads/install.sh | bash</code></pre>
+    </div>
 
-# Optional unbond later
-./content-grid-d verifier unbond 1000000 \
+    <p>
+      You can also <a href="/downloads/install.sh">download and inspect the installer</a> before
+      running it. Re-running the same command safely updates the software and service definitions
+      while preserving chain data, keys, verifier state, and Chroma data.
+    </p>
+
+    <div class="callout">
+      <strong>Protect the verifier key:</strong>
+      choose whether to create a new key or recover an existing mnemonic during installation.
+      When a new key is created, the installer prints the path to its only mnemonic backup.
+      Move that file to secure offline storage before funding the address.
+    </div>
+
+    <h2>Step 2 — Fund and bond the verifier</h2>
+    <p>
+      The installer prints the verifier address when it finishes. Send enough
+      <code>{{if .WalletConfig.FeeDenom}}{{.WalletConfig.FeeDenom}}{{else}}ucongrid{{end}}</code>
+      to that address for the bond and ongoing transaction fees, then submit the bond from the
+      same host. The examples use the default key name <code>verifier-key</code>; replace it if
+      you chose another name.
+    </p>
+
+    <h3>Linux</h3>
+    <div class="code">
+<pre><code>sudo -u congrid /usr/local/bin/content-grid-d verifier bond 1000000 \
   --denom {{if .WalletConfig.FeeDenom}}{{.WalletConfig.FeeDenom}}{{else}}ucongrid{{end}} \
-  --from &lt;local-key-name&gt; \
+  --from verifier-key \
+  --home /var/lib/congrid \
+  --keyring-backend file \
+  --keyring-dir /var/lib/congrid/keyrings/verifier \
   --chain-id {{.WalletConfig.ChainID}} \
-  --node {{.WalletConfig.RPC}} \
+  --node tcp://127.0.0.1:26657 \
   --gas-prices {{if .WalletConfig.GasPrice}}{{.WalletConfig.GasPrice}}{{else}}0.001ucongrid{{end}} \
   -y</code></pre>
     </div>
 
-    <h2>Step 2 — Run verifier daemon</h2>
-    <p>
-      Use <code>offchain/verifierd</code> from this repository for chain-driven assignments.
-      Run it continuously and monitor logs so you can submit checks inside each assignment window.
-    </p>
-
+    <h3>macOS</h3>
     <div class="code">
-<pre><code># Example status checks
-./content-grid-d verifier assignments &lt;verifier-address&gt; \
-  --node {{.WalletConfig.RPC}} \
-  --grpc-addr 127.0.0.1:9090 \
-  --grpc-insecure -o json
-
-./content-grid-d query registry publisher --domain &lt;domain&gt; \
-  --node {{.WalletConfig.RPC}} \
-  --grpc-addr 127.0.0.1:9090 \
-  --grpc-insecure -o json</code></pre>
+<pre><code>~/.local/bin/content-grid-d verifier bond 1000000 \
+  --denom {{if .WalletConfig.FeeDenom}}{{.WalletConfig.FeeDenom}}{{else}}ucongrid{{end}} \
+  --from verifier-key \
+  --home "$HOME/.content-grid" \
+  --keyring-backend file \
+  --keyring-dir "$HOME/.content-grid/keyrings/verifier" \
+  --chain-id {{.WalletConfig.ChainID}} \
+  --node tcp://127.0.0.1:26657 \
+  --gas-prices {{if .WalletConfig.GasPrice}}{{.WalletConfig.GasPrice}}{{else}}0.001ucongrid{{end}} \
+  -y</code></pre>
     </div>
 
-    <h3>One-click script (Linux/macOS, no Docker)</h3>
-    <p>
-      Use the repository script to build binaries, prepare the verifier key, render
-      <code>verifierd</code> config, and start the verifier daemon on a Linux or macOS host.
-      This path does not require Docker.
-    </p>
-
+    <h2>Step 3 — Monitor the verifier stack</h2>
+    <p>On Linux, inspect all four systemd services and follow verifier logs:</p>
     <div class="code">
-<pre><code># Store verifier key material outside git history.
-cp /path/to/verifier.mnemonic ~/.congrid-verifier.mnemonic
-printf '%s\n' '&lt;keyring-passphrase&gt;' &gt; ~/.congrid-verifier.pass
-chmod 600 ~/.congrid-verifier.mnemonic ~/.congrid-verifier.pass
-
-# Create the local script env file.
-cat &gt; .env.verifier &lt;&lt;'EOF'
-CONGRID_CHAIN_ID={{.WalletConfig.ChainID}}
-CONGRID_NODE_RPC_URL={{.WalletConfig.RPC}}
-CONGRID_NODE_GRPC_ADDR=127.0.0.1:9090
-CONGRID_HOME=$HOME/.content-grid
-
-CONGRID_VERIFIER_KEY_NAME=verifier-key
-CONGRID_VERIFIER_KEYRING_BACKEND=file
-CONGRID_VERIFIER_KEY_MNEMONIC_FILE=$HOME/.congrid-verifier.mnemonic
-CONGRID_VERIFIER_KEYRING_PASSPHRASE_FILE=$HOME/.congrid-verifier.pass
-
-CONGRID_VERIFIER_FEES=
-CONGRID_VERIFIER_GAS_PRICES=0.001{{if .WalletConfig.FeeDenom}}{{.WalletConfig.FeeDenom}}{{else}}ucongrid{{end}}
-EOF
-
-# Build, configure, and start verifierd in the background.
-./scripts/verifier-oneclick.sh --env .env.verifier start
-
-# Confirm process state and follow logs.
-./scripts/verifier-oneclick.sh --env .env.verifier status
-./scripts/verifier-oneclick.sh --env .env.verifier logs</code></pre>
+<pre><code>sudo systemctl status congrid-node congrid-chroma congrid-indexer congrid-verifier
+sudo journalctl -u congrid-verifier -f</code></pre>
     </div>
 
-    <p>
-      The script writes <code>offchain/verifierd/config.json</code>, builds
-      <code>bin/content-grid-d</code> and <code>bin/verifierd</code>, starts
-      <code>verifierd</code> in the background, and stores logs under <code>logs/verifierd.out</code>.
-      The important long-running defaults are
-      <code>CONGRID_VERIFIER_COMMIT_START_BUFFER_SECONDS=15</code>,
-      <code>CONGRID_VERIFIER_TX_INCLUSION_TIMEOUT_SECONDS=120</code>, and
-      <code>CONGRID_VERIFIER_STATE_DIR=$CONGRID_HOME/verifierd-state</code>, which persists
-      pending commit/reveal nonces across restarts.
-    </p>
-
+    <p>On macOS, inspect the launchd job and its log:</p>
     <div class="code">
-<pre><code># Print the verifier address resolved by the script
-./scripts/verifier-oneclick.sh --env .env.verifier address
+<pre><code>launchctl print "gui/$(id -u)/net.congrid.verifier"
+tail -f "$HOME/.content-grid/logs/verifier.log"</code></pre>
+    </div>
 
-# Optional: submit verifier bond through the same configured key
-CONGRID_VERIFIER_BOND_AMOUNT=1000000 \
-./scripts/verifier-oneclick.sh --env .env.verifier bond
+    <p>Health endpoints and assignment queries are available locally on either platform:</p>
+    <div class="code">
+<pre><code>curl -fsS http://127.0.0.1:8000/healthz
+curl -fsS http://127.0.0.1:9100/healthz
+curl -fsS http://127.0.0.1:9200/healthz
 
-# Confirm assignments and successful submissions from the host
-./content-grid-d verifier assignments &lt;verifier-address&gt; \
-  --node {{.WalletConfig.RPC}} \
+# Linux binary path; use ~/.local/bin/content-grid-d on macOS
+/usr/local/bin/content-grid-d verifier assignments &lt;verifier-address&gt; \
+  --node tcp://127.0.0.1:26657 \
   --grpc-addr 127.0.0.1:9090 \
   --grpc-insecure \
-  --include-finalized -o json
-
-# Stop or restart the background daemon
-./scripts/verifier-oneclick.sh --env .env.verifier stop
-./scripts/verifier-oneclick.sh --env .env.verifier restart</code></pre>
+  --include-finalized -o json</code></pre>
     </div>
 
-    <h2>Step 3 — Keep your verifier reliable</h2>
     <ul>
-      <li>Use stable DNS/network; avoid frequent IP rotations.</li>
-      <li>Track failed checks and homepage fetch latency.</li>
-      <li>Alert on process exit, RPC disconnect, and backlog growth.</li>
-      <li>Keep software updated with protocol changes.</li>
+      <li>Allow inbound TCP/26656 in the host and cloud firewall for P2P connectivity.</li>
+      <li>Alert on service exit, RPC disconnect, failed checks, and assignment backlog.</li>
+      <li>Keep enough balance available for verifier transaction fees.</li>
+      <li>Re-run the installer periodically to deploy published software updates.</li>
     </ul>
 
     <div class="callout">
       <strong>Verifier tip:</strong>
-      Reliability matters because missed or inaccurate checks reduce your reward potential.
+      Keep the node online continuously. Missed or inaccurate checks reduce reward potential,
+      while verifier state is preserved across installer updates and service restarts.
     </div>
   </div>
 </section>
