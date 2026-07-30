@@ -120,11 +120,15 @@ Linux 会通过 apt/dnf/yum/zypper/pacman 补齐依赖。macOS 自带 Python 3 �
 - `indexerd` 和 `verifierd` 的监听地址；
 - verifier key 名称和 keyring 口令；
 - 创建新 verifier key，或通过 mnemonic 恢复现有 key；
-- verifier 交易 gas prices，以及是否启用 drand 投递。
+- verifier 交易 gas prices。
 
 Chain ID 固定使用 `congrid-main`，genesis 默认使用当前下载目录下的
 `genesis.json`，交互安装不会再询问这两个值。测试网络等高级场景仍可分别通过
 `CONGRID_CHAIN_ID` 和 `CONGRID_GENESIS_URL` 覆盖。
+
+drand delivery 默认启用且不再询问。多个 verifier 可以安全地同时启用，程序会按
+确定性顺序选择主投递者和后备投递者。只有已经确认网络中存在其他投递节点的高级
+运维场景，才应设置 `CONGRID_DRAND_DELIVERY_DISABLED=true` 关闭本实例的投递职责。
 
 若创建新 key，安装器会把唯一的 mnemonic JSON 备份保存到执行安装的用户 home，
 权限为 `0600`，并打印完整路径。必须在给该地址充值前把它转移到安全的离线存储。

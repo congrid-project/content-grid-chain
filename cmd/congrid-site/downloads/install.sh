@@ -5,7 +5,7 @@ umask 027
 export LC_ALL=C
 export LANG=C
 
-INSTALLER_VERSION="1.2.0"
+INSTALLER_VERSION="1.2.1"
 
 case "$(uname -s)" in
   Linux)
@@ -136,6 +136,9 @@ Artifact overrides:
   CONGRID_BUNDLE_URL                   Full native bundle URL
   CONGRID_BUNDLE_SHA256                Expected lowercase/uppercase SHA-256
   CONGRID_DOWNLOAD_BASE_URL            Base URL used when BUNDLE_URL is unset
+
+Advanced operational override:
+  CONGRID_DRAND_DELIVERY_DISABLED      true disables this verifier's drand relay
 
 The installer supports Linux and macOS on amd64 and arm64. Linux services use
 systemd; macOS services use per-user launchd LaunchAgents. It never uses Docker,
@@ -693,7 +696,6 @@ default_indexer_listen="$(env_or_saved CONGRID_INDEXER_LISTEN_ADDR indexer_liste
 default_verifier_listen="$(env_or_saved CONGRID_VERIFIER_LISTEN_ADDR verifier_listen_addr "127.0.0.1:9200")"
 default_key_name="$(env_or_saved CONGRID_VERIFIER_KEY_NAME verifier_key_name "verifier-key")"
 default_gas_prices="$(env_or_saved CONGRID_VERIFIER_GAS_PRICES verifier_gas_prices "0.001ucongrid")"
-default_drand_disabled="$(env_or_saved CONGRID_DRAND_DELIVERY_DISABLED drand_delivery_disabled "false")"
 
 prompt_value MONIKER "Node name (moniker)" "$default_moniker" true
 CHAIN_ID="${CONGRID_CHAIN_ID:-congrid-main}"
@@ -715,20 +717,11 @@ prompt_value VERIFIER_LISTEN_ADDR "verifierd health listen address" "$default_ve
 prompt_value VERIFIER_KEY_NAME "Verifier key name" "$default_key_name" true
 prompt_value VERIFIER_GAS_PRICES "Verifier transaction gas prices" "$default_gas_prices" true
 
-if [ -n "${CONGRID_DRAND_DELIVERY_DISABLED:-}" ]; then
-  DRAND_DELIVERY_DISABLED="$CONGRID_DRAND_DELIVERY_DISABLED"
+DRAND_DELIVERY_DISABLED="${CONGRID_DRAND_DELIVERY_DISABLED:-false}"
+if [ "$DRAND_DELIVERY_DISABLED" = "true" ]; then
+  warn "drand delivery is disabled by CONGRID_DRAND_DELIVERY_DISABLED=true"
 else
-  if [ "$default_drand_disabled" = "true" ]; then
-    default_drand_enabled=false
-  else
-    default_drand_enabled=true
-  fi
-  prompt_yes_no DRAND_DELIVERY_ENABLED "Enable verifier drand delivery" "$default_drand_enabled"
-  if [ "$DRAND_DELIVERY_ENABLED" = "true" ]; then
-    DRAND_DELIVERY_DISABLED=false
-  else
-    DRAND_DELIVERY_DISABLED=true
-  fi
+  log "verifier drand delivery is enabled"
 fi
 
 validate_simple_name "node moniker" "$MONIKER"
