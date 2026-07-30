@@ -108,19 +108,23 @@ curl -fsSL https://congrid.net/downloads/install.sh | bash
 
 Linux 会通过 apt/dnf/yum/zypper/pacman 补齐依赖。macOS 自带 Python 3 且支持 venv
 时直接使用；否则需要先安装 [Homebrew](https://brew.sh)，脚本会调用
-`brew install python`。
+`brew install python`。安装器会验证虚拟环境内的 pip；如果检测到已有
+`chromad/.venv` 缺少 pip，会先尝试修复，必要时只重建该虚拟环境。
 
 脚本会直接从 `/dev/tty` 读取回答，因此即使脚本内容通过管道送给 Bash，交互仍然
 有效。首次安装会询问：
 
-- 节点 moniker 和 chain ID；
-- 官方 `genesis.json` URL；
+- 节点 moniker；
 - 可选 persistent peers 和公开 P2P 地址；
 - P2P 地址簿是否拒绝私网地址；
 - `indexerd` 和 `verifierd` 的监听地址；
 - verifier key 名称和 keyring 口令；
 - 创建新 verifier key，或通过 mnemonic 恢复现有 key；
 - verifier 交易 gas prices，以及是否启用 drand 投递。
+
+Chain ID 固定使用 `congrid-main`，genesis 默认使用当前下载目录下的
+`genesis.json`，交互安装不会再询问这两个值。测试网络等高级场景仍可分别通过
+`CONGRID_CHAIN_ID` 和 `CONGRID_GENESIS_URL` 覆盖。
 
 若创建新 key，安装器会把唯一的 mnemonic JSON 备份保存到执行安装的用户 home，
 权限为 `0600`，并打印完整路径。必须在给该地址充值前把它转移到安全的离线存储。
@@ -248,8 +252,6 @@ genesis。
 curl -fsSL https://congrid.net/downloads/install.sh |
   CONGRID_NON_INTERACTIVE=true \
   CONGRID_MONIKER=node-01 \
-  CONGRID_CHAIN_ID=congrid-main \
-  CONGRID_GENESIS_URL=https://congrid.net/downloads/genesis.json \
   CONGRID_VERIFIER_KEY_NAME=verifier-key \
   CONGRID_VERIFIER_KEY_ACTION=recover \
   CONGRID_VERIFIER_MNEMONIC='word ...' \

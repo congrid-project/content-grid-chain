@@ -5,7 +5,7 @@ umask 027
 export LC_ALL=C
 export LANG=C
 
-INSTALLER_VERSION="1.1.0"
+INSTALLER_VERSION="1.2.0"
 
 case "$(uname -s)" in
   Linux)
@@ -121,8 +121,8 @@ Options (when piping, pass options after "bash -s --"):
 
 Important non-interactive variables:
   CONGRID_MONIKER
-  CONGRID_CHAIN_ID
-  CONGRID_GENESIS_URL                  Required for a new node home
+  CONGRID_CHAIN_ID                     Override default: congrid-main
+  CONGRID_GENESIS_URL                  Override default: downloads/genesis.json
   CONGRID_SEEDS_URL                    Seed-list URL (default: downloads/seeds.txt)
   CONGRID_SEEDS_SHA256                 Expected seed-list SHA-256 override
   CONGRID_P2P_SEEDS                    Full seed-list override; skips download
@@ -287,7 +287,8 @@ install_system_dependencies() {
       command_exists "$command_name" || die "required macOS command is missing: $command_name"
     done
     if ! command_exists python3 ||
-      ! python3 -m venv "$venv_probe" >/dev/null 2>&1; then
+      ! python3 -m venv "$venv_probe" >/dev/null 2>&1 ||
+      ! "$venv_probe/bin/python" -m pip --version >/dev/null 2>&1; then
       rm -rf -- "$venv_probe"
       if command_exists brew; then
         log "installing Python with Homebrew"
@@ -307,6 +308,8 @@ install_system_dependencies() {
   done
   if command_exists python3; then
     if ! python3 -m venv "$venv_probe" >/dev/null 2>&1; then
+      need_install=true
+    elif ! "$venv_probe/bin/python" -m pip --version >/dev/null 2>&1; then
       need_install=true
     fi
     rm -rf -- "$venv_probe"
@@ -329,7 +332,7 @@ install_system_dependencies() {
     apt-get)
       run_root apt-get update
       run_root env DEBIAN_FRONTEND=noninteractive apt-get install -y \
-        ca-certificates curl tar python3 python3-venv procps passwd
+        ca-certificates curl tar python3 python3-pip python3-venv procps passwd
       ;;
     dnf)
       run_root dnf install -y ca-certificates curl tar python3 python3-pip util-linux procps-ng shadow-utils
@@ -365,6 +368,13 @@ python3 - <<'PY' || die "Python 3.9 or newer is required"
 import sys
 raise SystemExit(0 if sys.version_info >= (3, 9) else 1)
 PY
+
+VENV_VERIFY_PATH="$TMP_WORK/venv-verify"
+if ! python3 -m venv "$VENV_VERIFY_PATH" >/dev/null 2>&1 ||
+  ! "$VENV_VERIFY_PATH/bin/python" -m pip --version >/dev/null 2>&1; then
+  die "Python venv cannot provide pip; install python3-venv and python3-pip (or Homebrew Python on macOS), then rerun"
+fi
+rm -rf -- "$VENV_VERIFY_PATH"
 
 load_saved_value() {
   local key="$1"
@@ -676,8 +686,6 @@ else
 fi
 
 default_moniker="$(env_or_saved CONGRID_MONIKER moniker "$(hostname -s 2>/dev/null || printf 'congrid-node')")"
-default_chain_id="$(env_or_saved CONGRID_CHAIN_ID chain_id "congrid-main")"
-default_genesis_url="$(env_or_saved CONGRID_GENESIS_URL genesis_url "$DOWNLOAD_BASE_URL/genesis.json")"
 default_peers="$(env_or_saved CONGRID_PERSISTENT_PEERS persistent_peers "")"
 default_external_address="$(env_or_saved CONGRID_P2P_EXTERNAL_ADDRESS p2p_external_address "")"
 default_addr_book_strict="$(env_or_saved CONGRID_P2P_ADDR_BOOK_STRICT p2p_addr_book_strict "true")"
@@ -688,12 +696,10 @@ default_gas_prices="$(env_or_saved CONGRID_VERIFIER_GAS_PRICES verifier_gas_pric
 default_drand_disabled="$(env_or_saved CONGRID_DRAND_DELIVERY_DISABLED drand_delivery_disabled "false")"
 
 prompt_value MONIKER "Node name (moniker)" "$default_moniker" true
-prompt_value CHAIN_ID "Chain ID" "$default_chain_id" true
-if [ "$NODE_ALREADY_INITIALIZED" = "true" ]; then
-  GENESIS_URL="$default_genesis_url"
-else
-  prompt_value GENESIS_URL "Official genesis.json URL" "$default_genesis_url" true
-fi
+CHAIN_ID="${CONGRID_CHAIN_ID:-congrid-main}"
+GENESIS_URL="${CONGRID_GENESIS_URL:-$DOWNLOAD_BASE_URL/genesis.json}"
+log "using chain ID: $CHAIN_ID"
+log "using genesis: $GENESIS_URL"
 if [ "${CONGRID_P2P_SEEDS+x}" = "x" ]; then
   P2P_SEEDS="$CONGRID_P2P_SEEDS"
   SEEDS_SOURCE_URL=""
@@ -885,6 +891,20 @@ if ! run_root test -x "$CHROMAD_DIR/.venv/bin/python"; then
     die "python3 venv creation failed; install your distribution's python3-venv package and rerun"
   fi
 fi
+
+if ! run_root "$CHROMAD_DIR/.venv/bin/python" -m pip --version >/dev/null 2>&1; then
+  log "chromad virtual environment has no pip; attempting repair"
+  if ! run_root "$CHROMAD_DIR/.venv/bin/python" -m ensurepip --upgrade >/dev/null 2>&1 ||
+    ! run_root "$CHROMAD_DIR/.venv/bin/python" -m pip --version >/dev/null 2>&1; then
+    log "recreating chromad virtual environment with pip"
+    if ! run_root python3 -m venv --clear "$CHROMAD_DIR/.venv"; then
+      die "failed to recreate chromad Python environment; install python3-venv and python3-pip, then rerun"
+    fi
+  fi
+fi
+
+run_root "$CHROMAD_DIR/.venv/bin/python" -m pip --version >/dev/null 2>&1 ||
+  die "chromad virtual environment still has no pip after repair"
 run_root "$CHROMAD_DIR/.venv/bin/python" -m pip install \
   --disable-pip-version-check --quiet --upgrade pip
 run_root "$CHROMAD_DIR/.venv/bin/python" -m pip install \
