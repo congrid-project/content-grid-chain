@@ -222,6 +222,19 @@ curl -fsS http://127.0.0.1:9100/healthz
 curl -fsS http://127.0.0.1:9200/healthz
 ```
 
+如果 `congrid-indexer` 启动超时，先检查它等待的两个上游端点：
+
+```bash
+sudo systemctl status congrid-node congrid-chroma --no-pager --full
+sudo journalctl -u congrid-node -u congrid-chroma -n 100 --no-pager
+curl -fsS http://127.0.0.1:8000/healthz
+timeout 3 bash -c '</dev/tcp/127.0.0.1/9090'
+```
+
+新版安装器会给 indexer/verifier 的启动前健康检查预留 180 秒，并按
+node → Chroma → indexer → verifier 的依赖顺序启动。任一服务失败时会自动打印
+四个服务的状态和失败服务日志。
+
 macOS 检查命令：
 
 ```bash

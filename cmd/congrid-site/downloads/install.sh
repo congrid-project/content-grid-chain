@@ -5,7 +5,7 @@ umask 027
 export LC_ALL=C
 export LANG=C
 
-INSTALLER_VERSION="1.2.1"
+INSTALLER_VERSION="1.2.2"
 
 case "$(uname -s)" in
   Linux)
@@ -1450,6 +1450,7 @@ Type=simple
 User=congrid
 Group=congrid
 WorkingDirectory=/var/lib/congrid
+TimeoutStartSec=180s
 ExecStartPre=/usr/local/libexec/congrid/wait-for-tcp 127.0.0.1 9090 120
 ExecStartPre=/usr/local/libexec/congrid/wait-for-http http://127.0.0.1:8000/healthz 120
 ExecStart=/usr/local/bin/indexerd --config /etc/congrid/indexerd.json
@@ -1479,6 +1480,7 @@ Type=simple
 User=congrid
 Group=congrid
 WorkingDirectory=/var/lib/congrid
+TimeoutStartSec=180s
 ExecStartPre=/usr/local/libexec/congrid/wait-for-tcp 127.0.0.1 9090 120
 ExecStartPre=/usr/local/libexec/congrid/wait-for-http http://127.0.0.1:${INDEXER_LOCAL_PORT}/healthz 120
 ExecStart=/usr/local/libexec/congrid/verifierd-launcher /etc/congrid/verifier.passphrase /usr/local/bin/verifierd /etc/congrid/verifierd.json
@@ -1509,8 +1511,14 @@ run_root systemctl enable \
 
 if [ "$START_SERVICES" = "true" ]; then
   log "starting Content Grid services"
-  run_root systemctl restart congrid-node.service congrid-chroma.service
-  run_root systemctl restart congrid-indexer.service congrid-verifier.service
+  failed_start_service=""
+  for service_name in congrid-node congrid-chroma congrid-indexer congrid-verifier; do
+    log "starting $service_name.service"
+    if ! run_root systemctl restart "$service_name.service"; then
+      failed_start_service="$service_name"
+      break
+    fi
+  done
   sleep 3
 
   failed_services=()
@@ -1519,7 +1527,20 @@ if [ "$START_SERVICES" = "true" ]; then
       failed_services+=("$service_name")
     fi
   done
+  if [ -n "$failed_start_service" ]; then
+    case " ${failed_services[*]} " in
+      *" $failed_start_service "*) ;;
+      *) failed_services+=("$failed_start_service") ;;
+    esac
+  fi
   if [ "${#failed_services[@]}" -gt 0 ]; then
+    log "Content Grid service status:"
+    run_root systemctl status \
+      congrid-node.service \
+      congrid-chroma.service \
+      congrid-indexer.service \
+      congrid-verifier.service \
+      --no-pager --full >&2 || true
     for service_name in "${failed_services[@]}"; do
       log "recent logs for failed service $service_name:"
       run_root journalctl -u "$service_name.service" -n 30 --no-pager >&2 || true
