@@ -5,7 +5,7 @@ umask 027
 export LC_ALL=C
 export LANG=C
 
-INSTALLER_VERSION="1.2.2"
+INSTALLER_VERSION="1.2.3"
 
 case "$(uname -s)" in
   Linux)
@@ -1390,7 +1390,9 @@ StartLimitIntervalSec=0
 Type=simple
 User=congrid
 Group=congrid
-WorkingDirectory=/var/lib/congrid
+# Keep cwd outside --home for compatibility with older content-grid-d builds
+# whose relative-database safety check misidentified the normal home database.
+WorkingDirectory=/var/lib
 ExecStart=/usr/local/bin/content-grid-d start --home /var/lib/congrid
 Restart=on-failure
 RestartSec=5s

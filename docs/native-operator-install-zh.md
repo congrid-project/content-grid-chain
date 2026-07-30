@@ -235,6 +235,11 @@ timeout 3 bash -c '</dev/tcp/127.0.0.1/9090'
 node → Chroma → indexer → verifier 的依赖顺序启动。任一服务失败时会自动打印
 四个服务的状态和失败服务日志。
 
+如果节点日志出现 `unexpected ./data/application.db detected`，不要删除
+`/var/lib/congrid/data`。旧二进制会在 systemd 工作目录与 `--home` 相同时把正常
+数据库误判为相对路径数据库；安装器 `1.2.3` 会使用兼容工作目录，新构建的
+`content-grid-d` 也已经修正这项路径判断。
+
 macOS 检查命令：
 
 ```bash

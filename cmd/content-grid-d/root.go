@@ -286,18 +286,42 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer, appOpts serverty
 	// CometBFT height and app store versions will diverge, and queries will fail with
 	// "version does not exist".
 	// A common culprit is an accidental relative data dir (e.g. ./data).
-	if _, err := os.Stat(filepath.Join("data", "application.db")); err == nil {
-		logger.Error("unexpected ./data/application.db detected; this often causes Comet/app DB mismatch; remove ./data and restart with a clean --home")
-		panic("unexpected ./data/application.db detected")
-	}
-
 	home := cast.ToString(appOpts.Get(flags.FlagHome))
+	if cwd, err := os.Getwd(); err == nil {
+		if unexpected := unexpectedRelativeAppDB(cwd, home); unexpected != "" {
+			logger.Error(
+				"unexpected application DB outside --home; this can cause Comet/app DB mismatch",
+				"path", unexpected,
+				"expected_app_data_dir", filepath.Join(home, "data"),
+			)
+			panic("unexpected application DB outside --home")
+		}
+	}
 	if home != "" {
 		logger.Info("using --home", "home", home, "expected_app_data_dir", filepath.Join(home, "data"))
 	}
 
 	baseAppOptions := server.DefaultBaseappOptions(appOpts)
 	return app.NewApp(logger, db, traceStore, true, appOpts, baseAppOptions...)
+}
+
+func unexpectedRelativeAppDB(cwd, home string) string {
+	if cwd == "" || home == "" {
+		return ""
+	}
+
+	relativePath := filepath.Join(cwd, "data", "application.db")
+	relativeInfo, err := os.Stat(relativePath)
+	if err != nil {
+		return ""
+	}
+
+	expectedPath := filepath.Join(home, "data", "application.db")
+	expectedInfo, err := os.Stat(expectedPath)
+	if err == nil && os.SameFile(relativeInfo, expectedInfo) {
+		return ""
+	}
+	return relativePath
 }
 
 func appExport(
