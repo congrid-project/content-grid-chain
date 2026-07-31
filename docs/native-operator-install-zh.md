@@ -15,8 +15,9 @@ operator 栈：
 
 ## 发布网站需要准备的文件
 
-安装器使用一个原生发布包，保证三个 Go 二进制和 chromad 代码来自同一个 Git
-提交。构建 Linux 和 macOS 的四种组合：
+安装器使用一个原生发布包。正式 `content-grid-d`、`verifierd`、`indexerd` 和
+chromad 来自当前 Git 提交；包内还包含一个只用于重放历史区块的
+`content-grid-d-pre-upgrade`。构建 Linux 和 macOS 的四种组合：
 
 ```bash
 scripts/build-native-release.sh linux amd64 ./dist
@@ -25,7 +26,10 @@ scripts/build-native-release.sh darwin amd64 ./dist
 scripts/build-native-release.sh darwin arm64 ./dist
 ```
 
-构建脚本会自动执行 Go 交叉编译、整理目录、调用 `tar` 并生成 SHA-256。
+构建脚本会自动执行 Go 交叉编译、从提交
+`ef331816c0c213a145e26f7719bc4fb395e03c0a` 构建升级前节点二进制、整理目录、
+调用 `tar` 并生成 SHA-256。只有在明确发布另一个兼容历史版本时，才使用
+`CONGRID_PRE_UPGRADE_REF=<commit>` 覆盖该提交。
 
 如果二进制已经由其他发布流程构建完成，手工打包时目录必须是：
 
@@ -33,6 +37,7 @@ scripts/build-native-release.sh darwin arm64 ./dist
 congrid-native/
 ├── bin/
 │   ├── content-grid-d
+│   ├── content-grid-d-pre-upgrade
 │   ├── verifierd
 │   └── indexerd
 └── chromad/
@@ -57,6 +62,9 @@ shasum -a 256 congrid-native-darwin-arm64.tar.gz \
 ```
 
 其他平台/架构只需替换归档名；归档内部顶层目录始终保持为 `congrid-native`。
+`content-grid-d-pre-upgrade` 必须为同一目标 OS/架构，并由上述固定提交构建。
+构建脚本会把它的版本标记为 `pre-drand-strict-v2-ef331816`，安装器会校验该标记，
+防止误把当前节点二进制放到兼容文件名下。
 
 将以下文件复制到官网实际使用的 downloads 目录：
 
@@ -126,6 +134,11 @@ Chain ID 固定使用 `congrid-main`，genesis 默认使用当前下载目录下
 `genesis.json`，交互安装不会再询问这两个值。测试网络等高级场景仍可分别通过
 `CONGRID_CHAIN_ID` 和 `CONGRID_GENESIS_URL` 覆盖。
 
+`congrid-main` 曾在高度 13000 执行 `drand-strict-v2` 软件升级。全新节点会由
+安装器自动使用升级前二进制重放 1–12999，在 13000 自动切换当前二进制并执行
+迁移；用户不需要手工替换文件。安装器会等节点完成追块后再启动 indexer 和
+verifier，避免它们读取不完整的历史状态。
+
 drand delivery 默认启用且不再询问。多个 verifier 可以安全地同时启用，程序会按
 确定性顺序选择主投递者和后备投递者。只有已经确认网络中存在其他投递节点的高级
 运维场景，才应设置 `CONGRID_DRAND_DELIVERY_DISABLED=true` 关闭本实例的投递职责。
@@ -173,6 +186,8 @@ Linux 主要路径：
 /usr/local/bin/content-grid-d
 /usr/local/bin/verifierd
 /usr/local/bin/indexerd
+/usr/local/libexec/congrid/content-grid-d-pre-upgrade
+/usr/local/libexec/congrid/content-grid-node-bootstrap
 /opt/congrid/chromad
 /etc/congrid
 /var/lib/congrid
@@ -231,14 +246,21 @@ curl -fsS http://127.0.0.1:8000/healthz
 timeout 3 bash -c '</dev/tcp/127.0.0.1/9090'
 ```
 
-新版安装器会给 indexer/verifier 的启动前健康检查预留 180 秒，并按
-node → Chroma → indexer → verifier 的依赖顺序启动。任一服务失败时会自动打印
-四个服务的状态和失败服务日志。
+新版安装器会给首次链同步和 indexer/verifier 的启动前健康检查预留 60 分钟，
+并按 node → Chroma → 等待追块完成 → indexer → verifier 的依赖顺序启动。任一
+服务失败时会自动打印四个服务的状态和失败服务日志。
 
 如果节点日志出现 `unexpected ./data/application.db detected`，不要删除
 `/var/lib/congrid/data`。旧二进制会在 systemd 工作目录与 `--home` 相同时把正常
-数据库误判为相对路径数据库；安装器 `1.2.3` 会使用兼容工作目录，新构建的
+数据库误判为相对路径数据库；安装器 `1.2.3+` 会使用兼容工作目录，新构建的
 `content-grid-d` 也已经修正这项路径判断。
+
+安装器 `1.2.x` 曾直接用升级后节点二进制从 genesis 启动，受影响节点会停在高度
+1，并在日志中出现 `wrong Block.Header.AppHash`。重新运行 `1.3.0+` 安装器时，
+若本地 RPC 仍可访问，它会识别该特定高度-1状态，将旧 `data` 备份到
+`/var/backups/congrid-incompatible-height1-<timestamp>`（macOS 位于 node home
+的 `backups/`），只重置可重放的链数据库，然后自动走正确的升级路径。verifier
+keyring、助记词备份、节点身份和配置不会被删除。
 
 macOS 检查命令：
 
@@ -264,7 +286,8 @@ tail -f ~/.content-grid/logs/verifier.log
 - chromad 数据。
 
 已有节点的 chain ID 必须与输入一致；安装器不会使用下载的 genesis 覆盖已有
-genesis。
+genesis。唯一的自动重置例外是上一节所述、可精确识别的 `1.2.x` 高度-1
+不兼容链数据库；重置前一定会先备份，且不会触碰密钥和配置。
 
 ## 非交互安装
 

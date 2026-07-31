@@ -5,7 +5,7 @@ umask 027
 export LC_ALL=C
 export LANG=C
 
-INSTALLER_VERSION="1.2.3"
+INSTALLER_VERSION="1.3.0"
 
 case "$(uname -s)" in
   Linux)
@@ -57,6 +57,10 @@ SEEDS_URL="${CONGRID_SEEDS_URL:-}"
 SEEDS_SHA256="${CONGRID_SEEDS_SHA256:-}"
 NON_INTERACTIVE="${CONGRID_NON_INTERACTIVE:-false}"
 START_SERVICES="${CONGRID_START_SERVICES:-true}"
+PRE_UPGRADE_NAME="drand-strict-v2"
+PRE_UPGRADE_HEIGHT=13000
+PRE_UPGRADE_BINARY_VERSION="pre-drand-strict-v2-ef331816"
+INCOMPATIBLE_HEIGHT_ONE_APP_HASH="YyNzspIwNZkJl3wNQ4vcJAEQ4baLcIsZ50eOsKp5JxM="
 
 ROOT_CMD=()
 TMP_WORK=""
@@ -676,10 +680,62 @@ PY
 }
 
 NODE_ALREADY_INITIALIZED=false
+NODE_BOOTSTRAP_MODE="legacy"
+RESET_INCOMPATIBLE_CHAIN_DATA=false
 if run_root test -s "$CONGRID_HOME_DIR/config/config.toml"; then
   NODE_ALREADY_INITIALIZED=true
   log "existing node home detected at $CONGRID_HOME_DIR; chain data and genesis will be preserved"
+
+  if run_root test -s "$CONGRID_HOME_DIR/config/congrid-bootstrap-mode" &&
+    [ "$(run_root tr -d '[:space:]' "$CONGRID_HOME_DIR/config/congrid-bootstrap-mode")" = "current" ]; then
+    NODE_BOOTSTRAP_MODE="current"
+  elif run_root test -s "$CONGRID_HOME_DIR/data/upgrade-info.json" &&
+    run_root python3 - "$CONGRID_HOME_DIR/data/upgrade-info.json" "$PRE_UPGRADE_NAME" "$PRE_UPGRADE_HEIGHT" <<'PY'
+import json
+import sys
+
+path, expected_name, raw_expected_height = sys.argv[1:]
+try:
+    with open(path, "r", encoding="utf-8") as handle:
+        value = json.load(handle)
+    matched = (
+        value.get("name") == expected_name
+        and int(value.get("height", 0)) == int(raw_expected_height)
+    )
+except (OSError, ValueError, TypeError):
+    matched = False
+raise SystemExit(0 if matched else 1)
+PY
+  then
+    NODE_BOOTSTRAP_MODE="current"
+  else
+    rpc_status="$(
+      curl --fail --silent --show-error --max-time 5 \
+        http://127.0.0.1:26657/status 2>/dev/null || true
+    )"
+    rpc_abci_info="$(
+      curl --fail --silent --show-error --max-time 5 \
+        http://127.0.0.1:26657/abci_info 2>/dev/null || true
+    )"
+    node_rpc_height="$(
+      python3 -c 'import json,sys; print(int(json.load(sys.stdin)["result"]["sync_info"]["latest_block_height"]))' \
+        <<<"$rpc_status" 2>/dev/null || true
+    )"
+    node_rpc_app_hash="$(
+      python3 -c 'import json,sys; print(json.load(sys.stdin)["result"]["response"].get("last_block_app_hash", ""))' \
+        <<<"$rpc_abci_info" 2>/dev/null || true
+    )"
+
+    if [ -n "$node_rpc_height" ] && [ "$node_rpc_height" -ge "$PRE_UPGRADE_HEIGHT" ]; then
+      NODE_BOOTSTRAP_MODE="current"
+    elif [ "$node_rpc_height" = "1" ] &&
+      [ "$node_rpc_app_hash" = "$INCOMPATIBLE_HEIGHT_ONE_APP_HASH" ]; then
+      RESET_INCOMPATIBLE_CHAIN_DATA=true
+      warn "detected incompatible height-1 data created by installer 1.2.x; it will be backed up and replayed safely"
+    fi
+  fi
 fi
+log "node bootstrap mode: $NODE_BOOTSTRAP_MODE"
 
 printf '\nContent Grid native operator setup\n' >&2
 if [ "$HOST_OS" = "linux" ]; then
@@ -822,6 +878,7 @@ tar -xzf "$BUNDLE_PATH" -C "$BUNDLE_EXTRACT_DIR"
 BUNDLE_ROOT="$BUNDLE_EXTRACT_DIR/congrid-native"
 for required_file in \
   "$BUNDLE_ROOT/bin/content-grid-d" \
+  "$BUNDLE_ROOT/bin/content-grid-d-pre-upgrade" \
   "$BUNDLE_ROOT/bin/verifierd" \
   "$BUNDLE_ROOT/bin/indexerd" \
   "$BUNDLE_ROOT/chromad/server.py" \
@@ -830,16 +887,25 @@ for required_file in \
     die "native release bundle is missing $(basename "$required_file")"
 done
 
-for binary_file in content-grid-d verifierd indexerd; do
+for binary_file in content-grid-d content-grid-d-pre-upgrade verifierd indexerd; do
   chmod 0755 "$BUNDLE_ROOT/bin/$binary_file"
 done
 if ! "$BUNDLE_ROOT/bin/content-grid-d" version >/dev/null 2>&1; then
   die "content-grid-d in the release bundle cannot run on this $HOST_OS/$RELEASE_ARCH host"
 fi
+pre_upgrade_binary_version="$(
+  "$BUNDLE_ROOT/bin/content-grid-d-pre-upgrade" version 2>/dev/null || true
+)"
+if [ "$pre_upgrade_binary_version" != "$PRE_UPGRADE_BINARY_VERSION" ]; then
+  die "content-grid-d-pre-upgrade must report version $PRE_UPGRADE_BINARY_VERSION (got ${pre_upgrade_binary_version:-no output})"
+fi
 
 log "installing Content Grid binaries"
 run_root install -d -m 0755 "$BIN_DIR" "$CHROMAD_DIR" "$LIBEXEC_DIR" "$CONFIG_DIR"
 run_root install -m 0755 "$BUNDLE_ROOT/bin/content-grid-d" "$BIN_DIR/content-grid-d"
+run_root install -m 0755 \
+  "$BUNDLE_ROOT/bin/content-grid-d-pre-upgrade" \
+  "$LIBEXEC_DIR/content-grid-d-pre-upgrade"
 run_root install -m 0755 "$BUNDLE_ROOT/bin/verifierd" "$BIN_DIR/verifierd"
 run_root install -m 0755 "$BUNDLE_ROOT/bin/indexerd" "$BIN_DIR/indexerd"
 run_root install -m 0644 "$BUNDLE_ROOT/chromad/server.py" "$CHROMAD_DIR/server.py"
@@ -1306,8 +1372,8 @@ indexer_port="${4:-}"
 
 if [ -n "$indexer_port" ]; then
   helper_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-  "$helper_dir/wait-for-tcp" 127.0.0.1 9090 120
-  "$helper_dir/wait-for-http" "http://127.0.0.1:${indexer_port}/healthz" 120
+  "$helper_dir/wait-for-tcp" 127.0.0.1 9090 3600
+  "$helper_dir/wait-for-http" "http://127.0.0.1:${indexer_port}/healthz" 3600
 fi
 
 CONGRID_VERIFIER_KEYRING_PASSPHRASE="$(<"$passphrase_file")"
@@ -1361,6 +1427,41 @@ chmod 0755 "$TMP_WORK/wait-for-http" "$TMP_WORK/wait-for-tcp"
 run_root install -m 0755 "$TMP_WORK/wait-for-http" "$LIBEXEC_DIR/wait-for-http"
 run_root install -m 0755 "$TMP_WORK/wait-for-tcp" "$LIBEXEC_DIR/wait-for-tcp"
 
+cat >"$TMP_WORK/wait-for-node-sync" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+
+rpc_url="${1:-http://127.0.0.1:26657}"
+timeout_seconds="${2:-3600}"
+deadline=$(( $(date +%s) + timeout_seconds ))
+last_reported_height=""
+
+while [ "$(date +%s)" -le "$deadline" ]; do
+  status="$(
+    curl --fail --silent --show-error --max-time 5 "$rpc_url/status" 2>/dev/null |
+      python3 -c 'import json,sys; s=json.load(sys.stdin)["result"]["sync_info"]; print(s["latest_block_height"], str(s["catching_up"]).lower())' \
+      2>/dev/null || true
+  )"
+  if [ -n "$status" ]; then
+    height="${status%% *}"
+    catching_up="${status##* }"
+    if [ "$height" != "$last_reported_height" ]; then
+      printf 'waiting for chain sync: height=%s catching_up=%s\n' "$height" "$catching_up" >&2
+      last_reported_height="$height"
+    fi
+    if [ "$catching_up" = "false" ]; then
+      exit 0
+    fi
+  fi
+  sleep 5
+done
+
+printf 'timed out waiting for node synchronization via %s\n' "$rpc_url" >&2
+exit 1
+SH
+chmod 0755 "$TMP_WORK/wait-for-node-sync"
+run_root install -m 0755 "$TMP_WORK/wait-for-node-sync" "$LIBEXEC_DIR/wait-for-node-sync"
+
 cat >"$TMP_WORK/indexerd-launcher" <<'SH'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -1369,13 +1470,139 @@ indexer_binary="${1:?indexerd binary required}"
 config_file="${2:?indexerd config required}"
 helper_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 
-"$helper_dir/wait-for-tcp" 127.0.0.1 9090 120
+"$helper_dir/wait-for-node-sync" http://127.0.0.1:26657 3600
+"$helper_dir/wait-for-tcp" 127.0.0.1 9090 3600
 "$helper_dir/wait-for-http" http://127.0.0.1:8000/healthz 120
 
 exec "$indexer_binary" --config "$config_file"
 SH
 chmod 0755 "$TMP_WORK/indexerd-launcher"
 run_root install -m 0755 "$TMP_WORK/indexerd-launcher" "$LIBEXEC_DIR/indexerd-launcher"
+
+cat >"$TMP_WORK/content-grid-node-bootstrap" <<'SH'
+#!/usr/bin/env bash
+set -u
+
+legacy_binary="${1:?pre-upgrade content-grid-d required}"
+current_binary="${2:?current content-grid-d required}"
+home_dir="${3:?node home required}"
+upgrade_name="${4:-drand-strict-v2}"
+upgrade_height="${5:-13000}"
+mode_file="$home_dir/config/congrid-bootstrap-mode"
+upgrade_info="$home_dir/data/upgrade-info.json"
+
+uses_current_binary() {
+  if [ -s "$mode_file" ] &&
+    [ "$(tr -d '[:space:]' <"$mode_file")" = "current" ]; then
+    return 0
+  fi
+  [ -s "$upgrade_info" ] || return 1
+  python3 - "$upgrade_info" "$upgrade_name" "$upgrade_height" <<'PY'
+import json
+import sys
+
+path, expected_name, raw_expected_height = sys.argv[1:]
+try:
+    with open(path, "r", encoding="utf-8") as handle:
+        value = json.load(handle)
+    matched = (
+        value.get("name") == expected_name
+        and int(value.get("height", 0)) == int(raw_expected_height)
+    )
+except (OSError, ValueError, TypeError):
+    matched = False
+raise SystemExit(0 if matched else 1)
+PY
+}
+
+mark_current_binary() {
+  temporary="$mode_file.tmp.$$"
+  printf 'current\n' >"$temporary"
+  chmod 0640 "$temporary"
+  mv -f "$temporary" "$mode_file"
+}
+
+if uses_current_binary; then
+  mark_current_binary
+  printf '[congrid-node-bootstrap] using current binary\n' >&2
+  exec "$current_binary" start --home "$home_dir"
+fi
+
+printf '[congrid-node-bootstrap] replaying with pre-upgrade binary until %s@%s\n' \
+  "$upgrade_name" "$upgrade_height" >&2
+"$legacy_binary" start --home "$home_dir" &
+child_pid=$!
+
+forward_signal() {
+  kill -TERM "$child_pid" >/dev/null 2>&1 || true
+}
+trap forward_signal INT TERM
+
+wait "$child_pid"
+legacy_status=$?
+
+if uses_current_binary; then
+  mark_current_binary
+  printf '[congrid-node-bootstrap] upgrade reached; switching to current binary\n' >&2
+  exec "$current_binary" start --home "$home_dir"
+fi
+
+exit "$legacy_status"
+SH
+chmod 0755 "$TMP_WORK/content-grid-node-bootstrap"
+run_root install -m 0755 \
+  "$TMP_WORK/content-grid-node-bootstrap" \
+  "$LIBEXEC_DIR/content-grid-node-bootstrap"
+
+if [ "$RESET_INCOMPATIBLE_CHAIN_DATA" = "true" ]; then
+  repair_timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
+  if [ "$HOST_OS" = "linux" ]; then
+    repair_backup="/var/backups/congrid-incompatible-height1-$repair_timestamp"
+    run_root systemctl stop \
+      congrid-verifier.service \
+      congrid-indexer.service \
+      congrid-chroma.service \
+      congrid-node.service >/dev/null 2>&1 || true
+    run_root install -d -m 0700 "$repair_backup"
+    run_root cp -a "$CONGRID_HOME_DIR/data" "$repair_backup/data"
+  else
+    repair_backup="$CONGRID_HOME_DIR/backups/incompatible-height1-$repair_timestamp"
+    install -d -m 0700 "$CONGRID_HOME_DIR/backups" "$repair_backup"
+    cp -pR "$CONGRID_HOME_DIR/data" "$repair_backup/data"
+    launch_uid="$(id -u)"
+    if launchctl print "gui/$launch_uid" >/dev/null 2>&1; then
+      repair_launch_domain="gui/$launch_uid"
+    else
+      repair_launch_domain="user/$launch_uid"
+    fi
+    for launch_label in \
+      net.congrid.verifier \
+      net.congrid.indexer \
+      net.congrid.chroma \
+      net.congrid.node; do
+      launchctl bootout \
+        "$repair_launch_domain" \
+        "$LAUNCHD_DIR/$launch_label.plist" >/dev/null 2>&1 || true
+    done
+  fi
+
+  log "backed up incompatible height-1 data to $repair_backup"
+  run_as_service "$BIN_DIR/content-grid-d" comet unsafe-reset-all \
+    --home "$CONGRID_HOME_DIR" \
+    --keep-addr-book
+  NODE_BOOTSTRAP_MODE="legacy"
+fi
+
+printf '%s\n' "$NODE_BOOTSTRAP_MODE" >"$TMP_WORK/congrid-bootstrap-mode"
+if [ "$HOST_OS" = "linux" ]; then
+  run_root install -o "$SERVICE_USER" -g "$SERVICE_GROUP" -m 0640 \
+    "$TMP_WORK/congrid-bootstrap-mode" \
+    "$CONGRID_HOME_DIR/config/congrid-bootstrap-mode"
+else
+  install -m 0600 \
+    "$TMP_WORK/congrid-bootstrap-mode" \
+    "$CONGRID_HOME_DIR/config/congrid-bootstrap-mode"
+fi
 
 if [ "$HOST_OS" = "linux" ]; then
 cat >"$TMP_WORK/congrid-node.service" <<'UNIT'
@@ -1393,7 +1620,7 @@ Group=congrid
 # Keep cwd outside --home for compatibility with older content-grid-d builds
 # whose relative-database safety check misidentified the normal home database.
 WorkingDirectory=/var/lib
-ExecStart=/usr/local/bin/content-grid-d start --home /var/lib/congrid
+ExecStart=/usr/local/libexec/congrid/content-grid-node-bootstrap /usr/local/libexec/congrid/content-grid-d-pre-upgrade /usr/local/bin/content-grid-d /var/lib/congrid
 Restart=on-failure
 RestartSec=5s
 LimitNOFILE=65535
@@ -1452,8 +1679,9 @@ Type=simple
 User=congrid
 Group=congrid
 WorkingDirectory=/var/lib/congrid
-TimeoutStartSec=180s
-ExecStartPre=/usr/local/libexec/congrid/wait-for-tcp 127.0.0.1 9090 120
+TimeoutStartSec=3700s
+ExecStartPre=/usr/local/libexec/congrid/wait-for-node-sync http://127.0.0.1:26657 3600
+ExecStartPre=/usr/local/libexec/congrid/wait-for-tcp 127.0.0.1 9090 3600
 ExecStartPre=/usr/local/libexec/congrid/wait-for-http http://127.0.0.1:8000/healthz 120
 ExecStart=/usr/local/bin/indexerd --config /etc/congrid/indexerd.json
 Restart=on-failure
@@ -1482,9 +1710,9 @@ Type=simple
 User=congrid
 Group=congrid
 WorkingDirectory=/var/lib/congrid
-TimeoutStartSec=180s
-ExecStartPre=/usr/local/libexec/congrid/wait-for-tcp 127.0.0.1 9090 120
-ExecStartPre=/usr/local/libexec/congrid/wait-for-http http://127.0.0.1:${INDEXER_LOCAL_PORT}/healthz 120
+TimeoutStartSec=3700s
+ExecStartPre=/usr/local/libexec/congrid/wait-for-tcp 127.0.0.1 9090 3600
+ExecStartPre=/usr/local/libexec/congrid/wait-for-http http://127.0.0.1:${INDEXER_LOCAL_PORT}/healthz 3600
 ExecStart=/usr/local/libexec/congrid/verifierd-launcher /etc/congrid/verifier.passphrase /usr/local/bin/verifierd /etc/congrid/verifierd.json
 Restart=on-failure
 RestartSec=5s
@@ -1504,6 +1732,12 @@ for unit_name in congrid-node congrid-chroma congrid-indexer congrid-verifier; d
     "$TMP_WORK/$unit_name.service" "$SYSTEMD_DIR/$unit_name.service"
 done
 
+legacy_repair_dropin="$SYSTEMD_DIR/congrid-node.service.d/10-upgrade-bootstrap.conf"
+if run_root test -f "$legacy_repair_dropin"; then
+  log "removing superseded one-time node repair override"
+  run_root rm -f -- "$legacy_repair_dropin"
+fi
+
 run_root systemctl daemon-reload
 run_root systemctl enable \
   congrid-node.service \
@@ -1515,6 +1749,14 @@ if [ "$START_SERVICES" = "true" ]; then
   log "starting Content Grid services"
   failed_start_service=""
   for service_name in congrid-node congrid-chroma congrid-indexer congrid-verifier; do
+    if [ "$service_name" = "congrid-indexer" ]; then
+      log "waiting for the node to finish chain synchronization"
+      if ! run_root "$LIBEXEC_DIR/wait-for-node-sync" \
+        http://127.0.0.1:26657 3600; then
+        failed_start_service="congrid-node"
+        break
+      fi
+    fi
     log "starting $service_name.service"
     if ! run_root systemctl restart "$service_name.service"; then
       failed_start_service="$service_name"
@@ -1596,8 +1838,13 @@ def service(label, arguments, working_directory, stdout_name, environment=None):
 services = {
     "net.congrid.node": service(
         "net.congrid.node",
-        [os.path.join(binary, "content-grid-d"), "start", "--home", home],
-        home,
+        [
+            os.path.join(libexec, "content-grid-node-bootstrap"),
+            os.path.join(libexec, "content-grid-d-pre-upgrade"),
+            os.path.join(binary, "content-grid-d"),
+            home,
+        ],
+        login_home,
         "node",
     ),
     "net.congrid.chroma": service(
@@ -1670,6 +1917,8 @@ PY
 
     launchctl kickstart -k "$LAUNCH_DOMAIN/net.congrid.node"
     launchctl kickstart -k "$LAUNCH_DOMAIN/net.congrid.chroma"
+    log "waiting for the node to finish chain synchronization"
+    "$LIBEXEC_DIR/wait-for-node-sync" http://127.0.0.1:26657 3600
     launchctl kickstart -k "$LAUNCH_DOMAIN/net.congrid.indexer"
     launchctl kickstart -k "$LAUNCH_DOMAIN/net.congrid.verifier"
     sleep 3
