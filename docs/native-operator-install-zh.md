@@ -153,6 +153,9 @@ Linux 会通过 apt/dnf/yum/zypper/pacman 补齐依赖。macOS 自带 Python 3 �
 时直接使用；否则需要先安装 [Homebrew](https://brew.sh)，脚本会调用
 `brew install python`。安装器会验证虚拟环境内的 pip；如果检测到已有
 `chromad/.venv` 缺少 pip，会先尝试修复，必要时只重建该虚拟环境。
+安装器 `1.4.1+` 会主动补齐 Linux 非登录 shell 经常缺少的 `/usr/sbin`、`/sbin`
+等 PATH，因此即使 `groupadd` 已安装在 sbin 目录，通过 `curl | bash` 运行也能正确
+找到它。
 
 脚本会直接从 `/dev/tty` 读取回答，因此即使脚本内容通过管道送给 Bash，交互仍然
 有效。首次安装会询问：
@@ -180,6 +183,10 @@ drand delivery 默认启用且不再询问。多个 verifier 可以安全地同�
 
 若创建新 key，安装器会把唯一的 mnemonic JSON 备份保存到执行安装的用户 home，
 权限为 `0600`，并打印完整路径。必须在给该地址充值前把它转移到安全的离线存储。
+随后交互安装会显示新的 verifier 地址并暂停，提醒用户转入足够的 `ucongrid` 以支付
+verifier bond 和后续交易费；转账后按 Enter 继续，也可以输入 `skip` 稍后处理。
+安装器不会把“按 Enter”当作链上余额校验，也不会自动提交 bond。恢复已有 key 或
+重复安装不会出现这个暂停；非交互安装只打印提醒并继续执行。
 
 安装器默认下载并校验：
 
@@ -286,6 +293,13 @@ sudo journalctl -u congrid-node -u congrid-chroma -n 100 --no-pager
 curl -fsS http://127.0.0.1:8000/healthz
 timeout 3 bash -c '</dev/tcp/127.0.0.1/9090'
 ```
+
+如果 `congrid-chroma` 显示 `status=203/EXEC`，日志同时出现
+`.venv/bin/python: Permission denied`，说明 `congrid` 服务用户无法遍历 root 创建的
+虚拟环境或其父目录。安装器 `1.4.2+` 会修正 `/opt/congrid` 和虚拟环境的组权限，
+并在生成 systemd 单元前以服务用户执行 Python/import 探针；直接重新运行安装器即可
+修复已有环境。indexer 在这种情况下只是等待 Chroma 健康检查超时，不是链 RPC 或
+gRPC 故障。
 
 新版安装器会给首次链同步和 indexer/verifier 的启动前健康检查预留 60 分钟，
 并按 node → Chroma → 等待追块完成 → indexer → verifier 的依赖顺序启动。任一

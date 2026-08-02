@@ -5,11 +5,15 @@ umask 027
 export LC_ALL=C
 export LANG=C
 
-INSTALLER_VERSION="1.4.0"
+INSTALLER_VERSION="1.4.3"
 
 case "$(uname -s)" in
   Linux)
     HOST_OS="linux"
+    # Non-login shells started by `curl | bash` often omit the administrative
+    # sbin directories even though tools such as groupadd are installed there.
+    PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin${PATH:+:$PATH}"
+    export PATH
     SERVICE_USER="congrid"
     SERVICE_GROUP="congrid"
     SERVICE_LOGIN_HOME="/var/lib/congrid"
@@ -1081,6 +1085,11 @@ fi
 
 log "installing Content Grid binaries"
 run_root install -d -m 0755 "$BIN_DIR" "$CHROMAD_DIR" "$LIBEXEC_DIR" "$CONFIG_DIR"
+if [ "$HOST_OS" = "linux" ]; then
+  # A previously created /opt/congrid may have inherited a restrictive umask.
+  # Both parent directories must be traversable by the service user.
+  run_root chmod 0755 /opt/congrid "$CHROMAD_DIR"
+fi
 if [ "$COMPONENTS_ONLY" = "true" ]; then
   CLIENT_BINARY="$LIBEXEC_DIR/content-grid-d-client"
   run_root install -m 0755 "$BUNDLE_ROOT/bin/content-grid-d" "$CLIENT_BINARY"
@@ -1153,6 +1162,17 @@ run_root "$CHROMAD_DIR/.venv/bin/python" -m pip install \
   --disable-pip-version-check --quiet --upgrade pip
 run_root "$CHROMAD_DIR/.venv/bin/python" -m pip install \
   --disable-pip-version-check --quiet --requirement "$CHROMAD_DIR/requirements.txt"
+
+if [ "$HOST_OS" = "linux" ]; then
+  # The installer runs with umask 027. A root-created venv would otherwise be
+  # root:root/0750, so the unprivileged congrid service could not traverse it.
+  run_root chgrp -R "$SERVICE_GROUP" "$CHROMAD_DIR/.venv"
+  run_root chmod -R u+rwX,g+rX,o-rwx "$CHROMAD_DIR/.venv"
+fi
+if ! run_as_service "$CHROMAD_DIR/.venv/bin/python" -c \
+  'import chromadb, fastapi, uvicorn' >/dev/null 2>&1; then
+  die "chromad Python environment cannot be executed by $SERVICE_USER; check directory permissions and noexec mount settings for $CHROMAD_DIR"
+fi
 
 GENESIS_TMP="$TMP_WORK/genesis.json"
 if [ "$COMPONENTS_ONLY" = "true" ]; then
@@ -1326,6 +1346,7 @@ key_command() {
 }
 
 key_exists=false
+VERIFIER_KEY_WAS_CREATED=false
 KEY_ADDRESS_TMP="$TMP_WORK/key-address"
 if printf '%s\n%s\n' "$VERIFIER_PASSPHRASE" "$VERIFIER_PASSPHRASE" |
   key_command keys show "$VERIFIER_KEY_NAME" --address \
@@ -1385,6 +1406,7 @@ if [ "$key_exists" != "true" ]; then
       fi
       warn "a new verifier key was created; its only mnemonic backup is: $backup_path"
       warn "copy that file to secure offline storage before funding the address"
+      VERIFIER_KEY_WAS_CREATED=true
       ;;
     recover)
       if [ -n "${CONGRID_VERIFIER_MNEMONIC:-}" ]; then
@@ -1431,6 +1453,34 @@ fi
 
 [ -n "$key_address" ] || die "could not resolve the verifier account address"
 log "verifier account: $key_address"
+
+if [ "$VERIFIER_KEY_WAS_CREATED" = "true" ]; then
+  printf '\nA new verifier address was created:\n  %s\n' "$key_address" >&2
+  printf 'Send enough ucongrid to this address for the verifier bond and transaction fees.\n' >&2
+  printf 'Funding does not bond automatically; follow https://congrid.net/verifiers after installation.\n' >&2
+  if [ "$NON_INTERACTIVE" = "true" ]; then
+    warn "non-interactive installation cannot pause for funding; fund $key_address before submitting the verifier bond"
+  else
+    while true; do
+      printf 'After sending the funds, press Enter to continue (or type "skip" to fund it later): ' >/dev/tty
+      IFS= read -r funding_confirmation </dev/tty
+      case "$funding_confirmation" in
+        "")
+          log "continuing after verifier funding confirmation (balance was not queried)"
+          break
+          ;;
+        skip|SKIP|Skip)
+          warn "funding was deferred; verifier assignments cannot begin until the address is funded and bonded"
+          break
+          ;;
+        *)
+          printf 'Press Enter after funding, or type "skip".\n' >/dev/tty
+          ;;
+      esac
+    done
+    unset funding_confirmation
+  fi
+fi
 
 INDEXER_CONFIG_TMP="$TMP_WORK/indexerd.json"
 VERIFIER_CONFIG_TMP="$TMP_WORK/verifierd.json"
