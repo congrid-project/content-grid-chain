@@ -27,6 +27,7 @@ func TestVerifierPageUsesNativeInstaller(t *testing.T) {
 
 	body := rendered.String()
 	require.Contains(t, body, "curl -fsSL https://congrid.net/downloads/install.sh | bash")
+	require.Contains(t, body, "bash -s -- --components-only")
 	require.Contains(t, body, "congrid-node congrid-chroma congrid-indexer congrid-verifier")
 	require.Contains(t, body, "/downloads/install.sh")
 	require.NotContains(t, body, "verifier-oneclick.sh")

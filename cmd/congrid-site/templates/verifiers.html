@@ -5,7 +5,8 @@
   <div class="container">
     <h1>Run a Congrid Verifier</h1>
     <p class="lead">
-      Install a full Congrid node and verifier stack with one interactive command.
+      Install a full Congrid node and verifier stack, or attach the verifier components to an
+      existing node, with one interactive command.
       The official installer supports Linux and macOS, uses native binaries, and does not require Docker.
     </p>
 
@@ -35,13 +36,27 @@
     <h2>Step 1 — Install the native verifier stack</h2>
     <p>
       Run this as a normal login user with sudo access on Linux. On macOS, run it as your
-      normal user without sudo. The installer downloads checksum-verified binaries and the
-      current network seed list, then asks for the required settings through your terminal.
+      normal user without sudo. The installer downloads checksum-verified binaries, asks for
+      the required settings through your terminal, and fetches the seed list in full-stack mode.
     </p>
 
     <div class="code">
 <pre><code>curl -fsSL https://congrid.net/downloads/install.sh | bash</code></pre>
     </div>
+
+    <p>
+      If <code>content-grid-d</code> is already running on this machine, install only Chroma,
+      indexerd, and verifierd with the existing-node mode:
+    </p>
+
+    <div class="code">
+<pre><code>curl -fsSL https://congrid.net/downloads/install.sh | bash -s -- --components-only</code></pre>
+    </div>
+
+    <p>
+      This mode verifies the existing RPC and gRPC endpoints, then uses isolated component
+      state. It does not replace, configure, stop, start, or restart the existing chain node.
+    </p>
 
     <p>
       You can also <a href="/downloads/install.sh">download and inspect the installer</a> before
@@ -79,6 +94,13 @@
   -y</code></pre>
     </div>
 
+    <p>
+      With <code>--components-only</code>, use
+      <code>/usr/local/libexec/congrid/content-grid-d-client</code> as the Linux binary and
+      <code>/var/lib/congrid-components</code> for both <code>--home</code> and the keyring path
+      prefix.
+    </p>
+
     <h3>macOS</h3>
     <div class="code">
 <pre><code>~/.local/bin/content-grid-d verifier bond 1000000 \
@@ -93,8 +115,18 @@
   -y</code></pre>
     </div>
 
+    <p>
+      With <code>--components-only</code>, use
+      <code>~/.local/share/congrid/libexec/content-grid-d-client</code> as the macOS binary and
+      <code>~/.content-grid-components</code> as the home and keyring path prefix.
+    </p>
+
     <h2>Step 3 — Monitor the verifier stack</h2>
-    <p>On Linux, inspect all four systemd services and follow verifier logs:</p>
+    <p>
+      On Linux, inspect all four systemd services and follow verifier logs. Existing-node mode
+      manages only <code>congrid-chroma</code>, <code>congrid-indexer</code>, and
+      <code>congrid-verifier</code>.
+    </p>
     <div class="code">
 <pre><code>sudo systemctl status congrid-node congrid-chroma congrid-indexer congrid-verifier
 sudo journalctl -u congrid-verifier -f</code></pre>
@@ -121,7 +153,7 @@ curl -fsS http://127.0.0.1:9200/healthz
     </div>
 
     <ul>
-      <li>Allow inbound TCP/26656 in the host and cloud firewall for P2P connectivity.</li>
+      <li>When this installer manages the full node, allow inbound TCP/26656 for P2P connectivity.</li>
       <li>Alert on service exit, RPC disconnect, failed checks, and assignment backlog.</li>
       <li>Keep enough balance available for verifier transaction fees.</li>
       <li>Re-run the installer periodically to deploy published software updates.</li>

@@ -114,6 +114,41 @@ Linux 使用带有 sudo 权限的普通用户；macOS 直接使用普通登录�
 curl -fsSL https://congrid.net/downloads/install.sh | bash
 ```
 
+### 已有链节点：只安装其他组件
+
+如果这台机器已经有正常运行的 `content-grid-d`，使用隔离的组件模式：
+
+```bash
+curl -fsSL https://congrid.net/downloads/install.sh |
+  bash -s -- --components-only
+```
+
+该模式会询问现有节点的 RPC 和 gRPC 地址，默认分别为
+`127.0.0.1:26657`、`127.0.0.1:9090`。安装前会调用 RPC `/status`，确认返回的
+chain ID 是 `congrid-main`，并检查 gRPC TCP 端口可连接。RPC 和 gRPC 只需对本机
+组件可访问，不需要暴露到公网。
+
+组件模式只安装并管理 `chromad`、`indexerd` 和 `verifierd`。它不会覆盖
+`/usr/local/bin/content-grid-d`，不会修改节点 home、genesis、seeds 或 CometBFT
+配置，也不会创建、覆盖、停止、启动或重启 `congrid-node.service` /
+`net.congrid.node`。安装包中的当前节点二进制会被单独安装成交易客户端：
+
+```text
+# Linux
+/usr/local/libexec/congrid/content-grid-d-client
+/var/lib/congrid-components
+/etc/congrid-components
+
+# macOS
+~/.local/share/congrid/libexec/content-grid-d-client
+~/.content-grid-components
+~/.config/congrid-components
+```
+
+这些隔离目录用于 verifier keyring、pending state、Chroma 数据和交易客户端配置，
+不会递归改动已有节点目录。启动 indexer/verifier 前仍会等待现有节点完成同步；
+节点超过 60 分钟仍未同步完成时，已安装的组件会保留，可在节点同步后重新启动服务。
+
 Linux 会通过 apt/dnf/yum/zypper/pacman 补齐依赖。macOS 自带 Python 3 且支持 venv
 时直接使用；否则需要先安装 [Homebrew](https://brew.sh)，脚本会调用
 `brew install python`。安装器会验证虚拟环境内的 pip；如果检测到已有
@@ -201,6 +236,12 @@ congrid-chroma.service
 congrid-indexer.service
 congrid-verifier.service
 ```
+
+使用 `--components-only` 时，Linux 不安装或覆盖节点使用的
+`/usr/local/bin/content-grid-d`，也不安装节点 systemd 单元，只安装后三个单元；
+组件状态和配置分别位于 `/var/lib/congrid-components`、
+`/etc/congrid-components`。macOS 同样不会创建或加载 `net.congrid.node`，并使用上节
+列出的隔离目录。
 
 macOS 默认路径：
 
@@ -306,6 +347,21 @@ curl -fsSL https://congrid.net/downloads/install.sh |
 
 Linux 非交互模式需要 root，或已经配置免口令 sudo。macOS 非交互模式使用当前
 用户。敏感变量可能被调用方的进程管理或 CI 日志记录；生产环境优先使用交互模式。
+
+已有节点的组件模式可使用：
+
+```bash
+curl -fsSL https://congrid.net/downloads/install.sh |
+  CONGRID_NON_INTERACTIVE=true \
+  CONGRID_COMPONENTS_ONLY=true \
+  CONGRID_NODE_RPC_ADDR=127.0.0.1:26657 \
+  CONGRID_NODE_GRPC_ADDR=127.0.0.1:9090 \
+  CONGRID_VERIFIER_KEY_NAME=verifier-key \
+  CONGRID_VERIFIER_KEY_ACTION=recover \
+  CONGRID_VERIFIER_MNEMONIC='word ...' \
+  CONGRID_VERIFIER_KEYRING_PASSPHRASE='replace-with-a-secret' \
+  bash
+```
 
 设置 `CONGRID_START_SERVICES=false` 或传入 `--no-start` 可以只安装、配置并 enable
 服务，不立即启动。管道方式传参数的示例：

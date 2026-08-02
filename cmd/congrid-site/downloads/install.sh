@@ -5,7 +5,7 @@ umask 027
 export LC_ALL=C
 export LANG=C
 
-INSTALLER_VERSION="1.3.0"
+INSTALLER_VERSION="1.4.0"
 
 case "$(uname -s)" in
   Linux)
@@ -57,6 +57,7 @@ SEEDS_URL="${CONGRID_SEEDS_URL:-}"
 SEEDS_SHA256="${CONGRID_SEEDS_SHA256:-}"
 NON_INTERACTIVE="${CONGRID_NON_INTERACTIVE:-false}"
 START_SERVICES="${CONGRID_START_SERVICES:-true}"
+COMPONENTS_ONLY="${CONGRID_COMPONENTS_ONLY:-false}"
 PRE_UPGRADE_NAME="drand-strict-v2"
 PRE_UPGRADE_HEIGHT=13000
 PRE_UPGRADE_BINARY_VERSION="pre-drand-strict-v2-ef331816"
@@ -118,6 +119,7 @@ Recommended:
 
 Options (when piping, pass options after "bash -s --"):
   --download-base-url URL   Release directory (default: https://congrid.net/downloads)
+  --components-only         Install chromad, indexerd, and verifierd for an existing node
   --non-interactive         Read all settings from CONGRID_* environment variables
   --no-start                Install and configure without starting services
   -h, --help                Show this help
@@ -136,6 +138,12 @@ Important non-interactive variables:
   CONGRID_VERIFIER_MNEMONIC            Required when action=recover
   CONGRID_VERIFIER_KEYRING_PASSPHRASE
 
+Existing-node mode (--components-only):
+  CONGRID_NODE_RPC_ADDR                Existing node RPC host:port (default: 127.0.0.1:26657)
+  CONGRID_NODE_GRPC_ADDR               Existing node gRPC host:port (default: 127.0.0.1:9090)
+  CONGRID_COMPONENT_HOME               Isolated component state/client home override
+  CONGRID_COMPONENT_CONFIG_DIR         Isolated component configuration override
+
 Artifact overrides:
   CONGRID_BUNDLE_URL                   Full native bundle URL
   CONGRID_BUNDLE_SHA256                Expected lowercase/uppercase SHA-256
@@ -146,7 +154,8 @@ Advanced operational override:
 
 The installer supports Linux and macOS on amd64 and arm64. Linux services use
 systemd; macOS services use per-user launchd LaunchAgents. It never uses Docker,
-Podman, or another container runtime.
+Podman, or another container runtime. Existing-node mode does not install,
+configure, stop, start, or replace the existing content-grid-d node.
 USAGE
 }
 
@@ -159,6 +168,10 @@ while [ "$#" -gt 0 ]; do
       ;;
     --non-interactive)
       NON_INTERACTIVE=true
+      shift
+      ;;
+    --components-only)
+      COMPONENTS_ONLY=true
       shift
       ;;
     --no-start)
@@ -187,6 +200,20 @@ case "$START_SERVICES" in
   true|false) ;;
   *) die "CONGRID_START_SERVICES must be true or false" ;;
 esac
+case "$COMPONENTS_ONLY" in
+  true|false) ;;
+  *) die "CONGRID_COMPONENTS_ONLY must be true or false" ;;
+esac
+
+if [ "$COMPONENTS_ONLY" = "true" ]; then
+  if [ "$HOST_OS" = "linux" ]; then
+    CONGRID_HOME_DIR="${CONGRID_COMPONENT_HOME:-/var/lib/congrid-components}"
+    CONFIG_DIR="${CONGRID_COMPONENT_CONFIG_DIR:-/etc/congrid-components}"
+  else
+    CONGRID_HOME_DIR="${CONGRID_COMPONENT_HOME:-$HOME/.content-grid-components}"
+    CONFIG_DIR="${CONGRID_COMPONENT_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/congrid-components}"
+  fi
+fi
 
 DOWNLOAD_BASE_URL="${DOWNLOAD_BASE_URL%/}"
 if [ -z "$SEEDS_URL" ]; then
@@ -561,14 +588,52 @@ if host not in {"127.0.0.1", "localhost", "0.0.0.0"}:
 PY
 }
 
+validate_client_address() {
+  local label="$1"
+  local value="$2"
+  python3 - "$label" "$value" <<'PY'
+import ipaddress
+import re
+import sys
+
+label, value = sys.argv[1], sys.argv[2]
+host, separator, raw_port = value.rpartition(":")
+if not separator or not host or not raw_port.isdigit():
+    print(f"{label} must use host:port syntax", file=sys.stderr)
+    raise SystemExit(1)
+port = int(raw_port)
+if port < 1 or port > 65535:
+    print(f"{label} port must be from 1 to 65535", file=sys.stderr)
+    raise SystemExit(1)
+if host.startswith("[") and host.endswith("]"):
+    candidate = host[1:-1]
+else:
+    candidate = host
+try:
+    ipaddress.ip_address(candidate)
+except ValueError:
+    if not re.fullmatch(
+        r"(?=.{1,253}\Z)(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)*"
+        r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?",
+        candidate,
+    ):
+        print(f"{label} contains an invalid host", file=sys.stderr)
+        raise SystemExit(1)
+PY
+}
+
 validate_service_ports() {
   local indexer_addr="$1"
   local verifier_addr="$2"
-  python3 - "$indexer_addr" "$verifier_addr" <<'PY'
+  local node_rpc_addr="$3"
+  local node_grpc_addr="$4"
+  python3 - "$indexer_addr" "$verifier_addr" "$node_rpc_addr" "$node_grpc_addr" <<'PY'
 import sys
 
 indexer_port = int(sys.argv[1].rsplit(":", 1)[1])
 verifier_port = int(sys.argv[2].rsplit(":", 1)[1])
+node_rpc_port = int(sys.argv[3].rsplit(":", 1)[1])
+node_grpc_port = int(sys.argv[4].rsplit(":", 1)[1])
 reserved = {1317, 8000, 9090, 26656, 26657}
 if indexer_port in reserved:
     print(f"indexerd port {indexer_port} conflicts with another stack service", file=sys.stderr)
@@ -579,6 +644,17 @@ if verifier_port in reserved:
 if indexer_port == verifier_port:
     print("indexerd and verifierd must use different ports", file=sys.stderr)
     raise SystemExit(1)
+for service_name, service_port in {
+    "indexerd": indexer_port,
+    "verifierd": verifier_port,
+    "chromad": 8000,
+}.items():
+    if service_port in {node_rpc_port, node_grpc_port}:
+        print(
+            f"{service_name} port {service_port} conflicts with the existing node RPC/gRPC endpoint",
+            file=sys.stderr,
+        )
+        raise SystemExit(1)
 PY
 }
 
@@ -682,7 +758,12 @@ PY
 NODE_ALREADY_INITIALIZED=false
 NODE_BOOTSTRAP_MODE="legacy"
 RESET_INCOMPATIBLE_CHAIN_DATA=false
-if run_root test -s "$CONGRID_HOME_DIR/config/config.toml"; then
+if [ "$COMPONENTS_ONLY" = "true" ] &&
+  run_root test -s "$CONGRID_HOME_DIR/config/config.toml"; then
+  die "component state directory $CONGRID_HOME_DIR is an existing node home; choose a separate CONGRID_COMPONENT_HOME"
+fi
+if [ "$COMPONENTS_ONLY" != "true" ] &&
+  run_root test -s "$CONGRID_HOME_DIR/config/config.toml"; then
   NODE_ALREADY_INITIALIZED=true
   log "existing node home detected at $CONGRID_HOME_DIR; chain data and genesis will be preserved"
 
@@ -735,7 +816,11 @@ PY
     fi
   fi
 fi
-log "node bootstrap mode: $NODE_BOOTSTRAP_MODE"
+if [ "$COMPONENTS_ONLY" = "true" ]; then
+  log "existing-node mode: the chain node will not be modified or managed"
+else
+  log "node bootstrap mode: $NODE_BOOTSTRAP_MODE"
+fi
 
 printf '\nContent Grid native operator setup\n' >&2
 if [ "$HOST_OS" = "linux" ]; then
@@ -745,29 +830,44 @@ else
 fi
 
 default_moniker="$(env_or_saved CONGRID_MONIKER moniker "$(hostname -s 2>/dev/null || printf 'congrid-node')")"
-default_peers="$(env_or_saved CONGRID_PERSISTENT_PEERS persistent_peers "")"
-default_external_address="$(env_or_saved CONGRID_P2P_EXTERNAL_ADDRESS p2p_external_address "")"
-default_addr_book_strict="$(env_or_saved CONGRID_P2P_ADDR_BOOK_STRICT p2p_addr_book_strict "true")"
 default_indexer_listen="$(env_or_saved CONGRID_INDEXER_LISTEN_ADDR indexer_listen_addr "127.0.0.1:9100")"
 default_verifier_listen="$(env_or_saved CONGRID_VERIFIER_LISTEN_ADDR verifier_listen_addr "127.0.0.1:9200")"
 default_key_name="$(env_or_saved CONGRID_VERIFIER_KEY_NAME verifier_key_name "verifier-key")"
 default_gas_prices="$(env_or_saved CONGRID_VERIFIER_GAS_PRICES verifier_gas_prices "0.001ucongrid")"
 
-prompt_value MONIKER "Node name (moniker)" "$default_moniker" true
 CHAIN_ID="${CONGRID_CHAIN_ID:-congrid-main}"
 GENESIS_URL="${CONGRID_GENESIS_URL:-$DOWNLOAD_BASE_URL/genesis.json}"
 log "using chain ID: $CHAIN_ID"
-log "using genesis: $GENESIS_URL"
-if [ "${CONGRID_P2P_SEEDS+x}" = "x" ]; then
-  P2P_SEEDS="$CONGRID_P2P_SEEDS"
+if [ "$COMPONENTS_ONLY" = "true" ]; then
+  MONIKER="$default_moniker"
+  P2P_SEEDS=""
   SEEDS_SOURCE_URL=""
+  PERSISTENT_PEERS=""
+  P2P_EXTERNAL_ADDRESS=""
+  P2P_ADDR_BOOK_STRICT="true"
+  default_node_rpc="$(env_or_saved CONGRID_NODE_RPC_ADDR node_rpc_addr "127.0.0.1:26657")"
+  default_node_grpc="$(env_or_saved CONGRID_NODE_GRPC_ADDR node_grpc_addr "127.0.0.1:9090")"
+  prompt_value NODE_RPC_ADDR "Existing node RPC address" "$default_node_rpc" true
+  prompt_value NODE_GRPC_ADDR "Existing node gRPC address" "$default_node_grpc" true
 else
-  P2P_SEEDS="$(download_seed_list)"
-  SEEDS_SOURCE_URL="$SEEDS_URL"
+  default_peers="$(env_or_saved CONGRID_PERSISTENT_PEERS persistent_peers "")"
+  default_external_address="$(env_or_saved CONGRID_P2P_EXTERNAL_ADDRESS p2p_external_address "")"
+  default_addr_book_strict="$(env_or_saved CONGRID_P2P_ADDR_BOOK_STRICT p2p_addr_book_strict "true")"
+  prompt_value MONIKER "Node name (moniker)" "$default_moniker" true
+  log "using genesis: $GENESIS_URL"
+  if [ "${CONGRID_P2P_SEEDS+x}" = "x" ]; then
+    P2P_SEEDS="$CONGRID_P2P_SEEDS"
+    SEEDS_SOURCE_URL=""
+  else
+    P2P_SEEDS="$(download_seed_list)"
+    SEEDS_SOURCE_URL="$SEEDS_URL"
+  fi
+  prompt_value PERSISTENT_PEERS "Persistent peers (optional)" "$default_peers" false
+  prompt_value P2P_EXTERNAL_ADDRESS "Public P2P address (optional host:port)" "$default_external_address" false
+  prompt_yes_no P2P_ADDR_BOOK_STRICT "Reject private/unroutable peer addresses" "$default_addr_book_strict"
+  NODE_RPC_ADDR="127.0.0.1:26657"
+  NODE_GRPC_ADDR="127.0.0.1:9090"
 fi
-prompt_value PERSISTENT_PEERS "Persistent peers (optional)" "$default_peers" false
-prompt_value P2P_EXTERNAL_ADDRESS "Public P2P address (optional host:port)" "$default_external_address" false
-prompt_yes_no P2P_ADDR_BOOK_STRICT "Reject private/unroutable peer addresses" "$default_addr_book_strict"
 prompt_value INDEXER_LISTEN_ADDR "indexerd listen address" "$default_indexer_listen" true
 prompt_value VERIFIER_LISTEN_ADDR "verifierd health listen address" "$default_verifier_listen" true
 prompt_value VERIFIER_KEY_NAME "Verifier key name" "$default_key_name" true
@@ -791,18 +891,88 @@ validate_single_line "P2P external address" "$P2P_EXTERNAL_ADDRESS"
 validate_single_line "indexerd listen address" "$INDEXER_LISTEN_ADDR"
 validate_single_line "verifierd listen address" "$VERIFIER_LISTEN_ADDR"
 validate_single_line "gas prices" "$VERIFIER_GAS_PRICES"
-validate_peer_list "P2P seeds" "$P2P_SEEDS"
-validate_peer_list "persistent peers" "$PERSISTENT_PEERS"
+validate_single_line "node RPC address" "$NODE_RPC_ADDR"
+validate_single_line "node gRPC address" "$NODE_GRPC_ADDR"
+validate_client_address "node RPC address" "$NODE_RPC_ADDR"
+validate_client_address "node gRPC address" "$NODE_GRPC_ADDR"
+if [ "$COMPONENTS_ONLY" != "true" ]; then
+  validate_peer_list "P2P seeds" "$P2P_SEEDS"
+  validate_peer_list "persistent peers" "$PERSISTENT_PEERS"
+fi
 validate_listen_address "indexerd listen address" "$INDEXER_LISTEN_ADDR"
 validate_listen_address "verifierd listen address" "$VERIFIER_LISTEN_ADDR"
-validate_service_ports "$INDEXER_LISTEN_ADDR" "$VERIFIER_LISTEN_ADDR"
+validate_service_ports \
+  "$INDEXER_LISTEN_ADDR" \
+  "$VERIFIER_LISTEN_ADDR" \
+  "$NODE_RPC_ADDR" \
+  "$NODE_GRPC_ADDR"
 INDEXER_LOCAL_PORT="${INDEXER_LISTEN_ADDR##*:}"
+NODE_RPC_HOST="${NODE_RPC_ADDR%:*}"
+NODE_RPC_HOST="${NODE_RPC_HOST#[}"
+NODE_RPC_HOST="${NODE_RPC_HOST%]}"
+NODE_RPC_PORT="${NODE_RPC_ADDR##*:}"
+NODE_GRPC_HOST="${NODE_GRPC_ADDR%:*}"
+NODE_GRPC_HOST="${NODE_GRPC_HOST#[}"
+NODE_GRPC_HOST="${NODE_GRPC_HOST%]}"
+NODE_GRPC_PORT="${NODE_GRPC_ADDR##*:}"
+NODE_RPC_URL="http://$NODE_RPC_ADDR"
+NODE_CLI_RPC="tcp://$NODE_RPC_ADDR"
 
-if [ -z "$P2P_SEEDS" ] && [ -z "$PERSISTENT_PEERS" ]; then
+if [ "$COMPONENTS_ONLY" != "true" ] &&
+  [ -z "$P2P_SEEDS" ] && [ -z "$PERSISTENT_PEERS" ]; then
   if [ "${CONGRID_ALLOW_NO_PEERS:-false}" != "true" ]; then
     die "at least one P2P seed or persistent peer is required (set CONGRID_ALLOW_NO_PEERS=true only for a deliberate isolated node)"
   fi
   warn "installing without a bootstrap peer; the node cannot discover the network by itself"
+fi
+
+if [ "$COMPONENTS_ONLY" = "true" ]; then
+  log "verifying existing chain node at $NODE_RPC_ADDR"
+  existing_node_status="$(
+    curl --fail --silent --show-error --max-time 10 "$NODE_RPC_URL/status"
+  )" || die "cannot reach existing node RPC at $NODE_RPC_URL; make sure RPC is enabled and listening"
+  printf '%s' "$existing_node_status" >"$TMP_WORK/existing-node-status.json"
+  existing_node_summary="$(
+    python3 - "$CHAIN_ID" "$TMP_WORK/existing-node-status.json" <<'PY'
+import json
+import sys
+
+expected_chain_id, path = sys.argv[1:]
+try:
+    with open(path, "r", encoding="utf-8") as handle:
+        result = json.load(handle)["result"]
+    actual_chain_id = str(result["node_info"]["network"])
+    sync = result["sync_info"]
+    height = str(sync["latest_block_height"])
+    catching_up = str(sync["catching_up"]).lower()
+except (KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
+    print(f"invalid RPC /status response: {error}", file=sys.stderr)
+    raise SystemExit(2)
+if actual_chain_id != expected_chain_id:
+    print(
+        f"existing node chain ID mismatch: expected {expected_chain_id!r}, got {actual_chain_id!r}",
+        file=sys.stderr,
+    )
+    raise SystemExit(3)
+print(f"height={height} catching_up={catching_up}")
+PY
+  )" || die "existing node RPC validation failed"
+  if ! python3 - "$NODE_GRPC_HOST" "$NODE_GRPC_PORT" <<'PY'
+import socket
+import sys
+
+host, raw_port = sys.argv[1:]
+try:
+    with socket.create_connection((host, int(raw_port)), timeout=10):
+        pass
+except OSError as error:
+    print(f"cannot connect to existing node gRPC at {host}:{raw_port}: {error}", file=sys.stderr)
+    raise SystemExit(1)
+PY
+  then
+    die "existing node gRPC is unavailable; enable gRPC and make $NODE_GRPC_ADDR reachable"
+  fi
+  log "existing node verified: $existing_node_summary; gRPC=$NODE_GRPC_ADDR"
 fi
 
 if [ -n "${CONGRID_VERIFIER_KEYRING_PASSPHRASE:-}" ]; then
@@ -878,7 +1048,6 @@ tar -xzf "$BUNDLE_PATH" -C "$BUNDLE_EXTRACT_DIR"
 BUNDLE_ROOT="$BUNDLE_EXTRACT_DIR/congrid-native"
 for required_file in \
   "$BUNDLE_ROOT/bin/content-grid-d" \
-  "$BUNDLE_ROOT/bin/content-grid-d-pre-upgrade" \
   "$BUNDLE_ROOT/bin/verifierd" \
   "$BUNDLE_ROOT/bin/indexerd" \
   "$BUNDLE_ROOT/chromad/server.py" \
@@ -886,26 +1055,42 @@ for required_file in \
   [ -f "$required_file" ] && [ ! -L "$required_file" ] ||
     die "native release bundle is missing $(basename "$required_file")"
 done
+if [ "$COMPONENTS_ONLY" != "true" ]; then
+  [ -f "$BUNDLE_ROOT/bin/content-grid-d-pre-upgrade" ] &&
+    [ ! -L "$BUNDLE_ROOT/bin/content-grid-d-pre-upgrade" ] ||
+    die "native release bundle is missing content-grid-d-pre-upgrade"
+fi
 
-for binary_file in content-grid-d content-grid-d-pre-upgrade verifierd indexerd; do
+for binary_file in content-grid-d verifierd indexerd; do
   chmod 0755 "$BUNDLE_ROOT/bin/$binary_file"
 done
+if [ "$COMPONENTS_ONLY" != "true" ]; then
+  chmod 0755 "$BUNDLE_ROOT/bin/content-grid-d-pre-upgrade"
+fi
 if ! "$BUNDLE_ROOT/bin/content-grid-d" version >/dev/null 2>&1; then
   die "content-grid-d in the release bundle cannot run on this $HOST_OS/$RELEASE_ARCH host"
 fi
-pre_upgrade_binary_version="$(
-  "$BUNDLE_ROOT/bin/content-grid-d-pre-upgrade" version 2>/dev/null || true
-)"
-if [ "$pre_upgrade_binary_version" != "$PRE_UPGRADE_BINARY_VERSION" ]; then
-  die "content-grid-d-pre-upgrade must report version $PRE_UPGRADE_BINARY_VERSION (got ${pre_upgrade_binary_version:-no output})"
+if [ "$COMPONENTS_ONLY" != "true" ]; then
+  pre_upgrade_binary_version="$(
+    "$BUNDLE_ROOT/bin/content-grid-d-pre-upgrade" version 2>/dev/null || true
+  )"
+  if [ "$pre_upgrade_binary_version" != "$PRE_UPGRADE_BINARY_VERSION" ]; then
+    die "content-grid-d-pre-upgrade must report version $PRE_UPGRADE_BINARY_VERSION (got ${pre_upgrade_binary_version:-no output})"
+  fi
 fi
 
 log "installing Content Grid binaries"
 run_root install -d -m 0755 "$BIN_DIR" "$CHROMAD_DIR" "$LIBEXEC_DIR" "$CONFIG_DIR"
-run_root install -m 0755 "$BUNDLE_ROOT/bin/content-grid-d" "$BIN_DIR/content-grid-d"
-run_root install -m 0755 \
-  "$BUNDLE_ROOT/bin/content-grid-d-pre-upgrade" \
-  "$LIBEXEC_DIR/content-grid-d-pre-upgrade"
+if [ "$COMPONENTS_ONLY" = "true" ]; then
+  CLIENT_BINARY="$LIBEXEC_DIR/content-grid-d-client"
+  run_root install -m 0755 "$BUNDLE_ROOT/bin/content-grid-d" "$CLIENT_BINARY"
+else
+  CLIENT_BINARY="$BIN_DIR/content-grid-d"
+  run_root install -m 0755 "$BUNDLE_ROOT/bin/content-grid-d" "$CLIENT_BINARY"
+  run_root install -m 0755 \
+    "$BUNDLE_ROOT/bin/content-grid-d-pre-upgrade" \
+    "$LIBEXEC_DIR/content-grid-d-pre-upgrade"
+fi
 run_root install -m 0755 "$BUNDLE_ROOT/bin/verifierd" "$BIN_DIR/verifierd"
 run_root install -m 0755 "$BUNDLE_ROOT/bin/indexerd" "$BIN_DIR/indexerd"
 run_root install -m 0644 "$BUNDLE_ROOT/chromad/server.py" "$CHROMAD_DIR/server.py"
@@ -970,7 +1155,34 @@ run_root "$CHROMAD_DIR/.venv/bin/python" -m pip install \
   --disable-pip-version-check --quiet --requirement "$CHROMAD_DIR/requirements.txt"
 
 GENESIS_TMP="$TMP_WORK/genesis.json"
-if [ "$NODE_ALREADY_INITIALIZED" != "true" ]; then
+if [ "$COMPONENTS_ONLY" = "true" ]; then
+  log "creating isolated transaction-client configuration"
+  env \
+    CFG_CHAIN_ID="$CHAIN_ID" \
+    CFG_NODE_CLI_RPC="$NODE_CLI_RPC" \
+    python3 - "$TMP_WORK/client.toml" <<'PY'
+import json
+import os
+import sys
+
+quoted = lambda value: json.dumps(value, ensure_ascii=False)
+with open(sys.argv[1], "w", encoding="utf-8") as handle:
+    handle.write(f'chain-id = {quoted(os.environ["CFG_CHAIN_ID"])}\n')
+    handle.write('keyring-backend = "file"\n')
+    handle.write('output = "text"\n')
+    handle.write(f'node = {quoted(os.environ["CFG_NODE_CLI_RPC"])}\n')
+    handle.write('broadcast-mode = "sync"\n')
+PY
+  if [ "$HOST_OS" = "linux" ]; then
+    run_root install -d -o "$SERVICE_USER" -g "$SERVICE_GROUP" -m 0750 \
+      "$CONGRID_HOME_DIR/config"
+    run_root install -o "$SERVICE_USER" -g "$SERVICE_GROUP" -m 0640 \
+      "$TMP_WORK/client.toml" "$CONGRID_HOME_DIR/config/client.toml"
+  else
+    install -d -m 0750 "$CONGRID_HOME_DIR/config"
+    install -m 0600 "$TMP_WORK/client.toml" "$CONGRID_HOME_DIR/config/client.toml"
+  fi
+elif [ "$NODE_ALREADY_INITIALIZED" != "true" ]; then
   log "downloading network genesis"
   curl --fail --location --silent --show-error --retry 3 --retry-delay 2 \
     "$GENESIS_URL" --output "$GENESIS_TMP"
@@ -991,7 +1203,7 @@ if actual_chain_id != expected_chain_id:
 PY
 
   log "initializing content-grid-d home"
-  run_as_service "$BIN_DIR/content-grid-d" init "$MONIKER" \
+  run_as_service "$CLIENT_BINARY" init "$MONIKER" \
     --home "$CONGRID_HOME_DIR" \
     --chain-id "$CHAIN_ID" >/dev/null 2>&1
   if [ "$HOST_OS" = "linux" ]; then
@@ -1013,15 +1225,17 @@ PY
     die "configured chain ID $CHAIN_ID does not match existing genesis chain ID $existing_chain_id"
 fi
 
-log "updating node configuration"
-run_root env \
-  CFG_MONIKER="$MONIKER" \
-  CFG_CHAIN_ID="$CHAIN_ID" \
-  CFG_P2P_SEEDS="$P2P_SEEDS" \
-  CFG_PERSISTENT_PEERS="$PERSISTENT_PEERS" \
-  CFG_P2P_EXTERNAL_ADDRESS="$P2P_EXTERNAL_ADDRESS" \
-  CFG_P2P_ADDR_BOOK_STRICT="$P2P_ADDR_BOOK_STRICT" \
-  python3 - "$CONGRID_HOME_DIR" <<'PY'
+if [ "$COMPONENTS_ONLY" != "true" ]; then
+  log "updating node configuration"
+  run_root env \
+    CFG_MONIKER="$MONIKER" \
+    CFG_CHAIN_ID="$CHAIN_ID" \
+    CFG_P2P_SEEDS="$P2P_SEEDS" \
+    CFG_PERSISTENT_PEERS="$PERSISTENT_PEERS" \
+    CFG_P2P_EXTERNAL_ADDRESS="$P2P_EXTERNAL_ADDRESS" \
+    CFG_P2P_ADDR_BOOK_STRICT="$P2P_ADDR_BOOK_STRICT" \
+    CFG_NODE_CLI_RPC="$NODE_CLI_RPC" \
+    python3 - "$CONGRID_HOME_DIR" <<'PY'
 import json
 import os
 import re
@@ -1095,16 +1309,17 @@ update_toml(
     {
         ("", "chain-id"): quoted(os.environ["CFG_CHAIN_ID"]),
         ("", "keyring-backend"): quoted("file"),
-        ("", "node"): quoted("tcp://127.0.0.1:26657"),
+        ("", "node"): quoted(os.environ["CFG_NODE_CLI_RPC"]),
     },
 )
 PY
 if [ "$HOST_OS" = "linux" ]; then
   run_root chown -R "$SERVICE_USER:$SERVICE_GROUP" "$CONGRID_HOME_DIR/config"
 fi
+fi
 
 key_command() {
-  run_as_service "$BIN_DIR/content-grid-d" "$@" \
+  run_as_service "$CLIENT_BINARY" "$@" \
     --home "$CONGRID_HOME_DIR" \
     --keyring-backend file \
     --keyring-dir "$CONGRID_HOME_DIR/keyrings/verifier"
@@ -1239,11 +1454,15 @@ env \
   CFG_VERIFIER_ADDRESS="$key_address" \
   CFG_VERIFIER_GAS_PRICES="$VERIFIER_GAS_PRICES" \
   CFG_DRAND_DISABLED="$DRAND_DELIVERY_DISABLED" \
+  CFG_COMPONENTS_ONLY="$COMPONENTS_ONLY" \
+  CFG_NODE_RPC_ADDR="$NODE_RPC_ADDR" \
+  CFG_NODE_GRPC_ADDR="$NODE_GRPC_ADDR" \
+  CFG_NODE_CLI_RPC="$NODE_CLI_RPC" \
+  CFG_CLIENT_BINARY="$CLIENT_BINARY" \
   CFG_BUNDLE_URL="$BUNDLE_URL" \
   CFG_BUNDLE_SHA256="$BUNDLE_SHA256" \
   CFG_INSTALLER_VERSION="$INSTALLER_VERSION" \
   CFG_HOME_DIR="$CONGRID_HOME_DIR" \
-  CFG_BIN_DIR="$BIN_DIR" \
   python3 - <<'PY'
 import json
 import os
@@ -1259,7 +1478,7 @@ write_json(
     os.environ["OUT_INDEXER"],
     {
         "publishers": [],
-        "chain_grpc_addr": "127.0.0.1:9090",
+        "chain_grpc_addr": os.environ["CFG_NODE_GRPC_ADDR"],
         "chain_timeout_seconds": 10,
         "chain_page_limit": 200,
         "listen_addr": os.environ["CFG_INDEXER_LISTEN"],
@@ -1274,7 +1493,7 @@ write_json(
 write_json(
     os.environ["OUT_VERIFIER"],
     {
-        "grpc_addr": "127.0.0.1:9090",
+        "grpc_addr": os.environ["CFG_NODE_GRPC_ADDR"],
         "listen_addr": os.environ["CFG_VERIFIER_LISTEN"],
         "verifier_address": os.environ["CFG_VERIFIER_ADDRESS"],
         "state_dir": os.path.join(os.environ["CFG_HOME_DIR"], "verifierd-state"),
@@ -1298,9 +1517,9 @@ write_json(
             "fee_granter": "",
         },
         "submit": {
-            "binary": os.path.join(os.environ["CFG_BIN_DIR"], "content-grid-d"),
+            "binary": os.environ["CFG_CLIENT_BINARY"],
             "chain_id": os.environ["CFG_CHAIN_ID"],
-            "node": "tcp://127.0.0.1:26657",
+            "node": os.environ["CFG_NODE_CLI_RPC"],
             "from": os.environ["CFG_VERIFIER_KEY_NAME"],
             "keyring_backend": "file",
             "keyring_dir": os.path.join(
@@ -1322,10 +1541,17 @@ write_json(
     os.environ["OUT_STATE"],
     {
         "installer_version": os.environ["CFG_INSTALLER_VERSION"],
+        "install_mode": (
+            "components-only"
+            if os.environ["CFG_COMPONENTS_ONLY"] == "true"
+            else "full-stack"
+        ),
         "bundle_url": os.environ["CFG_BUNDLE_URL"],
         "bundle_sha256": os.environ["CFG_BUNDLE_SHA256"],
         "moniker": os.environ["CFG_MONIKER"],
         "chain_id": os.environ["CFG_CHAIN_ID"],
+        "node_rpc_addr": os.environ["CFG_NODE_RPC_ADDR"],
+        "node_grpc_addr": os.environ["CFG_NODE_GRPC_ADDR"],
         "genesis_url": os.environ["CFG_GENESIS_URL"],
         "p2p_seeds": os.environ["CFG_P2P_SEEDS"],
         "seeds_url": os.environ["CFG_SEEDS_URL"],
@@ -1369,10 +1595,12 @@ passphrase_file="${1:?passphrase file required}"
 verifier_binary="${2:?verifierd binary required}"
 config_file="${3:?verifierd config required}"
 indexer_port="${4:-}"
+grpc_host="${5:-127.0.0.1}"
+grpc_port="${6:-9090}"
 
 if [ -n "$indexer_port" ]; then
   helper_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-  "$helper_dir/wait-for-tcp" 127.0.0.1 9090 3600
+  "$helper_dir/wait-for-tcp" "$grpc_host" "$grpc_port" 3600
   "$helper_dir/wait-for-http" "http://127.0.0.1:${indexer_port}/healthz" 3600
 fi
 
@@ -1468,10 +1696,13 @@ set -euo pipefail
 
 indexer_binary="${1:?indexerd binary required}"
 config_file="${2:?indexerd config required}"
+rpc_url="${3:-http://127.0.0.1:26657}"
+grpc_host="${4:-127.0.0.1}"
+grpc_port="${5:-9090}"
 helper_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 
-"$helper_dir/wait-for-node-sync" http://127.0.0.1:26657 3600
-"$helper_dir/wait-for-tcp" 127.0.0.1 9090 3600
+"$helper_dir/wait-for-node-sync" "$rpc_url" 3600
+"$helper_dir/wait-for-tcp" "$grpc_host" "$grpc_port" 3600
 "$helper_dir/wait-for-http" http://127.0.0.1:8000/healthz 120
 
 exec "$indexer_binary" --config "$config_file"
@@ -1479,6 +1710,7 @@ SH
 chmod 0755 "$TMP_WORK/indexerd-launcher"
 run_root install -m 0755 "$TMP_WORK/indexerd-launcher" "$LIBEXEC_DIR/indexerd-launcher"
 
+if [ "$COMPONENTS_ONLY" != "true" ]; then
 cat >"$TMP_WORK/content-grid-node-bootstrap" <<'SH'
 #!/usr/bin/env bash
 set -u
@@ -1603,8 +1835,10 @@ else
     "$TMP_WORK/congrid-bootstrap-mode" \
     "$CONGRID_HOME_DIR/config/congrid-bootstrap-mode"
 fi
+fi
 
 if [ "$HOST_OS" = "linux" ]; then
+if [ "$COMPONENTS_ONLY" != "true" ]; then
 cat >"$TMP_WORK/congrid-node.service" <<'UNIT'
 [Unit]
 Description=Content Grid Chain node
@@ -1634,8 +1868,17 @@ ReadWritePaths=/var/lib/congrid
 [Install]
 WantedBy=multi-user.target
 UNIT
+fi
 
-cat >"$TMP_WORK/congrid-chroma.service" <<'UNIT'
+if [ "$COMPONENTS_ONLY" = "true" ]; then
+  INDEXER_UNIT_WANTS="network-online.target congrid-chroma.service"
+  VERIFIER_UNIT_WANTS="network-online.target congrid-indexer.service"
+else
+  INDEXER_UNIT_WANTS="network-online.target congrid-node.service congrid-chroma.service"
+  VERIFIER_UNIT_WANTS="network-online.target congrid-node.service congrid-indexer.service"
+fi
+
+cat >"$TMP_WORK/congrid-chroma.service" <<UNIT
 [Unit]
 Description=Content Grid Chroma embedding service
 Documentation=https://congrid.net/
@@ -1647,12 +1890,12 @@ StartLimitIntervalSec=0
 Type=simple
 User=congrid
 Group=congrid
-WorkingDirectory=/var/lib/congrid/chroma
-Environment=HOME=/var/lib/congrid/chroma
-Environment=CHROMA_PATH=/var/lib/congrid/chroma/data
+WorkingDirectory=$CONGRID_HOME_DIR/chroma
+Environment=HOME=$CONGRID_HOME_DIR/chroma
+Environment=CHROMA_PATH=$CONGRID_HOME_DIR/chroma/data
 Environment=CHROMA_HOST=127.0.0.1
 Environment=CHROMA_PORT=8000
-ExecStart=/opt/congrid/chromad/.venv/bin/python /opt/congrid/chromad/server.py
+ExecStart=$CHROMAD_DIR/.venv/bin/python $CHROMAD_DIR/server.py
 Restart=on-failure
 RestartSec=5s
 UMask=0027
@@ -1660,30 +1903,30 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectHome=true
 ProtectSystem=strict
-ReadWritePaths=/var/lib/congrid/chroma
+ReadWritePaths=$CONGRID_HOME_DIR/chroma
 
 [Install]
 WantedBy=multi-user.target
 UNIT
 
-cat >"$TMP_WORK/congrid-indexer.service" <<'UNIT'
+cat >"$TMP_WORK/congrid-indexer.service" <<UNIT
 [Unit]
 Description=Content Grid publisher indexer
 Documentation=https://congrid.net/
-Wants=network-online.target congrid-node.service congrid-chroma.service
-After=network-online.target congrid-node.service congrid-chroma.service
+Wants=$INDEXER_UNIT_WANTS
+After=$INDEXER_UNIT_WANTS
 StartLimitIntervalSec=0
 
 [Service]
 Type=simple
 User=congrid
 Group=congrid
-WorkingDirectory=/var/lib/congrid
+WorkingDirectory=$CONGRID_HOME_DIR
 TimeoutStartSec=3700s
-ExecStartPre=/usr/local/libexec/congrid/wait-for-node-sync http://127.0.0.1:26657 3600
-ExecStartPre=/usr/local/libexec/congrid/wait-for-tcp 127.0.0.1 9090 3600
-ExecStartPre=/usr/local/libexec/congrid/wait-for-http http://127.0.0.1:8000/healthz 120
-ExecStart=/usr/local/bin/indexerd --config /etc/congrid/indexerd.json
+ExecStartPre=$LIBEXEC_DIR/wait-for-node-sync $NODE_RPC_URL 3600
+ExecStartPre=$LIBEXEC_DIR/wait-for-tcp $NODE_GRPC_HOST $NODE_GRPC_PORT 3600
+ExecStartPre=$LIBEXEC_DIR/wait-for-http http://127.0.0.1:8000/healthz 120
+ExecStart=$BIN_DIR/indexerd --config $CONFIG_DIR/indexerd.json
 Restart=on-failure
 RestartSec=5s
 UMask=0027
@@ -1691,7 +1934,7 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectHome=true
 ProtectSystem=strict
-ReadWritePaths=/var/lib/congrid
+ReadWritePaths=$CONGRID_HOME_DIR
 
 [Install]
 WantedBy=multi-user.target
@@ -1701,19 +1944,19 @@ cat >"$TMP_WORK/congrid-verifier.service" <<UNIT
 [Unit]
 Description=Content Grid verifier agent
 Documentation=https://congrid.net/
-Wants=network-online.target congrid-node.service congrid-indexer.service
-After=network-online.target congrid-node.service congrid-indexer.service
+Wants=$VERIFIER_UNIT_WANTS
+After=$VERIFIER_UNIT_WANTS
 StartLimitIntervalSec=0
 
 [Service]
 Type=simple
 User=congrid
 Group=congrid
-WorkingDirectory=/var/lib/congrid
+WorkingDirectory=$CONGRID_HOME_DIR
 TimeoutStartSec=3700s
-ExecStartPre=/usr/local/libexec/congrid/wait-for-tcp 127.0.0.1 9090 3600
-ExecStartPre=/usr/local/libexec/congrid/wait-for-http http://127.0.0.1:${INDEXER_LOCAL_PORT}/healthz 3600
-ExecStart=/usr/local/libexec/congrid/verifierd-launcher /etc/congrid/verifier.passphrase /usr/local/bin/verifierd /etc/congrid/verifierd.json
+ExecStartPre=$LIBEXEC_DIR/wait-for-tcp $NODE_GRPC_HOST $NODE_GRPC_PORT 3600
+ExecStartPre=$LIBEXEC_DIR/wait-for-http http://127.0.0.1:${INDEXER_LOCAL_PORT}/healthz 3600
+ExecStart=$LIBEXEC_DIR/verifierd-launcher $CONFIG_DIR/verifier.passphrase $BIN_DIR/verifierd $CONFIG_DIR/verifierd.json
 Restart=on-failure
 RestartSec=5s
 UMask=0027
@@ -1721,39 +1964,41 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectHome=true
 ProtectSystem=strict
-ReadWritePaths=/var/lib/congrid
+ReadWritePaths=$CONGRID_HOME_DIR
 
 [Install]
 WantedBy=multi-user.target
 UNIT
 
-for unit_name in congrid-node congrid-chroma congrid-indexer congrid-verifier; do
+service_names=(congrid-chroma congrid-indexer congrid-verifier)
+if [ "$COMPONENTS_ONLY" != "true" ]; then
+  service_names=(congrid-node "${service_names[@]}")
+fi
+service_units=()
+for unit_name in "${service_names[@]}"; do
   run_root install -o root -g root -m 0644 \
     "$TMP_WORK/$unit_name.service" "$SYSTEMD_DIR/$unit_name.service"
+  service_units+=("$unit_name.service")
 done
 
 legacy_repair_dropin="$SYSTEMD_DIR/congrid-node.service.d/10-upgrade-bootstrap.conf"
-if run_root test -f "$legacy_repair_dropin"; then
+if [ "$COMPONENTS_ONLY" != "true" ] && run_root test -f "$legacy_repair_dropin"; then
   log "removing superseded one-time node repair override"
   run_root rm -f -- "$legacy_repair_dropin"
 fi
 
 run_root systemctl daemon-reload
-run_root systemctl enable \
-  congrid-node.service \
-  congrid-chroma.service \
-  congrid-indexer.service \
-  congrid-verifier.service >/dev/null
+run_root systemctl enable "${service_units[@]}" >/dev/null
 
 if [ "$START_SERVICES" = "true" ]; then
   log "starting Content Grid services"
   failed_start_service=""
-  for service_name in congrid-node congrid-chroma congrid-indexer congrid-verifier; do
+  for service_name in "${service_names[@]}"; do
     if [ "$service_name" = "congrid-indexer" ]; then
       log "waiting for the node to finish chain synchronization"
       if ! run_root "$LIBEXEC_DIR/wait-for-node-sync" \
-        http://127.0.0.1:26657 3600; then
-        failed_start_service="congrid-node"
+        "$NODE_RPC_URL" 3600; then
+        failed_start_service="congrid-indexer"
         break
       fi
     fi
@@ -1766,7 +2011,7 @@ if [ "$START_SERVICES" = "true" ]; then
   sleep 3
 
   failed_services=()
-  for service_name in congrid-node congrid-chroma congrid-indexer congrid-verifier; do
+  for service_name in "${service_names[@]}"; do
     if ! run_root systemctl is-active --quiet "$service_name.service"; then
       failed_services+=("$service_name")
     fi
@@ -1779,12 +2024,7 @@ if [ "$START_SERVICES" = "true" ]; then
   fi
   if [ "${#failed_services[@]}" -gt 0 ]; then
     log "Content Grid service status:"
-    run_root systemctl status \
-      congrid-node.service \
-      congrid-chroma.service \
-      congrid-indexer.service \
-      congrid-verifier.service \
-      --no-pager --full >&2 || true
+    run_root systemctl status "${service_units[@]}" --no-pager --full >&2 || true
     for service_name in "${failed_services[@]}"; do
       log "recent logs for failed service $service_name:"
       run_root journalctl -u "$service_name.service" -n 30 --no-pager >&2 || true
@@ -1802,6 +2042,10 @@ else
     CFG_BIN_DIR="$BIN_DIR" \
     CFG_LIBEXEC_DIR="$LIBEXEC_DIR" \
     CFG_INDEXER_PORT="$INDEXER_LOCAL_PORT" \
+    CFG_COMPONENTS_ONLY="$COMPONENTS_ONLY" \
+    CFG_NODE_RPC_URL="$NODE_RPC_URL" \
+    CFG_NODE_GRPC_HOST="$NODE_GRPC_HOST" \
+    CFG_NODE_GRPC_PORT="$NODE_GRPC_PORT" \
     python3 - <<'PY'
 import os
 import plistlib
@@ -1814,6 +2058,10 @@ chromad = os.environ["CFG_CHROMAD_DIR"]
 binary = os.environ["CFG_BIN_DIR"]
 libexec = os.environ["CFG_LIBEXEC_DIR"]
 indexer_port = os.environ["CFG_INDEXER_PORT"]
+components_only = os.environ["CFG_COMPONENTS_ONLY"] == "true"
+node_rpc_url = os.environ["CFG_NODE_RPC_URL"]
+node_grpc_host = os.environ["CFG_NODE_GRPC_HOST"]
+node_grpc_port = os.environ["CFG_NODE_GRPC_PORT"]
 logs = os.path.join(home, "logs")
 
 
@@ -1836,17 +2084,6 @@ def service(label, arguments, working_directory, stdout_name, environment=None):
 
 
 services = {
-    "net.congrid.node": service(
-        "net.congrid.node",
-        [
-            os.path.join(libexec, "content-grid-node-bootstrap"),
-            os.path.join(libexec, "content-grid-d-pre-upgrade"),
-            os.path.join(binary, "content-grid-d"),
-            home,
-        ],
-        login_home,
-        "node",
-    ),
     "net.congrid.chroma": service(
         "net.congrid.chroma",
         [
@@ -1868,6 +2105,9 @@ services = {
             os.path.join(libexec, "indexerd-launcher"),
             os.path.join(binary, "indexerd"),
             os.path.join(config, "indexerd.json"),
+            node_rpc_url,
+            node_grpc_host,
+            node_grpc_port,
         ],
         home,
         "indexer",
@@ -1880,11 +2120,26 @@ services = {
             os.path.join(binary, "verifierd"),
             os.path.join(config, "verifierd.json"),
             indexer_port,
+            node_grpc_host,
+            node_grpc_port,
         ],
         home,
         "verifier",
     ),
 }
+
+if not components_only:
+    services["net.congrid.node"] = service(
+        "net.congrid.node",
+        [
+            os.path.join(libexec, "content-grid-node-bootstrap"),
+            os.path.join(libexec, "content-grid-d-pre-upgrade"),
+            os.path.join(binary, "content-grid-d"),
+            home,
+        ],
+        login_home,
+        "node",
+    )
 
 os.makedirs(plist_dir, exist_ok=True)
 for label, value in services.items():
@@ -1904,31 +2159,29 @@ PY
       LAUNCH_DOMAIN="user/$launch_uid"
     fi
     log "loading Content Grid launchd services in $LAUNCH_DOMAIN"
-    for launch_label in \
-      net.congrid.node \
-      net.congrid.chroma \
-      net.congrid.indexer \
-      net.congrid.verifier; do
+    launch_labels=(net.congrid.chroma net.congrid.indexer net.congrid.verifier)
+    if [ "$COMPONENTS_ONLY" != "true" ]; then
+      launch_labels=(net.congrid.node "${launch_labels[@]}")
+    fi
+    for launch_label in "${launch_labels[@]}"; do
       launch_plist="$LAUNCHD_DIR/$launch_label.plist"
       launchctl bootout "$LAUNCH_DOMAIN" "$launch_plist" >/dev/null 2>&1 || true
       launchctl bootstrap "$LAUNCH_DOMAIN" "$launch_plist"
       launchctl enable "$LAUNCH_DOMAIN/$launch_label"
     done
 
-    launchctl kickstart -k "$LAUNCH_DOMAIN/net.congrid.node"
+    if [ "$COMPONENTS_ONLY" != "true" ]; then
+      launchctl kickstart -k "$LAUNCH_DOMAIN/net.congrid.node"
+    fi
     launchctl kickstart -k "$LAUNCH_DOMAIN/net.congrid.chroma"
     log "waiting for the node to finish chain synchronization"
-    "$LIBEXEC_DIR/wait-for-node-sync" http://127.0.0.1:26657 3600
+    "$LIBEXEC_DIR/wait-for-node-sync" "$NODE_RPC_URL" 3600
     launchctl kickstart -k "$LAUNCH_DOMAIN/net.congrid.indexer"
     launchctl kickstart -k "$LAUNCH_DOMAIN/net.congrid.verifier"
     sleep 3
 
     failed_services=()
-    for launch_label in \
-      net.congrid.node \
-      net.congrid.chroma \
-      net.congrid.indexer \
-      net.congrid.verifier; do
+    for launch_label in "${launch_labels[@]}"; do
       if ! launchctl print "$LAUNCH_DOMAIN/$launch_label" 2>/dev/null |
         grep -q 'state = running'; then
         failed_services+=("$launch_label")
@@ -1948,27 +2201,49 @@ unset VERIFIER_PASSPHRASE CONGRID_VERIFIER_KEYRING_PASSPHRASE
 
 printf '\nContent Grid native operator installation is complete.\n'
 printf 'Verifier address: %s\n' "$key_address"
-if [ -n "$P2P_SEEDS" ]; then
+if [ "$COMPONENTS_ONLY" = "true" ]; then
+  printf 'Existing node RPC:  %s\n' "$NODE_RPC_ADDR"
+  printf 'Existing node gRPC: %s\n' "$NODE_GRPC_ADDR"
+  printf 'Component state:    %s\n' "$CONGRID_HOME_DIR"
+  printf 'Transaction client: %s\n' "$CLIENT_BINARY"
+  printf 'Existing node:      unchanged and not managed by this installer\n'
+elif [ -n "$P2P_SEEDS" ]; then
   printf 'P2P seeds:        %s\n' "$P2P_SEEDS"
 fi
-if [ -n "$SEEDS_SOURCE_URL" ]; then
+if [ "$COMPONENTS_ONLY" != "true" ] && [ -n "$SEEDS_SOURCE_URL" ]; then
   printf 'Seed-list URL:    %s\n' "$SEEDS_SOURCE_URL"
 fi
-printf 'Node home:       %s\n' "$CONGRID_HOME_DIR"
+if [ "$COMPONENTS_ONLY" != "true" ]; then
+  printf 'Node home:       %s\n' "$CONGRID_HOME_DIR"
+fi
 printf 'Configuration:   %s\n' "$CONFIG_DIR"
 if [ "$START_SERVICES" = "true" ]; then
-  printf 'Services:        content-grid-d, chromad, indexerd, verifierd are running\n'
+  if [ "$COMPONENTS_ONLY" = "true" ]; then
+    printf 'Services:        chromad, indexerd, verifierd are running\n'
+  else
+    printf 'Services:        content-grid-d, chromad, indexerd, verifierd are running\n'
+  fi
 else
   printf 'Services:        installed and enabled, but not started (--no-start)\n'
 fi
 printf '\nUseful commands:\n'
 if [ "$HOST_OS" = "linux" ]; then
-  printf '  sudo systemctl status congrid-node congrid-chroma congrid-indexer congrid-verifier\n'
+  if [ "$COMPONENTS_ONLY" = "true" ]; then
+    printf '  sudo systemctl status congrid-chroma congrid-indexer congrid-verifier\n'
+  else
+    printf '  sudo systemctl status congrid-node congrid-chroma congrid-indexer congrid-verifier\n'
+  fi
   printf '  sudo journalctl -u congrid-verifier -f\n'
 else
-  printf '  launchctl print %s/net.congrid.node\n' "${LAUNCH_DOMAIN:-gui/$(id -u)}"
+  if [ "$COMPONENTS_ONLY" = "true" ]; then
+    printf '  launchctl print %s/net.congrid.verifier\n' "${LAUNCH_DOMAIN:-gui/$(id -u)}"
+  else
+    printf '  launchctl print %s/net.congrid.node\n' "${LAUNCH_DOMAIN:-gui/$(id -u)}"
+  fi
   printf '  tail -f %s/logs/verifier.log\n' "$CONGRID_HOME_DIR"
 fi
-printf '  %s/content-grid-d status --node tcp://127.0.0.1:26657\n' "$BIN_DIR"
+printf '  %s status --node %s\n' "$CLIENT_BINARY" "$NODE_CLI_RPC"
 printf '\nBefore verifier assignments can run, fund and bond the verifier address.\n'
-printf 'Also allow inbound TCP/26656 in the host/cloud firewall for P2P connectivity.\n'
+if [ "$COMPONENTS_ONLY" != "true" ]; then
+  printf 'Also allow inbound TCP/26656 in the host/cloud firewall for P2P connectivity.\n'
+fi
