@@ -46,6 +46,8 @@ type airdropConfig struct {
 	VerificationWorkers   int
 }
 
+const congridAccountAddressPrefix = "congrid"
+
 type airdropper struct {
 	srv      *server
 	cfg      airdropConfig
@@ -222,7 +224,7 @@ func (a *airdropper) handleAirdropPost() http.HandlerFunc {
 			a.renderFlash(w, r, "Invalid domain format.")
 			return
 		}
-		if _, err := sdk.AccAddressFromBech32(wallet); err != nil || !strings.HasPrefix(wallet, "congrid1") {
+		if err := validateCongridAccountAddress(wallet); err != nil {
 			a.renderFlash(w, r, "Invalid wallet address. Use a congrid1... address.")
 			return
 		}
@@ -270,6 +272,21 @@ func (a *airdropper) handleAirdropPost() http.HandlerFunc {
 		a.notifyWorker()
 		a.renderFlash(w, r, fmt.Sprintf("Website verified. The %s%s airdrop is queued for %s.", claim.Amount, claim.Denom, claim.Wallet))
 	}
+}
+
+// validateCongridAccountAddress uses an explicit HRP instead of
+// sdk.AccAddressFromBech32. congrid-site is a standalone process and does not
+// initialize the chain app's global SDK config, whose default account prefix is
+// "cosmos".
+func validateCongridAccountAddress(address string) error {
+	decoded, err := sdk.GetFromBech32(strings.TrimSpace(address), congridAccountAddressPrefix)
+	if err != nil {
+		return fmt.Errorf("decode congrid account address: %w", err)
+	}
+	if err := sdk.VerifyAddressFormat(decoded); err != nil {
+		return fmt.Errorf("verify congrid account address: %w", err)
+	}
+	return nil
 }
 
 func (a *airdropper) renderFlash(w http.ResponseWriter, r *http.Request, msg string) {

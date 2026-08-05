@@ -39,6 +39,24 @@ func TestSQLClaimStoreEnforcesWebsiteOnlyUniqueness(t *testing.T) {
 	}
 }
 
+func TestValidateCongridAccountAddressUsesChainPrefix(t *testing.T) {
+	const address = "congrid1fglanlkvqtyznlw3flu88680zmctyug8qr03pj"
+	if err := validateCongridAccountAddress(address); err != nil {
+		t.Fatalf("valid congrid address rejected: %v", err)
+	}
+
+	invalid := []string{
+		"cosmos1fglanlkvqtyznlw3flu88680zmctyug8qr03pj",
+		"congrid1not-a-valid-address",
+		"",
+	}
+	for _, candidate := range invalid {
+		if err := validateCongridAccountAddress(candidate); err == nil {
+			t.Fatalf("invalid address accepted: %q", candidate)
+		}
+	}
+}
+
 func TestSQLClaimStoreRetainsLastTwoLabelWebsiteKey(t *testing.T) {
 	store := openTestClaimStore(t)
 	ctx := context.Background()
