@@ -57,7 +57,7 @@ func (s *chainSlotStore) ListMarketplaceSlots(ctx context.Context) ([]Slot, erro
 	if err != nil {
 		return nil, err
 	}
-	leaseBySlot := map[string]registrypb.SlotLease{}
+	leaseBySlot := map[string]*registrypb.SlotLease{}
 	for _, lease := range leases {
 		leaseBySlot[lease.GetSlotId()] = lease
 	}
@@ -69,8 +69,7 @@ func (s *chainSlotStore) ListMarketplaceSlots(ctx context.Context) ([]Slot, erro
 		}
 		ui := slotFromChain(slot)
 		if lease, ok := leaseBySlot[slot.GetId()]; ok {
-			leaseCopy := lease
-			ui.Lease = leaseFromChain(&leaseCopy)
+			ui.Lease = leaseFromChain(lease)
 		}
 		out = append(out, ui)
 	}
@@ -94,7 +93,7 @@ func (s *chainSlotStore) ListPublisherSlots(ctx context.Context, publisher strin
 	if err != nil {
 		return nil, err
 	}
-	leaseBySlot := map[string]registrypb.SlotLease{}
+	leaseBySlot := map[string]*registrypb.SlotLease{}
 	for _, lease := range leases {
 		leaseBySlot[lease.GetSlotId()] = lease
 	}
@@ -106,8 +105,7 @@ func (s *chainSlotStore) ListPublisherSlots(ctx context.Context, publisher strin
 		}
 		ui := slotFromChain(slot)
 		if lease, ok := leaseBySlot[slot.GetId()]; ok {
-			leaseCopy := lease
-			ui.Lease = leaseFromChain(&leaseCopy)
+			ui.Lease = leaseFromChain(lease)
 		}
 		out = append(out, ui)
 	}
@@ -144,7 +142,7 @@ func (s *chainSlotStore) ListPublisherLeases(ctx context.Context, publisher stri
 		if slotLabel == "" {
 			continue
 		}
-		ui := leaseFromChain(&lease)
+		ui := leaseFromChain(lease)
 		ui.SlotLabel = slotLabel
 		ui.SlotID = slotID
 		out = append(out, *ui)
@@ -169,8 +167,8 @@ func (s *chainSlotStore) GetSlot(ctx context.Context, slotID string) (Slot, erro
 	return Slot{}, fmt.Errorf("slot not found")
 }
 
-func (s *chainSlotStore) listSlots(ctx context.Context, publisher string, status registrypb.SlotStatus) ([]registrypb.Slot, error) {
-	var out []registrypb.Slot
+func (s *chainSlotStore) listSlots(ctx context.Context, publisher string, status registrypb.SlotStatus) ([]*registrypb.Slot, error) {
+	var out []*registrypb.Slot
 	var pageKey []byte
 	for {
 		resp, err := s.queryClient.Slots(ctx, &registrypb.QuerySlotsRequest{
@@ -188,7 +186,7 @@ func (s *chainSlotStore) listSlots(ctx context.Context, publisher string, status
 			if slot == nil {
 				continue
 			}
-			out = append(out, *slot)
+			out = append(out, slot)
 		}
 		pageKey = resp.GetPagination().GetNextKey()
 		if len(pageKey) == 0 {
@@ -198,8 +196,8 @@ func (s *chainSlotStore) listSlots(ctx context.Context, publisher string, status
 	return out, nil
 }
 
-func (s *chainSlotStore) listLeases(ctx context.Context, publisher, slotID string, activeOnly bool, atUnix int64) ([]registrypb.SlotLease, error) {
-	var out []registrypb.SlotLease
+func (s *chainSlotStore) listLeases(ctx context.Context, publisher, slotID string, activeOnly bool, atUnix int64) ([]*registrypb.SlotLease, error) {
+	var out []*registrypb.SlotLease
 	var pageKey []byte
 	for {
 		resp, err := s.queryClient.Leases(ctx, &registrypb.QueryLeasesRequest{
@@ -219,7 +217,7 @@ func (s *chainSlotStore) listLeases(ctx context.Context, publisher, slotID strin
 			if lease == nil {
 				continue
 			}
-			out = append(out, *lease)
+			out = append(out, lease)
 		}
 		pageKey = resp.GetPagination().GetNextKey()
 		if len(pageKey) == 0 {
@@ -240,7 +238,10 @@ func (s *chainSlotStore) publisherOwner(ctx context.Context, domain string) (str
 	return resp.GetWebsite().GetOwner(), nil
 }
 
-func slotFromChain(slot registrypb.Slot) Slot {
+func slotFromChain(slot *registrypb.Slot) Slot {
+	if slot == nil {
+		return Slot{}
+	}
 	status := SlotStatusListed
 	switch slot.GetStatus() {
 	case registrypb.SlotStatus_SLOT_STATUS_PAUSED:

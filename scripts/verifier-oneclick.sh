@@ -226,15 +226,22 @@ build_binaries() {
     return
   fi
 
-  if ! need_build; then
-    return
-  fi
+	if ! need_build; then
+		return
+	fi
 
-  mkdir -p "$CONGRID_BIN_DIR" "$ROOT_DIR/.gocache"
-  log "building content-grid-d -> $CONTENT_GRID_BIN"
-  (cd "$ROOT_DIR" && GOCACHE="$ROOT_DIR/.gocache" go build -o "$CONTENT_GRID_BIN" ./cmd/content-grid-d)
-  log "building verifierd -> $VERIFIERD_BIN"
-  (cd "$ROOT_DIR" && GOCACHE="$ROOT_DIR/.gocache" go build -o "$VERIFIERD_BIN" ./offchain/verifierd)
+	local build_commit
+	local build_version
+	local build_ldflags
+	build_commit="$(git -C "$ROOT_DIR" rev-parse HEAD 2>/dev/null || printf unknown)"
+	build_version="${CONGRID_BUILD_VERSION:-$(git -C "$ROOT_DIR" describe --tags --always --dirty 2>/dev/null || printf publisher-rewards-v3)}"
+	build_ldflags="-X github.com/cosmos/cosmos-sdk/version.Version=$build_version -X github.com/cosmos/cosmos-sdk/version.Commit=$build_commit"
+
+	mkdir -p "$CONGRID_BIN_DIR" "$ROOT_DIR/.gocache"
+	log "building content-grid-d -> $CONTENT_GRID_BIN"
+	(cd "$ROOT_DIR" && GOCACHE="$ROOT_DIR/.gocache" go build -trimpath -ldflags "$build_ldflags" -o "$CONTENT_GRID_BIN" ./cmd/content-grid-d)
+	log "building verifierd -> $VERIFIERD_BIN"
+	(cd "$ROOT_DIR" && GOCACHE="$ROOT_DIR/.gocache" go build -trimpath -ldflags "$build_ldflags" -o "$VERIFIERD_BIN" ./offchain/verifierd)
 }
 
 run_content_grid_with_passphrase() {

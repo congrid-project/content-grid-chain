@@ -55,6 +55,31 @@ func TestMigrate1To2EnablesStrictDrand(t *testing.T) {
 	require.Equal(t, DefaultDrandRoundOffsetSec, got.DrandRoundOffsetSeconds)
 }
 
+func TestMigrate2To3InitializesPublisherFloorAndProtectsHistoricalRounds(t *testing.T) {
+	keeper, ctx := setupKeeper(t)
+	params := keeper.GetParams(ctx)
+	params.PublisherMinRewardBps = 0
+	require.NoError(t, keeper.SetParams(ctx, params))
+	require.NoError(t, keeper.SetAssignment(ctx, PublisherVerificationAssignment{
+		RoundStartUnix:  3600,
+		Domain:          "historical.example",
+		StartAtUnix:     3600,
+		DeadlineUnix:    4200,
+		Finalized:       true,
+		FinalizedAtUnix: 4201,
+		Verified:        true,
+	}))
+
+	module := NewAppModule(keeper)
+	require.NoError(t, module.migrate2To3(ctx))
+	require.EqualValues(t, 1000, keeper.GetParams(ctx).PublisherMinRewardBps)
+
+	assignment, found := keeper.GetAssignment(ctx, 3600, "historical.example")
+	require.True(t, found)
+	require.True(t, assignment.RewardsSettled)
+	require.Empty(t, keeper.listUnsettledVerificationRounds(ctx))
+}
+
 func TestSubmitDrandBeacon_ExactStrictAndSingle(t *testing.T) {
 	keeper, ctx := setupKeeper(t)
 	ctx = ctx.WithBlockTime(time.Unix(1_050, 0).UTC())

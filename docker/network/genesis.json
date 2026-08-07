@@ -322,6 +322,7 @@
         "min_verifier_score": "0.400000000000000000",
         "operator_reserve_bps": 4000,
         "publisher_emission_bps": 1000,
+        "publisher_min_reward_bps": 1000,
         "publisher_revoke_failure_threshold": 3,
         "publisher_verification_reward": "1000000",
         "required_external_links_for_full_reward": 15,

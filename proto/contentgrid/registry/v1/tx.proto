@@ -59,6 +59,15 @@ message MsgRevealVerification {
   string evidence_hash = 5;
   // Nonce used to bind the commit hash.
   string nonce = 6;
+  // Similar-site observations affect publisher payout, not badge verification.
+  int32 observed_similar_domains = 7;
+  int32 matched_similar_domains = 8;
+  int32 expected_similar_domains = 9;
+  string expected_set_hash = 10;
+  string observed_set_hash = 11;
+  // Assignment-scoped wallet that was actually checked on the homepage.
+  // New assignments require this value and bind it into the commit hash.
+  string verification_owner = 12;
 }
 
 message MsgRevealVerificationResponse {

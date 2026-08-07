@@ -111,6 +111,14 @@ func TestPublisherParamsValidate(t *testing.T) {
 	require.Error(t, params.Validate())
 
 	params = DefaultPublisherParams()
+	params.PublisherMinRewardBps = -1
+	require.Error(t, params.Validate())
+
+	params = DefaultPublisherParams()
+	params.PublisherMinRewardBps = 10001
+	require.Error(t, params.Validate())
+
+	params = DefaultPublisherParams()
 	params.VerifierRewardBaseShareBps = -1
 	require.Error(t, params.Validate())
 
@@ -128,6 +136,7 @@ func TestDefaultPublisherParamsEnableStrictDrand(t *testing.T) {
 	params := DefaultPublisherParams()
 	require.True(t, params.DrandEnabled)
 	require.True(t, params.EffectiveDrandStrictMode())
+	require.EqualValues(t, 1000, params.EffectivePublisherMinRewardBps())
 	require.NoError(t, params.Validate())
 }
 

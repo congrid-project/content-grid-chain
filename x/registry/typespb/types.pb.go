@@ -195,8 +195,12 @@ type Website struct {
 	// Cooldown enforcement after failed verification.
 	CooldownUntilUnix int64 `protobuf:"varint,9,opt,name=cooldown_until_unix,json=cooldownUntilUnix,proto3" json:"cooldown_until_unix,omitempty"`
 	CooldownCount     int32 `protobuf:"varint,10,opt,name=cooldown_count,json=cooldownCount,proto3" json:"cooldown_count,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// Candidate values requested by a re-registration. The current owner remains
+	// authoritative until verifier consensus confirms pending_owner on the page.
+	PendingOwner    string `protobuf:"bytes,11,opt,name=pending_owner,json=pendingOwner,proto3" json:"pending_owner,omitempty"`
+	PendingReferrer string `protobuf:"bytes,12,opt,name=pending_referrer,json=pendingReferrer,proto3" json:"pending_referrer,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *Website) Reset() {
@@ -299,6 +303,20 @@ func (x *Website) GetCooldownCount() int32 {
 	return 0
 }
 
+func (x *Website) GetPendingOwner() string {
+	if x != nil {
+		return x.PendingOwner
+	}
+	return ""
+}
+
+func (x *Website) GetPendingReferrer() string {
+	if x != nil {
+		return x.PendingReferrer
+	}
+	return ""
+}
+
 type PublisherVerificationAssignment struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	RoundStartUnix  int64                  `protobuf:"varint,1,opt,name=round_start_unix,json=roundStartUnix,proto3" json:"round_start_unix,omitempty"`
@@ -308,8 +326,16 @@ type PublisherVerificationAssignment struct {
 	Verifiers       []string               `protobuf:"bytes,5,rep,name=verifiers,proto3" json:"verifiers,omitempty"`
 	Finalized       bool                   `protobuf:"varint,6,opt,name=finalized,proto3" json:"finalized,omitempty"`
 	FinalizedAtUnix int64                  `protobuf:"varint,7,opt,name=finalized_at_unix,json=finalizedAtUnix,proto3" json:"finalized_at_unix,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// Verified records the finalized badge/owner consensus result.
+	Verified bool `protobuf:"varint,8,opt,name=verified,proto3" json:"verified,omitempty"`
+	// RewardsSettled prevents duplicate round-level payouts.
+	RewardsSettled bool `protobuf:"varint,9,opt,name=rewards_settled,json=rewardsSettled,proto3" json:"rewards_settled,omitempty"`
+	// Wallet that verifiers must find in the publisher badge for this assignment.
+	VerificationOwner string `protobuf:"bytes,10,opt,name=verification_owner,json=verificationOwner,proto3" json:"verification_owner,omitempty"`
+	// True when this assignment verifies a pending re-registration candidate.
+	Reregistration bool `protobuf:"varint,11,opt,name=reregistration,proto3" json:"reregistration,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *PublisherVerificationAssignment) Reset() {
@@ -389,6 +415,34 @@ func (x *PublisherVerificationAssignment) GetFinalizedAtUnix() int64 {
 		return x.FinalizedAtUnix
 	}
 	return 0
+}
+
+func (x *PublisherVerificationAssignment) GetVerified() bool {
+	if x != nil {
+		return x.Verified
+	}
+	return false
+}
+
+func (x *PublisherVerificationAssignment) GetRewardsSettled() bool {
+	if x != nil {
+		return x.RewardsSettled
+	}
+	return false
+}
+
+func (x *PublisherVerificationAssignment) GetVerificationOwner() string {
+	if x != nil {
+		return x.VerificationOwner
+	}
+	return ""
+}
+
+func (x *PublisherVerificationAssignment) GetReregistration() bool {
+	if x != nil {
+		return x.Reregistration
+	}
+	return false
 }
 
 type PublisherVerificationSubmission struct {
@@ -1201,7 +1255,7 @@ var File_contentgrid_registry_v1_types_proto protoreflect.FileDescriptor
 
 const file_contentgrid_registry_v1_types_proto_rawDesc = "" +
 	"\n" +
-	"#contentgrid/registry/v1/types.proto\x12\x17contentgrid.registry.v1\x1a\x14gogoproto/gogo.proto\"\xf1\x02\n" +
+	"#contentgrid/registry/v1/types.proto\x12\x17contentgrid.registry.v1\x1a\x14gogoproto/gogo.proto\"\xc1\x03\n" +
 	"\aWebsite\x12\x16\n" +
 	"\x06domain\x18\x01 \x01(\tR\x06domain\x12\x14\n" +
 	"\x05owner\x18\x02 \x01(\tR\x05owner\x12>\n" +
@@ -1213,7 +1267,9 @@ const file_contentgrid_registry_v1_types_proto_rawDesc = "" +
 	"\breferrer\x18\b \x01(\tR\breferrer\x12.\n" +
 	"\x13cooldown_until_unix\x18\t \x01(\x03R\x11cooldownUntilUnix\x12%\n" +
 	"\x0ecooldown_count\x18\n" +
-	" \x01(\x05R\rcooldownCount\"\x94\x02\n" +
+	" \x01(\x05R\rcooldownCount\x12#\n" +
+	"\rpending_owner\x18\v \x01(\tR\fpendingOwner\x12)\n" +
+	"\x10pending_referrer\x18\f \x01(\tR\x0fpendingReferrer\"\xb0\x03\n" +
 	"\x1fPublisherVerificationAssignment\x12(\n" +
 	"\x10round_start_unix\x18\x01 \x01(\x03R\x0eroundStartUnix\x12\x16\n" +
 	"\x06domain\x18\x02 \x01(\tR\x06domain\x12\"\n" +
@@ -1221,7 +1277,12 @@ const file_contentgrid_registry_v1_types_proto_rawDesc = "" +
 	"\rdeadline_unix\x18\x04 \x01(\x03R\fdeadlineUnix\x12\x1c\n" +
 	"\tverifiers\x18\x05 \x03(\tR\tverifiers\x12\x1c\n" +
 	"\tfinalized\x18\x06 \x01(\bR\tfinalized\x12*\n" +
-	"\x11finalized_at_unix\x18\a \x01(\x03R\x0ffinalizedAtUnix\"\x90\x04\n" +
+	"\x11finalized_at_unix\x18\a \x01(\x03R\x0ffinalizedAtUnix\x12\x1a\n" +
+	"\bverified\x18\b \x01(\bR\bverified\x12'\n" +
+	"\x0frewards_settled\x18\t \x01(\bR\x0erewardsSettled\x12-\n" +
+	"\x12verification_owner\x18\n" +
+	" \x01(\tR\x11verificationOwner\x12&\n" +
+	"\x0ereregistration\x18\v \x01(\bR\x0ereregistration\"\x90\x04\n" +
 	"\x1fPublisherVerificationSubmission\x12(\n" +
 	"\x10round_start_unix\x18\x01 \x01(\x03R\x0eroundStartUnix\x12\x16\n" +
 	"\x06domain\x18\x02 \x01(\tR\x06domain\x12\x1a\n" +

@@ -64,6 +64,8 @@ type Website struct {
 	Referrer           string        `json:"referrer,omitempty"`
 	CooldownUntilUnix  int64         `json:"cooldown_until_unix,omitempty"`
 	CooldownCount      int32         `json:"cooldown_count,omitempty"`
+	PendingOwner       string        `json:"pending_owner,omitempty"`
+	PendingReferrer    string        `json:"pending_referrer,omitempty"`
 }
 
 // NormalizeDomain lowercases and trims a domain string.
@@ -155,6 +157,18 @@ func ValidateWebsite(w Website) error {
 			return fmt.Errorf("invalid referrer address: %w", err)
 		}
 	}
+	if strings.TrimSpace(w.PendingOwner) != "" {
+		if _, err := sdk.AccAddressFromBech32(strings.TrimSpace(w.PendingOwner)); err != nil {
+			return fmt.Errorf("invalid pending owner address: %w", err)
+		}
+		if strings.TrimSpace(w.PendingReferrer) != "" {
+			if _, err := sdk.AccAddressFromBech32(strings.TrimSpace(w.PendingReferrer)); err != nil {
+				return fmt.Errorf("invalid pending referrer address: %w", err)
+			}
+		}
+	} else if strings.TrimSpace(w.PendingReferrer) != "" {
+		return errors.New("pending_referrer requires pending_owner")
+	}
 	if w.Status < StatusPending || w.Status > StatusRevoked {
 		return fmt.Errorf("invalid status: %d", w.Status)
 	}
@@ -204,6 +218,8 @@ func (w Website) ToProto() *typespb.Website {
 		Referrer:           w.Referrer,
 		CooldownUntilUnix:  w.CooldownUntilUnix,
 		CooldownCount:      w.CooldownCount,
+		PendingOwner:       w.PendingOwner,
+		PendingReferrer:    w.PendingReferrer,
 	}
 }
 
@@ -223,6 +239,8 @@ func WebsiteFromProto(p *typespb.Website) Website {
 		Referrer:           p.GetReferrer(),
 		CooldownUntilUnix:  p.GetCooldownUntilUnix(),
 		CooldownCount:      p.GetCooldownCount(),
+		PendingOwner:       p.GetPendingOwner(),
+		PendingReferrer:    p.GetPendingReferrer(),
 	}
 }
 
@@ -254,6 +272,7 @@ type PublisherParams struct {
 	VerifierVerificationReward         sdkmath.Int           `json:"verifier_verification_reward"`
 	VerifierRewardBaseShareBps         int64                 `json:"verifier_reward_base_share_bps"`
 	RequiredExternalLinksForFullReward int32                 `json:"required_external_links_for_full_reward"`
+	PublisherMinRewardBps              int64                 `json:"publisher_min_reward_bps"`
 	EmissionTotalSupply                sdkmath.Int           `json:"emission_total_supply"`
 	OperatorReserveBps                 int64                 `json:"operator_reserve_bps"`
 	PublisherEmissionBps               int64                 `json:"publisher_emission_bps"`
@@ -301,6 +320,7 @@ func DefaultPublisherParams() PublisherParams {
 		VerifierVerificationReward:         sdkmath.NewInt(500_000),
 		VerifierRewardBaseShareBps:         4000,
 		RequiredExternalLinksForFullReward: 15,
+		PublisherMinRewardBps:              1000,
 		EmissionTotalSupply:                sdkmath.NewInt(1_000_000_000_000000), // 1B CONGRID in ucongrid
 		OperatorReserveBps:                 4000,
 		PublisherEmissionBps:               1000,
@@ -385,6 +405,9 @@ func (pp PublisherParams) Validate() error {
 	if pp.RequiredExternalLinksForFullReward < 0 {
 		return fmt.Errorf("required external links for full reward must be >= 0")
 	}
+	if pp.PublisherMinRewardBps < 0 || pp.PublisherMinRewardBps > 10000 {
+		return fmt.Errorf("publisher min reward bps must be within [0,10000]")
+	}
 	if pp.EmissionTotalSupply.IsNegative() {
 		return fmt.Errorf("emission total supply must be >= 0")
 	}
@@ -458,6 +481,13 @@ func (pp PublisherParams) EffectiveRequiredExternalLinksForFullReward() int32 {
 		return pp.RequiredExternalLinksForFullReward
 	}
 	return DefaultPublisherParams().RequiredExternalLinksForFullReward
+}
+
+func (pp PublisherParams) EffectivePublisherMinRewardBps() int64 {
+	if pp.PublisherMinRewardBps > 0 && pp.PublisherMinRewardBps <= 10000 {
+		return pp.PublisherMinRewardBps
+	}
+	return DefaultPublisherParams().PublisherMinRewardBps
 }
 
 func (pp PublisherParams) EffectiveVerifierRewardBaseShareBps() int64 {

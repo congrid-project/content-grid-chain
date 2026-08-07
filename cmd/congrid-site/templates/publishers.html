@@ -90,7 +90,7 @@
         aria-describedby="publisher-referrer-help"
       />
       <p class="muted" id="publisher-referrer-help">
-        Enter the Congrid address of the verifier that referred you. The referrer is recorded with the initial registration and cannot currently be changed.
+        Enter the Congrid address of the verifier that referred you. Re-registering the same domain can replace or clear this referrer after page verification.
       </p>
 
       <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
@@ -121,7 +121,7 @@
         <input type="hidden" name="domain" value="" data-wallet-register-domain />
         <input type="hidden" name="wallet" value="" data-wallet-register-wallet />
         <input type="hidden" name="referrer" value="" data-wallet-register-referrer />
-        <button class="btn" type="submit">Register with connected wallet</button>
+        <button class="btn" type="submit">Register / re-register with connected wallet</button>
         <div class="callout" data-wallet-flash hidden style="margin-top: 10px;"></div>
       </form>
       <p class="muted" style="margin-top:10px;">
@@ -133,6 +133,7 @@
     <p>
       Verifiers continuously check your homepage badge and owner wallet binding.
       Keep your site online and the badge intact to remain eligible for network programs.
+      To change the receiving wallet or referrer, update the badge wallet first, connect that same wallet, and submit this registration flow again. The previous owner remains active until verifier consensus accepts the candidate.
     </p>
   </div>
 </section>

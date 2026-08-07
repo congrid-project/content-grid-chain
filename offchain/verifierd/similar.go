@@ -18,8 +18,7 @@ import (
 )
 
 const (
-	similarTopN            = 15
-	similarOverlapRequired = 9 // 0.6 * 15
+	similarTopN = 15
 )
 
 type indexerdSimilarReq struct {
@@ -85,7 +84,7 @@ func parseObservedSimilarDomains(pageHTML string) ([]string, error) {
 	tok := html.NewTokenizer(strings.NewReader(pageHTML))
 
 	inContainer := false
-	containerDepth := 0
+	containerDivDepth := 0
 	seen := map[string]struct{}{}
 	out := []string{}
 
@@ -108,17 +107,16 @@ func parseObservedSimilarDomains(pageHTML string) ([]string, error) {
 				}
 				if id == "congrid-similar" {
 					inContainer = true
-					containerDepth = 1
+					containerDivDepth = 1
 					continue
 				}
 				if inContainer {
-					containerDepth++
+					containerDivDepth++
 				}
 				continue
 			}
 
 			if inContainer {
-				containerDepth++
 				if tag == "a" {
 					href := ""
 					for hasAttr {
@@ -139,11 +137,12 @@ func parseObservedSimilarDomains(pageHTML string) ([]string, error) {
 			}
 
 		case html.EndTagToken:
-			if inContainer {
-				containerDepth--
-				if containerDepth <= 0 {
+			name, _ := tok.TagName()
+			if inContainer && strings.EqualFold(string(name), "div") {
+				containerDivDepth--
+				if containerDivDepth <= 0 {
 					inContainer = false
-					containerDepth = 0
+					containerDivDepth = 0
 				}
 			}
 		}

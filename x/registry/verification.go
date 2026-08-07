@@ -12,13 +12,17 @@ import (
 
 // PublisherVerificationAssignment captures the on-chain assignment window for a publisher.
 type PublisherVerificationAssignment struct {
-	RoundStartUnix  int64    `json:"round_start_unix"`
-	Domain          string   `json:"domain"`
-	StartAtUnix     int64    `json:"start_at_unix"`
-	DeadlineUnix    int64    `json:"deadline_unix"`
-	Verifiers       []string `json:"verifiers"`
-	Finalized       bool     `json:"finalized"`
-	FinalizedAtUnix int64    `json:"finalized_at_unix"`
+	RoundStartUnix    int64    `json:"round_start_unix"`
+	Domain            string   `json:"domain"`
+	StartAtUnix       int64    `json:"start_at_unix"`
+	DeadlineUnix      int64    `json:"deadline_unix"`
+	Verifiers         []string `json:"verifiers"`
+	Finalized         bool     `json:"finalized"`
+	FinalizedAtUnix   int64    `json:"finalized_at_unix"`
+	Verified          bool     `json:"verified"`
+	RewardsSettled    bool     `json:"rewards_settled"`
+	VerificationOwner string   `json:"verification_owner,omitempty"`
+	Reregistration    bool     `json:"reregistration,omitempty"`
 }
 
 func (a PublisherVerificationAssignment) ValidateBasic() error {
@@ -42,18 +46,29 @@ func (a PublisherVerificationAssignment) ValidateBasic() error {
 			return fmt.Errorf("invalid verifier address: %w", err)
 		}
 	}
+	if strings.TrimSpace(a.VerificationOwner) != "" {
+		if _, err := sdk.AccAddressFromBech32(strings.TrimSpace(a.VerificationOwner)); err != nil {
+			return fmt.Errorf("invalid verification owner address: %w", err)
+		}
+	} else if a.Reregistration {
+		return fmt.Errorf("reregistration requires verification owner")
+	}
 	return nil
 }
 
 func (a PublisherVerificationAssignment) ToProto() *typespb.PublisherVerificationAssignment {
 	return &typespb.PublisherVerificationAssignment{
-		RoundStartUnix:  a.RoundStartUnix,
-		Domain:          a.Domain,
-		StartAtUnix:     a.StartAtUnix,
-		DeadlineUnix:    a.DeadlineUnix,
-		Verifiers:       append([]string(nil), a.Verifiers...),
-		Finalized:       a.Finalized,
-		FinalizedAtUnix: a.FinalizedAtUnix,
+		RoundStartUnix:    a.RoundStartUnix,
+		Domain:            a.Domain,
+		StartAtUnix:       a.StartAtUnix,
+		DeadlineUnix:      a.DeadlineUnix,
+		Verifiers:         append([]string(nil), a.Verifiers...),
+		Finalized:         a.Finalized,
+		FinalizedAtUnix:   a.FinalizedAtUnix,
+		Verified:          a.Verified,
+		RewardsSettled:    a.RewardsSettled,
+		VerificationOwner: a.VerificationOwner,
+		Reregistration:    a.Reregistration,
 	}
 }
 
@@ -62,13 +77,17 @@ func PublisherVerificationAssignmentFromProto(pb *typespb.PublisherVerificationA
 		return PublisherVerificationAssignment{}, fmt.Errorf("nil assignment")
 	}
 	out := PublisherVerificationAssignment{
-		RoundStartUnix:  pb.GetRoundStartUnix(),
-		Domain:          NormalizeDomain(pb.GetDomain()),
-		StartAtUnix:     pb.GetStartAtUnix(),
-		DeadlineUnix:    pb.GetDeadlineUnix(),
-		Verifiers:       append([]string(nil), pb.GetVerifiers()...),
-		Finalized:       pb.GetFinalized(),
-		FinalizedAtUnix: pb.GetFinalizedAtUnix(),
+		RoundStartUnix:    pb.GetRoundStartUnix(),
+		Domain:            NormalizeDomain(pb.GetDomain()),
+		StartAtUnix:       pb.GetStartAtUnix(),
+		DeadlineUnix:      pb.GetDeadlineUnix(),
+		Verifiers:         append([]string(nil), pb.GetVerifiers()...),
+		Finalized:         pb.GetFinalized(),
+		FinalizedAtUnix:   pb.GetFinalizedAtUnix(),
+		Verified:          pb.GetVerified(),
+		RewardsSettled:    pb.GetRewardsSettled(),
+		VerificationOwner: strings.TrimSpace(pb.GetVerificationOwner()),
+		Reregistration:    pb.GetReregistration(),
 	}
 	return out, out.ValidateBasic()
 }
@@ -285,13 +304,16 @@ func (s PublisherVerificationSubmission) ValidateBasic() error {
 	if s.MatchedSimilarDomains > s.ExpectedSimilarDomains {
 		return fmt.Errorf("matched_similar_domains cannot exceed expected_similar_domains")
 	}
+	if s.MatchedSimilarDomains > s.ObservedSimilarDomains {
+		return fmt.Errorf("matched_similar_domains cannot exceed observed_similar_domains")
+	}
 	if s.ExpectedSimilarDomains > 0 {
 		if strings.TrimSpace(s.ExpectedSetHash) == "" {
 			return fmt.Errorf("expected_set_hash required when expected_similar_domains > 0")
 		}
-		if strings.TrimSpace(s.ObservedSetHash) == "" {
-			return fmt.Errorf("observed_set_hash required when expected_similar_domains > 0")
-		}
+	}
+	if s.ObservedSimilarDomains > 0 && strings.TrimSpace(s.ObservedSetHash) == "" {
+		return fmt.Errorf("observed_set_hash required when observed_similar_domains > 0")
 	}
 	return nil
 }

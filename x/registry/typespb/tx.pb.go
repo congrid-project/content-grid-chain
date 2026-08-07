@@ -266,9 +266,18 @@ type MsgRevealVerification struct {
 	// Optional evidence hash (must match commit if provided).
 	EvidenceHash string `protobuf:"bytes,5,opt,name=evidence_hash,json=evidenceHash,proto3" json:"evidence_hash,omitempty"`
 	// Nonce used to bind the commit hash.
-	Nonce         string `protobuf:"bytes,6,opt,name=nonce,proto3" json:"nonce,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Nonce string `protobuf:"bytes,6,opt,name=nonce,proto3" json:"nonce,omitempty"`
+	// Similar-site observations affect publisher payout, not badge verification.
+	ObservedSimilarDomains int32  `protobuf:"varint,7,opt,name=observed_similar_domains,json=observedSimilarDomains,proto3" json:"observed_similar_domains,omitempty"`
+	MatchedSimilarDomains  int32  `protobuf:"varint,8,opt,name=matched_similar_domains,json=matchedSimilarDomains,proto3" json:"matched_similar_domains,omitempty"`
+	ExpectedSimilarDomains int32  `protobuf:"varint,9,opt,name=expected_similar_domains,json=expectedSimilarDomains,proto3" json:"expected_similar_domains,omitempty"`
+	ExpectedSetHash        string `protobuf:"bytes,10,opt,name=expected_set_hash,json=expectedSetHash,proto3" json:"expected_set_hash,omitempty"`
+	ObservedSetHash        string `protobuf:"bytes,11,opt,name=observed_set_hash,json=observedSetHash,proto3" json:"observed_set_hash,omitempty"`
+	// Assignment-scoped wallet that was actually checked on the homepage.
+	// New assignments require this value and bind it into the commit hash.
+	VerificationOwner string `protobuf:"bytes,12,opt,name=verification_owner,json=verificationOwner,proto3" json:"verification_owner,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *MsgRevealVerification) Reset() {
@@ -339,6 +348,48 @@ func (x *MsgRevealVerification) GetEvidenceHash() string {
 func (x *MsgRevealVerification) GetNonce() string {
 	if x != nil {
 		return x.Nonce
+	}
+	return ""
+}
+
+func (x *MsgRevealVerification) GetObservedSimilarDomains() int32 {
+	if x != nil {
+		return x.ObservedSimilarDomains
+	}
+	return 0
+}
+
+func (x *MsgRevealVerification) GetMatchedSimilarDomains() int32 {
+	if x != nil {
+		return x.MatchedSimilarDomains
+	}
+	return 0
+}
+
+func (x *MsgRevealVerification) GetExpectedSimilarDomains() int32 {
+	if x != nil {
+		return x.ExpectedSimilarDomains
+	}
+	return 0
+}
+
+func (x *MsgRevealVerification) GetExpectedSetHash() string {
+	if x != nil {
+		return x.ExpectedSetHash
+	}
+	return ""
+}
+
+func (x *MsgRevealVerification) GetObservedSetHash() string {
+	if x != nil {
+		return x.ObservedSetHash
+	}
+	return ""
+}
+
+func (x *MsgRevealVerification) GetVerificationOwner() string {
+	if x != nil {
+		return x.VerificationOwner
 	}
 	return ""
 }
@@ -928,14 +979,21 @@ const file_contentgrid_registry_v1_tx_proto_rawDesc = "" +
 	"\x10round_start_unix\x18\x03 \x01(\x03R\x0eroundStartUnix\x12\x1f\n" +
 	"\vcommit_hash\x18\x04 \x01(\tR\n" +
 	"commitHash:\r\x82\xe7\xb0*\bverifier\"%\n" +
-	"#MsgSubmitVerificationCommitResponse\"\xd7\x01\n" +
+	"#MsgSubmitVerificationCommitResponse\"\x8a\x04\n" +
 	"\x15MsgRevealVerification\x12\x1a\n" +
 	"\bverifier\x18\x01 \x01(\tR\bverifier\x12\x16\n" +
 	"\x06domain\x18\x02 \x01(\tR\x06domain\x12(\n" +
 	"\x10round_start_unix\x18\x03 \x01(\x03R\x0eroundStartUnix\x12\x16\n" +
 	"\x06passed\x18\x04 \x01(\bR\x06passed\x12#\n" +
 	"\revidence_hash\x18\x05 \x01(\tR\fevidenceHash\x12\x14\n" +
-	"\x05nonce\x18\x06 \x01(\tR\x05nonce:\r\x82\xe7\xb0*\bverifier\"y\n" +
+	"\x05nonce\x18\x06 \x01(\tR\x05nonce\x128\n" +
+	"\x18observed_similar_domains\x18\a \x01(\x05R\x16observedSimilarDomains\x126\n" +
+	"\x17matched_similar_domains\x18\b \x01(\x05R\x15matchedSimilarDomains\x128\n" +
+	"\x18expected_similar_domains\x18\t \x01(\x05R\x16expectedSimilarDomains\x12*\n" +
+	"\x11expected_set_hash\x18\n" +
+	" \x01(\tR\x0fexpectedSetHash\x12*\n" +
+	"\x11observed_set_hash\x18\v \x01(\tR\x0fobservedSetHash\x12-\n" +
+	"\x12verification_owner\x18\f \x01(\tR\x11verificationOwner:\r\x82\xe7\xb0*\bverifier\"y\n" +
 	"\x1dMsgRevealVerificationResponse\x12X\n" +
 	"\n" +
 	"submission\x18\x01 \x01(\v28.contentgrid.registry.v1.PublisherVerificationSubmissionR\n" +

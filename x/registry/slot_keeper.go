@@ -96,6 +96,27 @@ func (k Keeper) IterateSlots(ctx sdk.Context, cb func(Slot) bool) {
 	}
 }
 
+func (k Keeper) transferSlotsForDomain(ctx sdk.Context, domain, previousOwner, newOwner string, nowUnix int64) error {
+	domain = NormalizeDomain(domain)
+	previousOwner = strings.TrimSpace(previousOwner)
+	newOwner = strings.TrimSpace(newOwner)
+	toTransfer := make([]Slot, 0)
+	k.IterateSlots(ctx, func(slot Slot) bool {
+		if slot.Domain == domain && slot.Publisher == previousOwner {
+			toTransfer = append(toTransfer, slot)
+		}
+		return false
+	})
+	for _, slot := range toTransfer {
+		slot.Publisher = newOwner
+		slot.UpdatedAtUnix = nowUnix
+		if err := k.SetSlot(ctx, slot); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (k Keeper) ListSlotsPaginated(ctx sdk.Context, publisher string, status SlotStatus, pageReq *sdkquery.PageRequest) ([]Slot, *sdkquery.PageResponse, error) {
 	publisher = strings.TrimSpace(publisher)
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), slotStorePrefix)

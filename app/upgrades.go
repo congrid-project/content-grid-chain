@@ -18,6 +18,10 @@ import (
 // governance proposal must use this exact value.
 const DrandStrictV2UpgradeName = "drand-strict-v2"
 
+// PublisherRewardsV3UpgradeName enables round-level publisher rewards, the
+// ten-percent minimum payout, and verifier-confirmed publisher re-registration.
+const PublisherRewardsV3UpgradeName = "publisher-rewards-v3"
+
 func registerUpgradeHandlers(app *App) {
 	app.UpgradeKeeper.SetUpgradeHandler(
 		DrandStrictV2UpgradeName,
@@ -39,6 +43,36 @@ func registerUpgradeHandlers(app *App) {
 			return updatedVM, nil
 		},
 	)
+	app.UpgradeKeeper.SetUpgradeHandler(
+		PublisherRewardsV3UpgradeName,
+		func(ctx context.Context, plan upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
+			sdkCtx := sdk.UnwrapSDKContext(ctx)
+			sdkCtx.Logger().Info("running software upgrade", "name", plan.Name, "height", plan.Height)
+
+			fromVM = preparePublisherRewardsV3VersionMap(fromVM, app.ModuleManager.GetVersionMap())
+			updatedVM, err := app.ModuleManager.RunMigrations(ctx, app.Configurator(), fromVM)
+			if err != nil {
+				return nil, fmt.Errorf("run module migrations for %s: %w", PublisherRewardsV3UpgradeName, err)
+			}
+			return updatedVM, nil
+		},
+	)
+}
+
+func preparePublisherRewardsV3VersionMap(fromVM, targetVM module.VersionMap) module.VersionMap {
+	out := make(module.VersionMap, len(fromVM)+4)
+	for name, version := range fromVM {
+		out[name] = version
+	}
+	for _, name := range []string{nodes.ModuleName, verifiers.ModuleName, tokenomics.ModuleName} {
+		if _, found := out[name]; !found {
+			out[name] = targetVM[name]
+		}
+	}
+	if _, found := out[registry.ModuleName]; !found {
+		out[registry.ModuleName] = 2
+	}
+	return out
 }
 
 // prepareDrandStrictV2VersionMap protects chains created before the custom

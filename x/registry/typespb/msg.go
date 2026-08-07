@@ -103,6 +103,44 @@ func (m *MsgRevealVerification) ValidateBasic() error {
 	if strings.TrimSpace(m.Nonce) == "" {
 		return fmt.Errorf("nonce required")
 	}
+	if strings.TrimSpace(m.VerificationOwner) != "" {
+		if _, err := sdk.AccAddressFromBech32(strings.TrimSpace(m.VerificationOwner)); err != nil {
+			return fmt.Errorf("invalid verification owner address: %w", err)
+		}
+	}
+	if m.ObservedSimilarDomains < 0 || m.MatchedSimilarDomains < 0 || m.ExpectedSimilarDomains < 0 {
+		return fmt.Errorf("similar domain counts must be >= 0")
+	}
+	if m.MatchedSimilarDomains > m.ObservedSimilarDomains {
+		return fmt.Errorf("matched_similar_domains cannot exceed observed_similar_domains")
+	}
+	if m.MatchedSimilarDomains > m.ExpectedSimilarDomains {
+		return fmt.Errorf("matched_similar_domains cannot exceed expected_similar_domains")
+	}
+	if m.ExpectedSimilarDomains > 0 && strings.TrimSpace(m.ExpectedSetHash) == "" {
+		return fmt.Errorf("expected_set_hash required when expected_similar_domains > 0")
+	}
+	if m.ObservedSimilarDomains > 0 && strings.TrimSpace(m.ObservedSetHash) == "" {
+		return fmt.Errorf("observed_set_hash required when observed_similar_domains > 0")
+	}
+	if HasVerificationEvidence(
+		m.ObservedSimilarDomains,
+		m.MatchedSimilarDomains,
+		m.ExpectedSimilarDomains,
+		m.ExpectedSetHash,
+		m.ObservedSetHash,
+	) {
+		expectedEvidenceHash := ComputeVerificationEvidenceHash(
+			m.ObservedSimilarDomains,
+			m.MatchedSimilarDomains,
+			m.ExpectedSimilarDomains,
+			m.ExpectedSetHash,
+			m.ObservedSetHash,
+		)
+		if strings.ToLower(strings.TrimSpace(m.EvidenceHash)) != expectedEvidenceHash {
+			return fmt.Errorf("evidence_hash does not match similar-site evidence")
+		}
+	}
 	return nil
 }
 

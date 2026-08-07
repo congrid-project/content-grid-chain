@@ -141,11 +141,14 @@ func (a *Agent) runAssignment(ctx context.Context, assignment *registrypb.Publis
 			return
 		}
 
-		owner, err := a.Chain.PublisherOwner(ctx, assignment.GetDomain())
-		if err != nil {
-			assignmentErr = fmt.Errorf("failed to fetch owner: %w", err)
-			log.Printf("assignment %s: %v", key, assignmentErr)
-			return
+		owner := strings.TrimSpace(assignment.GetVerificationOwner())
+		if owner == "" {
+			owner, err = a.Chain.PublisherOwner(ctx, assignment.GetDomain())
+			if err != nil {
+				assignmentErr = fmt.Errorf("failed to fetch owner: %w", err)
+				log.Printf("assignment %s: %v", key, assignmentErr)
+				return
+			}
 		}
 		if owner == "" {
 			assignmentErr = fmt.Errorf("owner not found")
@@ -161,37 +164,38 @@ func (a *Agent) runAssignment(ctx context.Context, assignment *registrypb.Publis
 		}
 		verifyCtx, cancel := context.WithTimeout(ctx, timeout)
 		defer cancel()
-		leaseExpectations, leaseErr := a.Chain.ActiveLeaseExpectationsForDomain(verifyCtx, assignment.GetDomain())
-		if leaseErr != nil {
-			log.Printf("assignment %s: failed to fetch active leases: %v", key, leaseErr)
-			err = a.Verifier.Verify(verifyCtx, assignment.GetDomain(), owner)
-		} else {
-			err = a.Verifier.VerifyWithLeases(verifyCtx, assignment.GetDomain(), owner, leaseExpectations)
-		}
+		// Publisher activity is determined only by the official homepage badge
+		// and its on-chain owner binding. Lease and similar-site links must not
+		// turn a valid publisher badge into a failed verification result.
+		err = a.Verifier.Verify(verifyCtx, assignment.GetDomain(), owner)
 		passed := err == nil
 		if err != nil {
 			log.Printf("assignment %s: verification failed: %v", key, err)
 		}
 
-		var observedHash string
+		var (
+			observedSimilar int32
+			matchedSimilar  int32
+			expectedSimilar int32
+			expectedSetHash string
+			observedSetHash string
+		)
 		if passed && strings.TrimSpace(a.Cfg.IndexerdBaseURL) != "" {
 			page, ferr := fetchHomepageHTML(verifyCtx, a.Cfg.VerifyScheme, assignment.GetDomain())
 			if ferr != nil {
 				log.Printf("assignment %s: fetch homepage for similar parse failed: %v", key, ferr)
 			} else {
 				observed, _ := parseObservedSimilarDomains(page)
-				obsHash := sha256HexOfSet(observed)
-				expected, _, eerr := fetchExpectedSimilar(ctx, a.Cfg.IndexerdBaseURL, assignment.GetDomain())
+				observedSimilar = int32(len(observed))
+				observedSetHash = sha256HexOfSet(observed)
+				expected, setHash, eerr := fetchExpectedSimilar(verifyCtx, a.Cfg.IndexerdBaseURL, assignment.GetDomain())
 				if eerr != nil {
 					log.Printf("assignment %s: expected similar fetch failed: %v", key, eerr)
 				} else {
-					match := overlapCount(observed, expected)
-					observedHash = obsHash
-
-					if match < similarOverlapRequired {
-						passed = false
-						log.Printf("assignment %s: similar overlap insufficient: matched=%d expected=%d", key, match, similarTopN)
-					}
+					expectedSimilar = int32(len(expected))
+					expectedSetHash = setHash
+					matchedSimilar = int32(overlapCount(observed, expected))
+					log.Printf("assignment %s: similar links observed=%d matched=%d expected=%d", key, observedSimilar, matchedSimilar, expectedSimilar)
 				}
 			}
 		}
@@ -202,17 +206,44 @@ func (a *Agent) runAssignment(ctx context.Context, assignment *registrypb.Publis
 			log.Printf("assignment %s: %v", key, assignmentErr)
 			return
 		}
-		evidenceHash := strings.TrimSpace(observedHash)
-		commitHash := registrypb.ComputeVerificationCommitHash(assignment.GetDomain(), assignment.GetRoundStartUnix(), a.Cfg.VerifierAddress, passed, evidenceHash, nonce)
+		evidenceHash := ""
+		if registrypb.HasVerificationEvidence(
+			observedSimilar,
+			matchedSimilar,
+			expectedSimilar,
+			expectedSetHash,
+			observedSetHash,
+		) {
+			evidenceHash = registrypb.ComputeVerificationEvidenceHash(
+				observedSimilar,
+				matchedSimilar,
+				expectedSimilar,
+				expectedSetHash,
+				observedSetHash,
+			)
+		}
+		verificationOwner := strings.TrimSpace(assignment.GetVerificationOwner())
+		var commitHash string
+		if verificationOwner != "" {
+			commitHash = registrypb.ComputeVerificationCommitHashV2(assignment.GetDomain(), assignment.GetRoundStartUnix(), a.Cfg.VerifierAddress, verificationOwner, passed, evidenceHash, nonce)
+		} else {
+			commitHash = registrypb.ComputeVerificationCommitHash(assignment.GetDomain(), assignment.GetRoundStartUnix(), a.Cfg.VerifierAddress, passed, evidenceHash, nonce)
+		}
 		pending = pendingReveal{
-			Key:            key,
-			Domain:         assignment.GetDomain(),
-			RoundStartUnix: assignment.GetRoundStartUnix(),
-			Verifier:       a.Cfg.VerifierAddress,
-			Passed:         passed,
-			EvidenceHash:   evidenceHash,
-			Nonce:          nonce,
-			CommitHash:     commitHash,
+			Key:                    key,
+			Domain:                 assignment.GetDomain(),
+			RoundStartUnix:         assignment.GetRoundStartUnix(),
+			Verifier:               a.Cfg.VerifierAddress,
+			Passed:                 passed,
+			EvidenceHash:           evidenceHash,
+			ObservedSimilarDomains: observedSimilar,
+			MatchedSimilarDomains:  matchedSimilar,
+			ExpectedSimilarDomains: expectedSimilar,
+			ExpectedSetHash:        expectedSetHash,
+			ObservedSetHash:        observedSetHash,
+			VerificationOwner:      verificationOwner,
+			Nonce:                  nonce,
+			CommitHash:             commitHash,
 		}
 		if err := a.savePendingReveal(pending); err != nil {
 			assignmentErr = fmt.Errorf("failed to persist pending reveal state: %w", err)
@@ -280,7 +311,7 @@ func (a *Agent) submitCommitUntil(ctx context.Context, assignment *registrypb.Pu
 func (a *Agent) submitRevealUntil(ctx context.Context, assignment *registrypb.PublisherVerificationAssignment, pending pendingReveal, deadline time.Time) error {
 	var lastErr error
 	for {
-		err := a.submitReveal(ctx, assignment, pending.Passed, pending.EvidenceHash, pending.Nonce)
+		err := a.submitReveal(ctx, assignment, pending)
 		if err == nil || isAlreadySubmittedError(err) {
 			return nil
 		}
@@ -321,11 +352,15 @@ func (a *Agent) submitCommit(ctx context.Context, assignment *registrypb.Publish
 	return nil
 }
 
-func (a *Agent) submitReveal(ctx context.Context, assignment *registrypb.PublisherVerificationAssignment, passed bool, evidenceHash, nonce string) error {
+func (a *Agent) submitReveal(ctx context.Context, assignment *registrypb.PublisherVerificationAssignment, pending pendingReveal) error {
 	args := []string{
 		"verifier", "reveal", assignment.GetDomain(),
 		"--round-start", strconv.FormatInt(assignment.GetRoundStartUnix(), 10),
-		"--nonce", nonce,
+		"--nonce", pending.Nonce,
+		"--observed-similar-domains", strconv.FormatInt(int64(pending.ObservedSimilarDomains), 10),
+		"--matched-similar-domains", strconv.FormatInt(int64(pending.MatchedSimilarDomains), 10),
+		"--expected-similar-domains", strconv.FormatInt(int64(pending.ExpectedSimilarDomains), 10),
+		"--verification-owner", pending.VerificationOwner,
 		"--from", a.Cfg.Submit.From,
 		"--chain-id", a.Cfg.Submit.ChainID,
 		"--node", a.Cfg.Submit.Node,
@@ -333,13 +368,19 @@ func (a *Agent) submitReveal(ctx context.Context, assignment *registrypb.Publish
 		"--broadcast-mode", a.Cfg.Submit.BroadcastMode,
 		"--output", "json",
 	}
-	if passed {
+	if pending.Passed {
 		args = append(args, "--passed")
 	} else {
 		args = append(args, "--failed")
 	}
-	if strings.TrimSpace(evidenceHash) != "" {
-		args = append(args, "--evidence-hash", evidenceHash)
+	if strings.TrimSpace(pending.EvidenceHash) != "" {
+		args = append(args, "--evidence-hash", pending.EvidenceHash)
+	}
+	if strings.TrimSpace(pending.ExpectedSetHash) != "" {
+		args = append(args, "--expected-set-hash", pending.ExpectedSetHash)
+	}
+	if strings.TrimSpace(pending.ObservedSetHash) != "" {
+		args = append(args, "--observed-set-hash", pending.ObservedSetHash)
 	}
 	args = a.appendSubmitFlags(args)
 

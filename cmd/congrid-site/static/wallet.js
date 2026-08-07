@@ -629,6 +629,16 @@ function bindPublisherRegisterForms() {
           throw new Error("Referrer verifier address format looks invalid. Use congrid1... address.");
         }
 
+        const verificationResponse = await fetch("/publishers/verify", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ domain, wallet: state.address }),
+        });
+        const verification = await verificationResponse.json().catch(() => ({}));
+        if (!verificationResponse.ok || verification.ok !== true) {
+          throw new Error(verification.error || "Homepage badge verification failed.");
+        }
+
         const msg = {
           typeUrl: "/contentgrid.registry.v1.MsgRegisterPublisher",
           value: {
@@ -641,7 +651,7 @@ function bindPublisherRegisterForms() {
           },
         };
         const txHash = await submitTx([msg], 220000);
-        showFlash(`Publisher registered. Tx: ${txHash}`, false, form);
+        showFlash(`Registration submitted; verifier confirmation pending. Tx: ${txHash}`, false, form);
       } catch (err) {
         console.error("Wallet Action Error:", err);
         showFlash(err.message || String(err), true, form);

@@ -115,6 +115,8 @@ func TestPublisherPageSupportsVerifierReferrer(t *testing.T) {
 	require.Contains(t, body, `name="referrer"`)
 	require.Contains(t, body, `data-wallet-register-referrer`)
 	require.Contains(t, body, "--referrer ${referrer}")
+	require.Contains(t, body, "Register / re-register with connected wallet")
+	require.Contains(t, body, "can replace or clear this referrer")
 }
 
 func TestPublisherPageGeneratesSVGLogoFirstInSimilarSites(t *testing.T) {
@@ -146,4 +148,6 @@ func TestPublisherWalletEncodesReferrerAsProtoFieldSix(t *testing.T) {
 	require.Contains(t, source, `writer.uint32(50).string(message.referrer)`)
 	require.Contains(t, source, `const referrer = String(data.get("referrer") || "").trim()`)
 	require.Contains(t, source, "referrer,\n")
+	require.Contains(t, source, `fetch("/publishers/verify"`)
+	require.Contains(t, source, `wallet: state.address`)
 }

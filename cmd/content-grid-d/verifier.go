@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"content-grid-chain/x/registry"
@@ -85,6 +86,30 @@ func verifierUnbondCmd() *cobra.Command {
 
 var _ = fmt.Errorf
 
+type similarEvidenceFlags struct {
+	observed        int32
+	matched         int32
+	expected        int32
+	expectedSetHash string
+	observedSetHash string
+}
+
+func (f *similarEvidenceFlags) addTo(cmd *cobra.Command) {
+	cmd.Flags().Int32Var(&f.observed, "observed-similar-domains", 0, "unique similar domains observed in the publisher page")
+	cmd.Flags().Int32Var(&f.matched, "matched-similar-domains", 0, "observed domains matching the expected set")
+	cmd.Flags().Int32Var(&f.expected, "expected-similar-domains", 0, "domains returned by the expected similar set")
+	cmd.Flags().StringVar(&f.expectedSetHash, "expected-set-hash", "", "hash of the expected similar-domain set")
+	cmd.Flags().StringVar(&f.observedSetHash, "observed-set-hash", "", "hash of the observed similar-domain set")
+}
+
+func (f similarEvidenceFlags) resolveHash(raw string) string {
+	raw = strings.TrimSpace(raw)
+	if raw != "" || !registrypb.HasVerificationEvidence(f.observed, f.matched, f.expected, f.expectedSetHash, f.observedSetHash) {
+		return raw
+	}
+	return registrypb.ComputeVerificationEvidenceHash(f.observed, f.matched, f.expected, f.expectedSetHash, f.observedSetHash)
+}
+
 func verifierCommitCmd() *cobra.Command {
 	var (
 		passedFlag   bool
@@ -92,9 +117,11 @@ func verifierCommitCmd() *cobra.Command {
 		roundStart   int64
 		includeFinal bool
 
-		commitHash   string
-		evidenceHash string
-		nonce        string
+		commitHash        string
+		evidenceHash      string
+		nonce             string
+		verificationOwner string
+		similar           similarEvidenceFlags
 	)
 	cmd := &cobra.Command{
 		Use:   "commit [domain]",
@@ -152,6 +179,12 @@ func verifierCommitCmd() *cobra.Command {
 					return fmt.Errorf("multiple active assignments found for %s; specify --round-start", domain)
 				}
 				roundStart = matches[0].GetRoundStartUnix()
+				assignmentOwner := strings.TrimSpace(matches[0].GetVerificationOwner())
+				if verificationOwner == "" {
+					verificationOwner = assignmentOwner
+				} else if assignmentOwner != "" && verificationOwner != assignmentOwner {
+					return fmt.Errorf("--verification-owner does not match assignment")
+				}
 			}
 
 			if commitHash == "" {
@@ -162,7 +195,12 @@ func verifierCommitCmd() *cobra.Command {
 					return fmt.Errorf("--nonce required when computing commit hash")
 				}
 				passed := passedFlag
-				commitHash = registrypb.ComputeVerificationCommitHash(domain, roundStart, clientCtx.GetFromAddress().String(), passed, evidenceHash, nonce)
+				evidenceHash = similar.resolveHash(evidenceHash)
+				if strings.TrimSpace(verificationOwner) != "" {
+					commitHash = registrypb.ComputeVerificationCommitHashV2(domain, roundStart, clientCtx.GetFromAddress().String(), verificationOwner, passed, evidenceHash, nonce)
+				} else {
+					commitHash = registrypb.ComputeVerificationCommitHash(domain, roundStart, clientCtx.GetFromAddress().String(), passed, evidenceHash, nonce)
+				}
 			}
 
 			msg := &registrypb.MsgSubmitVerificationCommit{
@@ -184,6 +222,8 @@ func verifierCommitCmd() *cobra.Command {
 	cmd.Flags().StringVar(&commitHash, "commit-hash", "", "precomputed commit hash (optional if --passed/--failed and --nonce provided)")
 	cmd.Flags().StringVar(&evidenceHash, "evidence-hash", "", "optional evidence hash used when computing commit hash")
 	cmd.Flags().StringVar(&nonce, "nonce", "", "nonce used when computing commit hash")
+	cmd.Flags().StringVar(&verificationOwner, "verification-owner", "", "assignment-scoped publisher wallet bound into the commit hash")
+	similar.addTo(cmd)
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }
@@ -195,8 +235,10 @@ func verifierRevealCmd() *cobra.Command {
 		roundStart   int64
 		includeFinal bool
 
-		evidenceHash string
-		nonce        string
+		evidenceHash      string
+		nonce             string
+		verificationOwner string
+		similar           similarEvidenceFlags
 	)
 	cmd := &cobra.Command{
 		Use:   "reveal [domain]",
@@ -261,15 +303,28 @@ func verifierRevealCmd() *cobra.Command {
 					return fmt.Errorf("multiple active assignments found for %s; specify --round-start", domain)
 				}
 				roundStart = matches[0].GetRoundStartUnix()
+				assignmentOwner := strings.TrimSpace(matches[0].GetVerificationOwner())
+				if verificationOwner == "" {
+					verificationOwner = assignmentOwner
+				} else if assignmentOwner != "" && verificationOwner != assignmentOwner {
+					return fmt.Errorf("--verification-owner does not match assignment")
+				}
 			}
 
+			evidenceHash = similar.resolveHash(evidenceHash)
 			msg := &registrypb.MsgRevealVerification{
-				Verifier:       clientCtx.GetFromAddress().String(),
-				Domain:         domain,
-				RoundStartUnix: roundStart,
-				Passed:         passed,
-				EvidenceHash:   evidenceHash,
-				Nonce:          nonce,
+				Verifier:               clientCtx.GetFromAddress().String(),
+				Domain:                 domain,
+				RoundStartUnix:         roundStart,
+				Passed:                 passed,
+				EvidenceHash:           evidenceHash,
+				Nonce:                  nonce,
+				ObservedSimilarDomains: similar.observed,
+				MatchedSimilarDomains:  similar.matched,
+				ExpectedSimilarDomains: similar.expected,
+				ExpectedSetHash:        similar.expectedSetHash,
+				ObservedSetHash:        similar.observedSetHash,
+				VerificationOwner:      strings.TrimSpace(verificationOwner),
 			}
 			if err := msg.ValidateBasic(); err != nil {
 				return err
@@ -283,6 +338,8 @@ func verifierRevealCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&includeFinal, "include-finalized", false, "include finalized assignments when auto-resolving round start")
 	cmd.Flags().StringVar(&evidenceHash, "evidence-hash", "", "optional evidence hash (must match commit)")
 	cmd.Flags().StringVar(&nonce, "nonce", "", "nonce used for the commit")
+	cmd.Flags().StringVar(&verificationOwner, "verification-owner", "", "assignment-scoped publisher wallet checked on the homepage")
+	similar.addTo(cmd)
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }

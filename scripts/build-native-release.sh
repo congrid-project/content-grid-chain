@@ -91,6 +91,10 @@ ARCHIVE_PATH="$OUTPUT_DIR/$ARCHIVE_NAME"
 
 mkdir -p "$STAGE_DIR/bin" "$STAGE_DIR/chromad" "$OUTPUT_DIR"
 
+SOURCE_COMMIT="$(git -C "$ROOT_DIR" rev-parse HEAD 2>/dev/null || printf unknown)"
+SOURCE_VERSION="${CONGRID_BUILD_VERSION:-$(git -C "$ROOT_DIR" describe --tags --always --dirty 2>/dev/null || printf publisher-rewards-v3)}"
+SOURCE_LDFLAGS="-X github.com/cosmos/cosmos-sdk/version.Version=$SOURCE_VERSION -X github.com/cosmos/cosmos-sdk/version.Commit=$SOURCE_COMMIT"
+
 build_binary() {
   local output_name="$1"
   local package_path="$2"
@@ -98,7 +102,7 @@ build_binary() {
   (
     cd "$ROOT_DIR"
     CGO_ENABLED=0 GOOS="$TARGET_OS" GOARCH="$TARGET_ARCH" \
-      go build -trimpath -o "$STAGE_DIR/bin/$output_name" "$package_path"
+      go build -trimpath -ldflags "$SOURCE_LDFLAGS" -o "$STAGE_DIR/bin/$output_name" "$package_path"
   )
 }
 
@@ -119,7 +123,7 @@ printf '[congrid-release] building content-grid-d-pre-upgrade from %s for %s/%s\
   cd "$PRE_UPGRADE_SOURCE"
   CGO_ENABLED=0 GOOS="$TARGET_OS" GOARCH="$TARGET_ARCH" \
     go build -trimpath \
-      -ldflags "-X github.com/cosmos/cosmos-sdk/version.Version=$PRE_UPGRADE_VERSION" \
+      -ldflags "-X github.com/cosmos/cosmos-sdk/version.Version=$PRE_UPGRADE_VERSION -X github.com/cosmos/cosmos-sdk/version.Commit=$PRE_UPGRADE_COMMIT" \
       -o "$STAGE_DIR/bin/content-grid-d-pre-upgrade" \
       ./cmd/content-grid-d
 )
@@ -128,7 +132,8 @@ install -m 0644 "$ROOT_DIR/offchain/chromad/server.py" "$STAGE_DIR/chromad/serve
 install -m 0644 "$ROOT_DIR/offchain/chromad/requirements.txt" "$STAGE_DIR/chromad/requirements.txt"
 
 cat >"$STAGE_DIR/BUILD-INFO" <<EOF
-source_commit=$(git -C "$ROOT_DIR" rev-parse HEAD 2>/dev/null || printf unknown)
+source_version=$SOURCE_VERSION
+source_commit=$SOURCE_COMMIT
 pre_upgrade_source_commit=$PRE_UPGRADE_COMMIT
 pre_upgrade_plan=drand-strict-v2
 pre_upgrade_height=13000

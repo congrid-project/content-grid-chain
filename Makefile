@@ -3,11 +3,14 @@ GO ?= go
 BIN ?= content-grid-d
 PKG ?= ./cmd/content-grid-d
 GOCACHE ?= $(PWD)/.gocache
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || printf publisher-rewards-v3)
+COMMIT ?= $(shell git rev-parse HEAD 2>/dev/null || printf unknown)
+LDFLAGS ?= -X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) -X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT)
 
 .PHONY: build test lint format proto proto-format
 
 build:
-	GOCACHE=$(GOCACHE) $(GO) build -o $(BIN) $(PKG)
+	GOCACHE=$(GOCACHE) $(GO) build -trimpath -ldflags "$(LDFLAGS)" -o $(BIN) $(PKG)
 
 test:
 	GOCACHE=$(GOCACHE) $(GO) test ./...

@@ -106,7 +106,7 @@ The general formula (in seconds for any round) is:
 - `verifier_round = total_supply * verifier_bps * round_interval_seconds / (10000 * duration_hours * 3600)`
 
 Allocation details:
-- Publisher: The active publishers in the current round will be divided equally first; if the external links do not reach the threshold (`required_external_links_for_full_reward`), they will receive it in proportion; the unclaimed part will be destroyed.
+- Publisher: Publishers whose registered homepage passes the official badge/anchor verification are active. The publisher pool is split equally among active publishers, then each receives `max(publisher_min_reward_bps, matched_links / required_external_links_for_full_reward)`, capped at 100%. With the defaults, zero matching similar-site links still earns 10% of the equal base share, while 15 links earns the full share; the unclaimed part is destroyed.
 - Verifiers: distributed only among verifiers who passed and submitted successfully, with weight proportional to their stake and multiplied by the active referred-publisher factor (`stake × referral_factor`); destroyed when no one can claim it.
 
 4.4 Value flow and deflation (current implementation)

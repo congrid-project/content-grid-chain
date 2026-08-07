@@ -18,11 +18,9 @@
   - 首页包含 **Congrid 验证徽章**：
     - `<a href="https://congrid.net">`（或 `https://www.congrid.net/`），且不带 query / fragment。
     - `<a>` 内包裹 `<img>`。
-    - `<img src>` 来自 `https://congrid.net/...`，并带有 `publisher=<domain>` 和 `wallet=<owner>`。
-  - 若存在活跃租约，首页还必须包含每个活跃租约对应的标记：
-    - 包裹元素示例：`<div data-congrid-slot-id="slot-000123" data-congrid-lease="lease-000456"> ... </div>`
-    - 被包裹的锚点示例：`<a href="https://advertiser.example/landing">...`
-    - `href` 必须与租约 `target_url` 的 host + path 一致。
+    - `<img src>` 来自 `https://congrid.net/...`，并带有 `publisher=<domain>` 和 `wallet=<verification_owner>`。
+    - 普通轮次的 `verification_owner` 是当前 owner；重注册轮次则是待验证的新 owner。只有页面中的钱包与 assignment 快照完全一致才会通过。
+- 租赁链接和相似网站链接不改变上述 publisher 活跃判定；相似网站链接仅影响奖励比例。
 - 通过 `content-grid-d verifier commit ...` 提交 commit。
 - 等待 reveal window 打开后，通过 `content-grid-d verifier reveal ...` 提交 reveal。
 

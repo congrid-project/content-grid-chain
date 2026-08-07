@@ -16,11 +16,9 @@
   - homepage contains a **Congrid verification badge**:
     - `<a href="https://congrid.net">` (or `https://www.congrid.net/`) with no query/fragment
     - the `<a>` wraps an `<img>`
-    - `<img src>` is served from `https://congrid.net/...` and includes `publisher=<domain>` and `wallet=<owner>`
-  - if there are active leases, homepage also contains lease markup for each active lease:
-    - wrapper element with backend slot id: `<div data-congrid-slot-id="slot-000123" data-congrid-lease="lease-000456"> ... </div>`
-    - wrapped anchor: `<a href="https://advertiser.example/landing">...`
-    - `href` must match lease `target_url` (host + path)
+    - `<img src>` is served from `https://congrid.net/...` and includes `publisher=<domain>` and `wallet=<verification_owner>`
+    - `verification_owner` is the current owner in a normal round and the candidate owner in a re-registration round. It must exactly match the wallet snapshot in the assignment.
+- Lease and similar-site links do not change publisher activity. Similar-site links affect only the reward multiplier.
 - **Submits commit** via `content-grid-d verifier commit ...`.
 - **Waits for reveal window**, then **reveals** via `content-grid-d verifier reveal ...`.
 

@@ -106,7 +106,7 @@ CONGRID是驱动协议运行的价值载体。以下是**目前的实施口径**
 - `verifier_round = total_supply * verifier_bps * round_interval_seconds / (10000 * duration_hours * 3600)`
 
 分配详情：
-- 发布者：本轮活跃发布者优先平分；如果外部链接未达到阈值（`required_external_links_for_full_reward`），将按比例接收；无人认领的部分将被销毁。
+- 发布者：注册首页通过官方徽章及官网链接验证即为活跃。publisher 池先在活跃发布者之间平均拆分，再按 `max(publisher_min_reward_bps, matched_links / required_external_links_for_full_reward)` 领取，最高为 100%。按默认参数，即使相似网站链接匹配数为 0，也能领取均分基准的 10%；匹配 15 条则领取完整份额，未被领取的部分会被销毁。
 - verifier：仅分配给已通过并成功提交结果的 verifiers；其权重与 stake 成正比，并叠加其邀请的活跃发布者因子（`stake × referral_factor`）；当无人认领时会被销毁。
 
 4.4 价值流动和通货紧缩（当前实施）

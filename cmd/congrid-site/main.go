@@ -177,6 +177,7 @@ func main() {
 	}
 	mux.HandleFunc("GET /{$}", s.handleHome(*baseURL))
 	mux.HandleFunc("GET /publishers", s.handlePublishers(*baseURL))
+	mux.HandleFunc("POST /publishers/verify", s.handlePublisherVerify())
 	mux.HandleFunc("POST /publishers/register", s.handlePublisherRegister(*baseURL))
 	mux.HandleFunc("GET /verifiers", s.handleVerifiers(*baseURL))
 	mux.HandleFunc("GET /docs", s.handleDocs(*baseURL))

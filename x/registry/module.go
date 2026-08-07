@@ -89,12 +89,40 @@ func (a AppModule) RegisterServices(cfg module.Configurator) {
 	if err := cfg.RegisterMigration(ModuleName, 1, a.migrate1To2); err != nil {
 		panic(err)
 	}
+	if err := cfg.RegisterMigration(ModuleName, 2, a.migrate2To3); err != nil {
+		panic(err)
+	}
 }
 
 func (a AppModule) migrate1To2(ctx sdk.Context) error {
 	params := a.keeper.GetParams(ctx)
 	params = params.WithStrictDrandEnabled()
 	return a.keeper.SetParams(ctx, params)
+}
+
+func (a AppModule) migrate2To3(ctx sdk.Context) error {
+	params := a.keeper.GetParams(ctx)
+	params.PublisherMinRewardBps = DefaultPublisherParams().PublisherMinRewardBps
+	if err := a.keeper.SetParams(ctx, params); err != nil {
+		return err
+	}
+
+	// Rewards before v3 were settled assignment-by-assignment. Mark every
+	// pre-upgrade assignment as handled so the new round-level settlement cannot
+	// replay historical payouts or partially settle a transition round.
+	assignments := make([]PublisherVerificationAssignment, 0)
+	a.keeper.IterateAssignments(ctx, func(assignment PublisherVerificationAssignment) bool {
+		assignments = append(assignments, assignment)
+		return false
+	})
+	for _, assignment := range assignments {
+		assignment.RewardsSettled = true
+		if err := a.keeper.SetAssignment(ctx, assignment); err != nil {
+			return err
+		}
+		a.keeper.clearVerificationRoundUnsettled(ctx, assignment.RoundStartUnix)
+	}
+	return nil
 }
 
 // EndBlock runs verification round processing after transactions.
@@ -148,4 +176,4 @@ func (a AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) stdjson.R
 }
 
 // ConsensusVersion returns the module consensus version.
-func (AppModule) ConsensusVersion() uint64 { return 2 }
+func (AppModule) ConsensusVersion() uint64 { return 3 }

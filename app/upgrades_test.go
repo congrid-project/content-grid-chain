@@ -47,3 +47,21 @@ func TestPrepareDrandStrictV2VersionMapPreservesRecordedVersions(t *testing.T) {
 	got := prepareDrandStrictV2VersionMap(fromVM, targetVM)
 	require.Equal(t, fromVM, got)
 }
+
+func TestPreparePublisherRewardsV3VersionMap(t *testing.T) {
+	fromVM := module.VersionMap{"bank": 4}
+	targetVM := module.VersionMap{
+		nodes.ModuleName:      1,
+		registry.ModuleName:   3,
+		verifiers.ModuleName:  1,
+		tokenomics.ModuleName: 1,
+	}
+
+	got := preparePublisherRewardsV3VersionMap(fromVM, targetVM)
+	require.Equal(t, uint64(4), got["bank"])
+	require.Equal(t, uint64(2), got[registry.ModuleName])
+	require.Equal(t, uint64(1), got[nodes.ModuleName])
+	require.Equal(t, uint64(1), got[verifiers.ModuleName])
+	require.Equal(t, uint64(1), got[tokenomics.ModuleName])
+	require.NotContains(t, fromVM, registry.ModuleName)
+}

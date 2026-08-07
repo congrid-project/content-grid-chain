@@ -28,8 +28,13 @@ func TestHTTPContentVerifier(t *testing.T) {
 		},
 		{
 			name:    "official anchor + img with wallet query matches owner",
-			body:    `<a href="https://congrid.net"><img src="https://congrid.net/badge.png?publisher={{publisher}}&wallet=cosmos1owner" /></a>`,
+			body:    `<a href="https://congrid.net"><img src="https://congrid.net/badge.svg?publisher={{publisher}}&wallet=cosmos1owner" /></a>`,
 			wantErr: false,
+		},
+		{
+			name:    "official badge publisher must match registered domain",
+			body:    `<a href="https://congrid.net"><img src="https://congrid.net/badge.svg?publisher=wrong.example&wallet=cosmos1owner" /></a>`,
+			wantErr: true,
 		},
 		{
 			name:    "official anchor + img with data-wallet style (not supported) should fail",

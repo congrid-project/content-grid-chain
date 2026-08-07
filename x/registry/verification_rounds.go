@@ -25,6 +25,9 @@ func (k Keeper) EndBlock(ctx sdk.Context) error {
 	if err := k.finalizeAssignments(ctx); err != nil {
 		return err
 	}
+	if err := k.settleFinalizedVerificationRounds(ctx); err != nil {
+		return err
+	}
 	if err := k.settleLeases(ctx); err != nil {
 		return err
 	}
@@ -60,6 +63,12 @@ func (k Keeper) assignNewRound(ctx sdk.Context) error {
 	publishers := make([]Website, 0)
 	nowUnix := roundStartUnix
 	k.IterateWebsites(ctx, func(w Website) bool {
+		if strings.TrimSpace(w.PendingOwner) != "" {
+			// A re-registration candidate must be able to recover a pending,
+			// revoked, or cooled-down registration after fixing the homepage.
+			publishers = append(publishers, w)
+			return false
+		}
 		if w.CooldownUntilUnix > nowUnix {
 			return false
 		}
@@ -68,9 +77,7 @@ func (k Keeper) assignNewRound(ctx sdk.Context) error {
 			return false
 		}
 		if w.Status == StatusVerified {
-			if len(k.activeLeasesForDomain(ctx, w.Domain, nowUnix)) > 0 {
-				publishers = append(publishers, w)
-			}
+			publishers = append(publishers, w)
 		}
 		return false
 	})
@@ -150,14 +157,24 @@ func (k Keeper) assignNewRound(ctx sdk.Context) error {
 		)
 		sort.Strings(selected)
 
+		verificationOwner := w.Owner
+		reregistration := false
+		if strings.TrimSpace(w.PendingOwner) != "" {
+			verificationOwner = strings.TrimSpace(w.PendingOwner)
+			reregistration = true
+		}
 		assignment := PublisherVerificationAssignment{
-			RoundStartUnix:  roundStartUnix,
-			Domain:          w.Domain,
-			StartAtUnix:     startAtUnix,
-			DeadlineUnix:    deadlineUnix,
-			Verifiers:       selected,
-			Finalized:       false,
-			FinalizedAtUnix: 0,
+			RoundStartUnix:    roundStartUnix,
+			Domain:            w.Domain,
+			StartAtUnix:       startAtUnix,
+			DeadlineUnix:      deadlineUnix,
+			Verifiers:         selected,
+			Finalized:         false,
+			FinalizedAtUnix:   0,
+			Verified:          false,
+			RewardsSettled:    false,
+			VerificationOwner: verificationOwner,
+			Reregistration:    reregistration,
 		}
 		if err := k.SetAssignment(ctx, assignment); err != nil {
 			return err
@@ -170,6 +187,8 @@ func (k Keeper) assignNewRound(ctx sdk.Context) error {
 				sdk.NewAttribute(AttributeKeyStartAt, fmt.Sprintf("%d", assignment.StartAtUnix)),
 				sdk.NewAttribute(AttributeKeyDeadline, fmt.Sprintf("%d", assignment.DeadlineUnix)),
 				sdk.NewAttribute(AttributeKeyVerifierCount, fmt.Sprintf("%d", len(assignment.Verifiers))),
+				sdk.NewAttribute(AttributeKeyVerificationOwner, assignment.VerificationOwner),
+				sdk.NewAttribute(AttributeKeyReregistration, fmt.Sprintf("%t", assignment.Reregistration)),
 			),
 		)
 	}
@@ -208,17 +227,67 @@ func (k Keeper) finalizeAssignments(ctx sdk.Context) error {
 		}
 
 		if website, found := k.GetWebsite(ctx, a.Domain); found {
-			if verified {
+			if a.Reregistration {
+				candidateMatches := strings.TrimSpace(website.PendingOwner) != "" &&
+					strings.TrimSpace(website.PendingOwner) == strings.TrimSpace(a.VerificationOwner)
+				if !candidateMatches {
+					// The candidate changed after this assignment was created. Its
+					// result must not mutate or reward the current registration.
+					verified = false
+				} else if verified {
+					previousOwner := website.Owner
+					website.Owner = strings.TrimSpace(website.PendingOwner)
+					website.Referrer = strings.TrimSpace(website.PendingReferrer)
+					website.PendingOwner = ""
+					website.PendingReferrer = ""
+					website.Status = StatusVerified
+					website.RegisteredAtHeight = ctx.BlockHeight()
+					website.CooldownUntilUnix = 0
+					website.CooldownCount = 0
+					if err := k.transferSlotsForDomain(ctx, website.Domain, previousOwner, website.Owner, nowUnix); err != nil {
+						errOut = err
+						return true
+					}
+					if err := k.UpsertWebsite(ctx, website); err != nil {
+						errOut = err
+						return true
+					}
+					k.ClearPublisherFailureStreak(ctx, website.Domain)
+					ctx.EventManager().EmitEvent(
+						sdk.NewEvent(
+							EventTypeReregistrationAccepted,
+							sdk.NewAttribute(AttributeKeyDomain, website.Domain),
+							sdk.NewAttribute(AttributeKeyPreviousOwner, previousOwner),
+							sdk.NewAttribute(AttributeKeyOwner, website.Owner),
+							sdk.NewAttribute(AttributeKeyReferrer, website.Referrer),
+							sdk.NewAttribute(AttributeKeyRoundStart, fmt.Sprintf("%d", a.RoundStartUnix)),
+						),
+					)
+				} else if hasQuorum {
+					rejectedOwner := website.PendingOwner
+					website.PendingOwner = ""
+					website.PendingReferrer = ""
+					if err := k.UpsertWebsite(ctx, website); err != nil {
+						errOut = err
+						return true
+					}
+					ctx.EventManager().EmitEvent(
+						sdk.NewEvent(
+							EventTypeReregistrationRejected,
+							sdk.NewAttribute(AttributeKeyDomain, website.Domain),
+							sdk.NewAttribute(AttributeKeyOwner, website.Owner),
+							sdk.NewAttribute(AttributeKeyPendingOwner, rejectedOwner),
+							sdk.NewAttribute(AttributeKeyRoundStart, fmt.Sprintf("%d", a.RoundStartUnix)),
+						),
+					)
+				}
+			} else if verified {
 				if website.Status != StatusVerified {
 					website.Status = StatusVerified
 					if err := k.UpsertWebsite(ctx, website); err != nil {
 						errOut = err
 						return true
 					}
-				}
-				if err := k.rewardVerifiedPublisher(ctx, a, website, submissions, stats.VerifiedSimilarDomains, intervalSeconds, params); err != nil {
-					errOut = err
-					return true
 				}
 				k.ClearPublisherFailureStreak(ctx, website.Domain)
 
@@ -337,6 +406,7 @@ func (k Keeper) finalizeAssignments(ctx sdk.Context) error {
 
 		a.Finalized = true
 		a.FinalizedAtUnix = nowUnix
+		a.Verified = verified
 		if err := k.SetAssignment(ctx, a); err != nil {
 			errOut = err
 			return true
@@ -351,7 +421,9 @@ func (k Keeper) finalizeAssignments(ctx sdk.Context) error {
 				sdk.NewAttribute(AttributeKeyFails, fmt.Sprintf("%d", fails)),
 				sdk.NewAttribute(AttributeKeyQuorum, fmt.Sprintf("%d", quorum)),
 				sdk.NewAttribute(AttributeKeySubmissionCount, fmt.Sprintf("%d", len(submissions))),
-				sdk.NewAttribute(AttributeKeyVerified, fmt.Sprintf("%t", hasQuorum && majorityPass)),
+				sdk.NewAttribute(AttributeKeyVerified, fmt.Sprintf("%t", verified)),
+				sdk.NewAttribute(AttributeKeyVerificationOwner, a.VerificationOwner),
+				sdk.NewAttribute(AttributeKeyReregistration, fmt.Sprintf("%t", a.Reregistration)),
 				sdk.NewAttribute(AttributeKeyExpectedHash, stats.MajorityExpectedHash),
 				sdk.NewAttribute(AttributeKeyMatchedSimilar, fmt.Sprintf("%d", stats.VerifiedSimilarDomains)),
 			),
@@ -573,26 +645,51 @@ func splitVerifierAssignmentRewards(total sdkmath.Int, successful []string, weig
 	return payoutByAddr, remaining
 }
 
-func (k Keeper) rewardVerifiedPublisher(ctx sdk.Context, assignment PublisherVerificationAssignment, website Website, submissions []PublisherVerificationSubmission, matchedExternalLinks int32, intervalSeconds int64, params PublisherParams) error {
-	if k.tokenomics == nil {
-		return nil
-	}
-
-	roundPublisherCount := k.CountAssignmentsForRound(ctx, assignment.RoundStartUnix)
-	if roundPublisherCount <= 0 {
-		roundPublisherCount = 1
-	}
-
-	emissionPoolBps := params.EffectivePublisherEmissionBps() + params.EffectiveVerifierEmissionBps()
-	if emissionPoolBps > 0 {
-		totalPoolAmount := params.EffectiveEmissionTotalSupply().MulRaw(emissionPoolBps).QuoRaw(10000)
-		if totalPoolAmount.IsPositive() {
-			if err := k.tokenomics.EnsureEmissionPool(ctx, verificationRewardDenom, totalPoolAmount); err != nil {
-				return err
+func (k Keeper) settleFinalizedVerificationRounds(ctx sdk.Context) error {
+	for _, roundStart := range k.listUnsettledVerificationRounds(ctx) {
+		assignments := k.ListAssignmentsForRound(ctx, roundStart)
+		if len(assignments) == 0 {
+			k.clearVerificationRoundUnsettled(ctx, roundStart)
+			continue
+		}
+		allFinalized := true
+		settledCount := 0
+		for _, assignment := range assignments {
+			if !assignment.Finalized {
+				allFinalized = false
+			}
+			if assignment.RewardsSettled {
+				settledCount++
 			}
 		}
+		if settledCount == len(assignments) {
+			k.clearVerificationRoundUnsettled(ctx, roundStart)
+			continue
+		}
+		if !allFinalized {
+			continue
+		}
+		if settledCount != 0 {
+			return fmt.Errorf("verification round %d has partially settled rewards", roundStart)
+		}
+		if err := k.settleVerificationRound(ctx, assignments); err != nil {
+			return fmt.Errorf("settle verification round %d: %w", roundStart, err)
+		}
 	}
+	return nil
+}
 
+func (k Keeper) settleVerificationRound(ctx sdk.Context, assignments []PublisherVerificationAssignment) error {
+	if len(assignments) == 0 {
+		return nil
+	}
+	sort.Slice(assignments, func(i, j int) bool { return assignments[i].Domain < assignments[j].Domain })
+
+	params := k.GetParams(ctx)
+	intervalSeconds := params.RoundIntervalSeconds
+	if intervalSeconds <= 0 {
+		intervalSeconds = int64(time.Hour.Seconds())
+	}
 	publisherRoundPool, verifierRoundPool, err := params.RoundEmissionPools(intervalSeconds)
 	if err != nil {
 		return err
@@ -604,50 +701,133 @@ func (k Keeper) rewardVerifiedPublisher(ctx sdk.Context, assignment PublisherVer
 		verifierRoundPool = params.VerifierVerificationReward
 	}
 
-	if publisherRoundPool.IsPositive() {
-		publisherPoolPerAssignment := publisherRoundPool.QuoRaw(int64(roundPublisherCount))
-		if publisherPoolPerAssignment.IsPositive() {
-			requiredLinks := params.EffectiveRequiredExternalLinksForFullReward()
-			claimable := publisherPoolPerAssignment
-			if requiredLinks > 0 {
-				if matchedExternalLinks <= 0 {
-					claimable = sdkmath.ZeroInt()
-				} else if matchedExternalLinks < requiredLinks {
-					claimable = publisherPoolPerAssignment.MulRaw(int64(matchedExternalLinks)).QuoRaw(int64(requiredLinks))
-				}
-			}
-			if claimable.GT(publisherPoolPerAssignment) {
-				claimable = publisherPoolPerAssignment
-			}
-			unclaimed := publisherPoolPerAssignment.Sub(claimable)
-
-			if claimable.IsPositive() {
-				ownerAddr, err := sdk.AccAddressFromBech32(website.Owner)
-				if err != nil {
-					return err
-				}
-				coin := sdk.NewCoin(verificationRewardDenom, claimable)
-				if err := k.tokenomics.SendFromPool(ctx, ownerAddr, sdk.NewCoins(coin)); err != nil {
-					return err
-				}
-			}
-			if unclaimed.IsPositive() {
-				if err := k.tokenomics.BurnFromPool(ctx, sdk.NewCoins(sdk.NewCoin(verificationRewardDenom, unclaimed))); err != nil {
-					return err
-				}
+	if k.tokenomics == nil {
+		return k.markVerificationRoundRewardsSettled(ctx, assignments)
+	}
+	emissionPoolBps := params.EffectivePublisherEmissionBps() + params.EffectiveVerifierEmissionBps()
+	if emissionPoolBps > 0 {
+		totalPoolAmount := params.EffectiveEmissionTotalSupply().MulRaw(emissionPoolBps).QuoRaw(10000)
+		if totalPoolAmount.IsPositive() {
+			if err := k.tokenomics.EnsureEmissionPool(ctx, verificationRewardDenom, totalPoolAmount); err != nil {
+				return err
 			}
 		}
 	}
 
-	if !verifierRoundPool.IsPositive() {
-		return nil
+	activeAssignments := make([]PublisherVerificationAssignment, 0, len(assignments))
+	for _, assignment := range assignments {
+		if assignment.Verified {
+			activeAssignments = append(activeAssignments, assignment)
+		}
 	}
 
-	verifierPoolPerAssignment := verifierRoundPool.QuoRaw(int64(roundPublisherCount))
-	if !verifierPoolPerAssignment.IsPositive() {
-		return nil
+	publisherRemaining := publisherRoundPool
+	if publisherRoundPool.IsPositive() && len(activeAssignments) > 0 {
+		baseShare := publisherRoundPool.QuoRaw(int64(len(activeAssignments)))
+		for _, assignment := range activeAssignments {
+			website, found := k.GetWebsite(ctx, assignment.Domain)
+			if !found {
+				continue
+			}
+			stats := computeSimilarRoundStats(len(assignment.Verifiers), k.ListSubmissions(ctx, assignment.RoundStartUnix, assignment.Domain))
+			claimable := publisherClaimableAmount(
+				baseShare,
+				stats.VerifiedSimilarDomains,
+				params.EffectiveRequiredExternalLinksForFullReward(),
+				params.EffectivePublisherMinRewardBps(),
+			)
+			if !claimable.IsPositive() {
+				continue
+			}
+			ownerAddr, err := sdk.AccAddressFromBech32(website.Owner)
+			if err != nil {
+				return err
+			}
+			if err := k.tokenomics.SendFromPool(ctx, ownerAddr, sdk.NewCoins(sdk.NewCoin(verificationRewardDenom, claimable))); err != nil {
+				return err
+			}
+			publisherRemaining = publisherRemaining.Sub(claimable)
+			ctx.EventManager().EmitEvent(
+				sdk.NewEvent(
+					EventTypePublisherRewardPaid,
+					sdk.NewAttribute(AttributeKeyDomain, assignment.Domain),
+					sdk.NewAttribute(AttributeKeyOwner, website.Owner),
+					sdk.NewAttribute(AttributeKeyRoundStart, fmt.Sprintf("%d", assignment.RoundStartUnix)),
+					sdk.NewAttribute(AttributeKeyMatchedSimilar, fmt.Sprintf("%d", stats.VerifiedSimilarDomains)),
+					sdk.NewAttribute(AttributeKeyPayoutAmount, claimable.String()+verificationRewardDenom),
+				),
+			)
+		}
+	}
+	if publisherRemaining.IsPositive() {
+		if err := k.tokenomics.BurnFromPool(ctx, sdk.NewCoins(sdk.NewCoin(verificationRewardDenom, publisherRemaining))); err != nil {
+			return err
+		}
 	}
 
+	verifierRemaining := verifierRoundPool
+	if verifierRoundPool.IsPositive() && len(assignments) > 0 {
+		perAssignment := verifierRoundPool.QuoRaw(int64(len(assignments)))
+		for _, assignment := range activeAssignments {
+			sent, err := k.payVerifierAssignmentRewards(ctx, assignment, perAssignment, params)
+			if err != nil {
+				return err
+			}
+			verifierRemaining = verifierRemaining.Sub(sent)
+		}
+	}
+	if verifierRemaining.IsPositive() {
+		if err := k.tokenomics.BurnFromPool(ctx, sdk.NewCoins(sdk.NewCoin(verificationRewardDenom, verifierRemaining))); err != nil {
+			return err
+		}
+	}
+
+	if err := k.markVerificationRoundRewardsSettled(ctx, assignments); err != nil {
+		return err
+	}
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			EventTypeRoundRewardsSettled,
+			sdk.NewAttribute(AttributeKeyRoundStart, fmt.Sprintf("%d", assignments[0].RoundStartUnix)),
+			sdk.NewAttribute(AttributeKeyActivePublishers, fmt.Sprintf("%d", len(activeAssignments))),
+			sdk.NewAttribute(AttributeKeyBurnAmount, publisherRemaining.Add(verifierRemaining).String()+verificationRewardDenom),
+		),
+	)
+	return nil
+}
+
+func publisherClaimableAmount(baseShare sdkmath.Int, matchedLinks, requiredLinks int32, minimumRewardBps int64) sdkmath.Int {
+	if !baseShare.IsPositive() {
+		return sdkmath.ZeroInt()
+	}
+	if requiredLinks <= 0 {
+		return baseShare
+	}
+	if minimumRewardBps < 0 {
+		minimumRewardBps = 0
+	}
+	if minimumRewardBps > 10000 {
+		minimumRewardBps = 10000
+	}
+	if matchedLinks < 0 {
+		matchedLinks = 0
+	}
+	proportionalBps := int64(matchedLinks) * 10000 / int64(requiredLinks)
+	if proportionalBps > 10000 {
+		proportionalBps = 10000
+	}
+	claimBps := minimumRewardBps
+	if proportionalBps > claimBps {
+		claimBps = proportionalBps
+	}
+	return baseShare.MulRaw(claimBps).QuoRaw(10000)
+}
+
+func (k Keeper) payVerifierAssignmentRewards(ctx sdk.Context, assignment PublisherVerificationAssignment, total sdkmath.Int, params PublisherParams) (sdkmath.Int, error) {
+	if !total.IsPositive() {
+		return sdkmath.ZeroInt(), nil
+	}
+	submissions := k.ListSubmissions(ctx, assignment.RoundStartUnix, assignment.Domain)
 	successfulSet := make(map[string]struct{}, len(submissions))
 	for _, sub := range submissions {
 		if sub.Passed {
@@ -655,7 +835,7 @@ func (k Keeper) rewardVerifiedPublisher(ctx sdk.Context, assignment PublisherVer
 		}
 	}
 	if len(successfulSet) == 0 {
-		return k.tokenomics.BurnFromPool(ctx, sdk.NewCoins(sdk.NewCoin(verificationRewardDenom, verifierPoolPerAssignment)))
+		return sdkmath.ZeroInt(), nil
 	}
 
 	successful := make([]string, 0, len(successfulSet))
@@ -669,37 +849,25 @@ func (k Keeper) rewardVerifiedPublisher(ctx sdk.Context, assignment PublisherVer
 	if k.verifiers != nil {
 		bondDenom = k.verifiers.GetParams(ctx).BondDenom
 		for _, v := range k.verifiers.ListVerifiers(ctx) {
-			if v.Bond.Denom != bondDenom {
-				continue
+			if v.Bond.Denom == bondDenom {
+				bondByAddr[v.Address] = v.Bond.Amount
 			}
-			bondByAddr[v.Address] = v.Bond.Amount
 		}
 	}
-
 	weightByAddr := make(map[string]sdkmath.Int, len(successful))
 	for _, addr := range successful {
 		stake, ok := bondByAddr[addr]
 		if !ok || !stake.IsPositive() {
 			continue
 		}
-		refActive := k.CountActiveReferredPublishers(ctx, addr)
-		refFactor := int64(refActive)
+		refFactor := int64(k.CountActiveReferredPublishers(ctx, addr))
 		if refFactor <= 0 {
 			refFactor = 1
 		}
-		weight := stake.MulRaw(refFactor)
-		if weight.IsPositive() {
-			weightByAddr[addr] = weight
-		}
+		weightByAddr[addr] = stake.MulRaw(refFactor)
 	}
 
-	payoutByAddr, remaining := splitVerifierAssignmentRewards(
-		verifierPoolPerAssignment,
-		successful,
-		weightByAddr,
-		params.EffectiveVerifierRewardBaseShareBps(),
-	)
-
+	payoutByAddr, remaining := splitVerifierAssignmentRewards(total, successful, weightByAddr, params.EffectiveVerifierRewardBaseShareBps())
 	for _, addr := range successful {
 		share := payoutByAddr[addr]
 		if !share.IsPositive() {
@@ -707,17 +875,24 @@ func (k Keeper) rewardVerifiedPublisher(ctx sdk.Context, assignment PublisherVer
 		}
 		acc, err := sdk.AccAddressFromBech32(addr)
 		if err != nil {
-			return err
+			return sdkmath.ZeroInt(), err
 		}
-		coin := sdk.NewCoin(verificationRewardDenom, share)
-		if err := k.tokenomics.SendFromPool(ctx, acc, sdk.NewCoins(coin)); err != nil {
+		if err := k.tokenomics.SendFromPool(ctx, acc, sdk.NewCoins(sdk.NewCoin(verificationRewardDenom, share))); err != nil {
+			return sdkmath.ZeroInt(), err
+		}
+	}
+	return total.Sub(remaining), nil
+}
+
+func (k Keeper) markVerificationRoundRewardsSettled(ctx sdk.Context, assignments []PublisherVerificationAssignment) error {
+	for _, assignment := range assignments {
+		assignment.RewardsSettled = true
+		if err := k.SetAssignment(ctx, assignment); err != nil {
 			return err
 		}
 	}
-	if remaining.IsPositive() {
-		if err := k.tokenomics.BurnFromPool(ctx, sdk.NewCoins(sdk.NewCoin(verificationRewardDenom, remaining))); err != nil {
-			return err
-		}
+	if len(assignments) > 0 {
+		k.clearVerificationRoundUnsettled(ctx, assignments[0].RoundStartUnix)
 	}
 	return nil
 }

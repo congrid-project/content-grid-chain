@@ -26,6 +26,10 @@ message Website {
   // Cooldown enforcement after failed verification.
   int64 cooldown_until_unix = 9;
   int32 cooldown_count = 10;
+  // Candidate values requested by a re-registration. The current owner remains
+  // authoritative until verifier consensus confirms pending_owner on the page.
+  string pending_owner = 11;
+  string pending_referrer = 12;
 }
 
 message PublisherVerificationAssignment {
@@ -36,6 +40,14 @@ message PublisherVerificationAssignment {
   repeated string verifiers = 5;
   bool finalized = 6;
   int64 finalized_at_unix = 7;
+  // Verified records the finalized badge/owner consensus result.
+  bool verified = 8;
+  // RewardsSettled prevents duplicate round-level payouts.
+  bool rewards_settled = 9;
+  // Wallet that verifiers must find in the publisher badge for this assignment.
+  string verification_owner = 10;
+  // True when this assignment verifies a pending re-registration candidate.
+  bool reregistration = 11;
 }
 
 message PublisherVerificationSubmission {

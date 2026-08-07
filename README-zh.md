@@ -18,7 +18,7 @@
 - 推荐类 Unix 环境 (macOS/Linux)
 
 ## 构建、运行、测试
-- 构建：`go build -o content-grid-d ./cmd/content-grid-d`
+- 构建并写入版本与 commit：`make build`
 - 运行：`./content-grid-d version` 或 `./content-grid-d init`（占位符）
 - 测试：`go test ./...`
 - 原型：`./scripts/proto-gen.sh` 修改 `proto/` 后重新生成 gRPC 代码
@@ -34,7 +34,9 @@
 
 1. 初始化和按键
    ```bash
-   go build -o content-grid-d ./cmd/content-grid-d
+   make build
+   ./content-grid-d version
+   ./content-grid-d version --long | grep -E '^(version|commit):'
 
    CHAIN_ID=grid-local-1
    HOME1=./localnet/node1
@@ -139,6 +141,7 @@ node1 不需要配置 node2/node3。node2 和 node3 启动后会先连接 seed�
     "emission_total_supply": "1000000000000000",
     "operator_reserve_bps": 4000,
     "publisher_emission_bps": 1000,
+    "publisher_min_reward_bps": 1000,
     "verifier_emission_bps": 5000,
     "emission_duration_hours": 876000
   }
@@ -184,12 +187,17 @@ node1 不需要配置 node2/node3。node2 和 node3 启动后会先连接 seed�
 
 2. **执行注册命令**（或使用 `/publishers` 页面生成的命令）：运行`./content-grid-d publisher register <domain> --from <key-or-address> [--metadata-uri <link>] [--referrer <address>]`。
 - `--referrer`：可选，referrer地址（用于影响 verifier 的收益权重；publisher 推荐 publisher 不生效）。
+- `--from` 对应的签名钱包必须与首页 badge 的 `wallet` 完全一致；命令会在广播交易前检查该地址确实出现在页面上。
 - 系统会自动识别并锁定域名的**一级域名**（Primary Domain，如`example.com`）。
 - 同一一级域名下只能注册一个站点，防止他人抢注子域名。支持非默认端口（例如 `example.com:8080`）。
-3. **验证完成**：命令会访问`https://<domain>/`来验证是否包含 congrid 官方链接；链下 verifier 代理也会定期抓取主页进行确认。
+3. **重新注册 / 修改收款钱包或 referrer**：先用新的浏览器扩展钱包连接并把首页 badge 的 `wallet` 改成该地址，然后再次执行同一条 `publisher register` 命令。`owner` 同时是控制权钱包和 publisher 奖励收款钱包，不存在第二个收益钱包字段。
+- 重注册交易只创建待验证候选，不会立刻覆盖现有 owner。
+- 下一轮 verifier 在首页确认新钱包后，链上才会原子替换 owner 和 referrer；验证失败时旧注册保持不变。
+- 查询结果中的 `pending_owner` / `pending_referrer` 表示正在等待页面验证的重注册候选。重注册时省略 `--referrer` 表示清空原 referrer。
+4. **验证完成**：命令会访问`https://<domain>/`来验证是否包含 congrid 官方链接和签名钱包；链下 verifier 代理也会定期抓取主页进行确认。
 - **无需押金/质押**：发布者注册本身不需要锁定或质押。
 - **手续费策略**：当交易只包含 `MsgRegisterPublisher` 时，可使用 0 手续费提交（例如 `--fees 0ucongrid`）。其他交易类型仍遵循共识验证人最小 gas price 策略，除非使用 `feegrant`。
-4. **查询状态**：注册成功后，可以通过gRPC查询或CLI `content-grid-d query registry publisher <domain>`查看。
+5. **查询状态**：注册成功后，可以通过gRPC查询或CLI `content-grid-d query registry publisher <domain>`查看。
 
 ### verifier 债券（普通地址 + 托管）
 

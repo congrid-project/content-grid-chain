@@ -59,7 +59,53 @@ func (s *server) handlePublisherRegister(baseURL string) http.HandlerFunc {
 			s.renderPublishersFlash(w, r, baseURL, "Registration tx failed: "+err.Error())
 			return
 		}
-		s.renderPublishersFlash(w, r, baseURL, fmt.Sprintf("Publisher registered successfully. tx=%s", txHash))
+		s.renderPublishersFlash(w, r, baseURL, fmt.Sprintf("Publisher registration submitted; page verification is pending. tx=%s", txHash))
+	}
+}
+
+func (s *server) handlePublisherVerify() http.HandlerFunc {
+	type verifyRequest struct {
+		Domain string `json:"domain"`
+		Wallet string `json:"wallet"`
+	}
+	type verifyResponse struct {
+		OK    bool   `json:"ok"`
+		Error string `json:"error,omitempty"`
+	}
+	writeResponse := func(w http.ResponseWriter, status int, response verifyResponse) {
+		w.Header().Set("content-type", "application/json")
+		w.WriteHeader(status)
+		_ = json.NewEncoder(w).Encode(response)
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		r.Body = http.MaxBytesReader(w, r.Body, 8<<10)
+		var request verifyRequest
+		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+			writeResponse(w, http.StatusBadRequest, verifyResponse{Error: "invalid verification request"})
+			return
+		}
+		domain := registry.NormalizeDomain(request.Domain)
+		wallet := strings.TrimSpace(request.Wallet)
+		if !registry.IsDomainFormatValid(domain) {
+			writeResponse(w, http.StatusBadRequest, verifyResponse{Error: "invalid domain format"})
+			return
+		}
+		if _, err := sdk.AccAddressFromBech32(wallet); err != nil || !strings.HasPrefix(wallet, "congrid1") {
+			writeResponse(w, http.StatusBadRequest, verifyResponse{Error: "invalid wallet address"})
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 12*time.Second)
+		defer cancel()
+		verifier := newSecureHomepageVerifier(true, false)
+		if err := verifier.Verify(ctx, domain, wallet); err != nil {
+			writeResponse(w, http.StatusUnprocessableEntity, verifyResponse{
+				Error: "homepage badge does not contain the connected wallet and registered domain",
+			})
+			return
+		}
+		writeResponse(w, http.StatusOK, verifyResponse{OK: true})
 	}
 }
 

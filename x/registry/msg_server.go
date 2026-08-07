@@ -29,6 +29,9 @@ func (m msgServer) RegisterPublisher(ctx context.Context, msg *typespb.MsgRegist
 	if msg == nil {
 		return nil, fmt.Errorf("message cannot be nil")
 	}
+	if err := msg.ValidateBasic(); err != nil {
+		return nil, err
+	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
@@ -48,25 +51,25 @@ func (m msgServer) RegisterPublisher(ctx context.Context, msg *typespb.MsgRegist
 	)
 
 	if existing, found := m.keeper.GetWebsite(sdkCtx, website.Domain); found {
-		// Allow re-registration for anti-squatting recovery only when a publisher is still
-		// pending and has already failed at least one finalized verification round.
-		if existing.Status != StatusPending {
-			return nil, fmt.Errorf("%w: %s", ErrWebsiteExists, website.Domain)
+		candidateOwner := strings.TrimSpace(website.Owner)
+		if existing.PendingOwner != "" && candidateOwner != existing.PendingOwner && candidateOwner != existing.Owner {
+			return nil, fmt.Errorf("publisher %s already has a re-registration pending for another owner", website.Domain)
 		}
-		if m.keeper.GetPublisherFailureStreak(sdkCtx, website.Domain) < 1 {
-			return nil, fmt.Errorf("pending publisher %s is not yet eligible for re-registration", website.Domain)
-		}
-		website.RegisteredAtHeight = sdkCtx.BlockHeight()
-		website.CooldownCount = 0
-		website.CooldownUntilUnix = 0
-		if err := ValidateWebsite(website); err != nil {
+		existing.PendingOwner = candidateOwner
+		existing.PendingReferrer = website.Referrer
+		if err := m.keeper.UpsertWebsite(sdkCtx, existing); err != nil {
 			return nil, err
 		}
-		if err := m.keeper.UpsertWebsite(sdkCtx, website); err != nil {
-			return nil, err
-		}
-		m.keeper.ClearPublisherFailureStreak(sdkCtx, website.Domain)
-		registered = website
+		registered = existing
+		sdkCtx.EventManager().EmitEvent(
+			sdk.NewEvent(
+				EventTypeReregistrationRequested,
+				sdk.NewAttribute(AttributeKeyDomain, existing.Domain),
+				sdk.NewAttribute(AttributeKeyOwner, existing.Owner),
+				sdk.NewAttribute(AttributeKeyPendingOwner, existing.PendingOwner),
+				sdk.NewAttribute(AttributeKeyReferrer, existing.PendingReferrer),
+			),
+		)
 	} else {
 		registered, err = m.keeper.RegisterWebsite(sdkCtx, website)
 		if err != nil {
@@ -74,17 +77,19 @@ func (m msgServer) RegisterPublisher(ctx context.Context, msg *typespb.MsgRegist
 		}
 	}
 
-	sdkCtx.EventManager().EmitEvents(sdk.Events{
-		sdk.NewEvent(
-			EventTypePublisherRegistered,
-			sdk.NewAttribute(AttributeKeyDomain, registered.Domain),
-			sdk.NewAttribute(AttributeKeyOwner, registered.Owner),
-			sdk.NewAttribute(AttributeKeyStatus, registered.Status.String()),
-			sdk.NewAttribute(AttributeKeyMetadataURI, registered.MetadataURI),
-			sdk.NewAttribute(AttributeKeyVerifier, registered.Verifier),
-			sdk.NewAttribute(AttributeKeyReferrer, registered.Referrer),
-		),
-	})
+	if registered.PendingOwner == "" {
+		sdkCtx.EventManager().EmitEvent(
+			sdk.NewEvent(
+				EventTypePublisherRegistered,
+				sdk.NewAttribute(AttributeKeyDomain, registered.Domain),
+				sdk.NewAttribute(AttributeKeyOwner, registered.Owner),
+				sdk.NewAttribute(AttributeKeyStatus, registered.Status.String()),
+				sdk.NewAttribute(AttributeKeyMetadataURI, registered.MetadataURI),
+				sdk.NewAttribute(AttributeKeyVerifier, registered.Verifier),
+				sdk.NewAttribute(AttributeKeyReferrer, registered.Referrer),
+			),
+		)
+	}
 
 	return &typespb.MsgRegisterPublisherResponse{Website: registered.ToProto()}, nil
 }
@@ -142,6 +147,9 @@ func (m msgServer) RevealVerification(ctx context.Context, msg *typespb.MsgRevea
 	if msg == nil {
 		return nil, fmt.Errorf("message cannot be nil")
 	}
+	if err := msg.ValidateBasic(); err != nil {
+		return nil, err
+	}
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	domain := NormalizeDomain(msg.GetDomain())
@@ -175,19 +183,37 @@ func (m msgServer) RevealVerification(ctx context.Context, msg *typespb.MsgRevea
 
 	evidenceHash := strings.TrimSpace(msg.GetEvidenceHash())
 	nonce := strings.TrimSpace(msg.GetNonce())
-	expectedHash := typespb.ComputeVerificationCommitHash(domain, msg.GetRoundStartUnix(), msg.GetVerifier(), msg.GetPassed(), evidenceHash, nonce)
+	verificationOwner := strings.TrimSpace(msg.GetVerificationOwner())
+	assignmentOwner := strings.TrimSpace(assignment.VerificationOwner)
+	var expectedHash string
+	if assignmentOwner != "" {
+		if verificationOwner != assignmentOwner {
+			return nil, errorsmod.Wrapf(ErrCommitMismatch, "verification owner mismatch: got %q want %q", verificationOwner, assignmentOwner)
+		}
+		expectedHash = typespb.ComputeVerificationCommitHashV2(domain, msg.GetRoundStartUnix(), msg.GetVerifier(), verificationOwner, msg.GetPassed(), evidenceHash, nonce)
+	} else {
+		if verificationOwner != "" {
+			return nil, errorsmod.Wrap(ErrCommitMismatch, "legacy assignment must not include a verification owner")
+		}
+		expectedHash = typespb.ComputeVerificationCommitHash(domain, msg.GetRoundStartUnix(), msg.GetVerifier(), msg.GetPassed(), evidenceHash, nonce)
+	}
 	if strings.ToLower(commitHash) != expectedHash {
 		return nil, errorsmod.Wrapf(ErrCommitMismatch, "commit hash mismatch")
 	}
 
 	submission := PublisherVerificationSubmission{
-		RoundStartUnix:  msg.GetRoundStartUnix(),
-		Domain:          domain,
-		Verifier:        msg.GetVerifier(),
-		Passed:          msg.GetPassed(),
-		ObservedAtUnix:  nowUnix,
-		LatencyMs:       0,
-		SubmittedAtUnix: nowUnix,
+		RoundStartUnix:         msg.GetRoundStartUnix(),
+		Domain:                 domain,
+		Verifier:               msg.GetVerifier(),
+		Passed:                 msg.GetPassed(),
+		ObservedAtUnix:         nowUnix,
+		LatencyMs:              0,
+		SubmittedAtUnix:        nowUnix,
+		ObservedSimilarDomains: msg.GetObservedSimilarDomains(),
+		MatchedSimilarDomains:  msg.GetMatchedSimilarDomains(),
+		ExpectedSimilarDomains: msg.GetExpectedSimilarDomains(),
+		ExpectedSetHash:        strings.ToLower(strings.TrimSpace(msg.GetExpectedSetHash())),
+		ObservedSetHash:        strings.ToLower(strings.TrimSpace(msg.GetObservedSetHash())),
 	}
 	if err := m.keeper.SetSubmission(sdkCtx, submission); err != nil {
 		return nil, err
@@ -202,6 +228,11 @@ func (m msgServer) RevealVerification(ctx context.Context, msg *typespb.MsgRevea
 			sdk.NewAttribute(AttributeKeyRoundStart, fmt.Sprintf("%d", submission.RoundStartUnix)),
 			sdk.NewAttribute(AttributeKeyVerified, fmt.Sprintf("%t", submission.Passed)),
 			sdk.NewAttribute(AttributeKeyEvidenceHash, evidenceHash),
+			sdk.NewAttribute(AttributeKeyObservedSimilar, fmt.Sprintf("%d", submission.ObservedSimilarDomains)),
+			sdk.NewAttribute(AttributeKeyMatchedSimilar, fmt.Sprintf("%d", submission.MatchedSimilarDomains)),
+			sdk.NewAttribute(AttributeKeyExpectedSimilar, fmt.Sprintf("%d", submission.ExpectedSimilarDomains)),
+			sdk.NewAttribute(AttributeKeyExpectedHash, submission.ExpectedSetHash),
+			sdk.NewAttribute(AttributeKeyObservedHash, submission.ObservedSetHash),
 		),
 	)
 

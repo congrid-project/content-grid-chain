@@ -120,6 +120,9 @@ func (k Keeper) SetAssignment(ctx sdk.Context, assignment PublisherVerificationA
 		return err
 	}
 	store.Set(assignmentKey(assignment.RoundStartUnix, assignment.Domain), bz)
+	if !assignment.RewardsSettled {
+		k.markVerificationRoundUnsettled(ctx, assignment.RoundStartUnix)
+	}
 	return nil
 }
 
@@ -176,6 +179,48 @@ func (k Keeper) CountAssignmentsForRound(ctx sdk.Context, roundStartUnix int64) 
 		count++
 	}
 	return count
+}
+
+func (k Keeper) ListAssignmentsForRound(ctx sdk.Context, roundStartUnix int64) []PublisherVerificationAssignment {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), assignmentStorePrefix)
+	roundPrefix := verificationRoundKey(roundStartUnix)
+	iter := store.Iterator(roundPrefix, storetypes.PrefixEndBytes(roundPrefix))
+	defer iter.Close()
+
+	assignments := make([]PublisherVerificationAssignment, 0)
+	for ; iter.Valid(); iter.Next() {
+		var assignment PublisherVerificationAssignment
+		if err := json.Unmarshal(iter.Value(), &assignment); err != nil {
+			panic(fmt.Errorf("failed to decode assignment: %w", err))
+		}
+		assignments = append(assignments, assignment)
+	}
+	return assignments
+}
+
+func (k Keeper) markVerificationRoundUnsettled(ctx sdk.Context, roundStartUnix int64) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), unsettledRoundStorePrefix)
+	store.Set(verificationRoundKey(roundStartUnix), []byte{1})
+}
+
+func (k Keeper) clearVerificationRoundUnsettled(ctx sdk.Context, roundStartUnix int64) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), unsettledRoundStorePrefix)
+	store.Delete(verificationRoundKey(roundStartUnix))
+}
+
+func (k Keeper) listUnsettledVerificationRounds(ctx sdk.Context) []int64 {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), unsettledRoundStorePrefix)
+	iter := store.Iterator(nil, nil)
+	defer iter.Close()
+
+	rounds := make([]int64, 0)
+	for ; iter.Valid(); iter.Next() {
+		if len(iter.Key()) != 8 {
+			panic(fmt.Errorf("invalid unsettled verification round key length %d", len(iter.Key())))
+		}
+		rounds = append(rounds, int64(binary.BigEndian.Uint64(iter.Key())))
+	}
+	return rounds
 }
 
 func (k Keeper) CountActiveReferredPublishers(ctx sdk.Context, verifier string) int {
@@ -371,9 +416,16 @@ func drandBeaconKey(round uint64) []byte {
 }
 
 func assignmentKey(roundStartUnix int64, domain string) []byte {
-	key := make([]byte, 8+len(domain))
-	binary.BigEndian.PutUint64(key[:8], uint64(roundStartUnix))
+	roundKey := verificationRoundKey(roundStartUnix)
+	key := make([]byte, len(roundKey)+len(domain))
+	copy(key, roundKey)
 	copy(key[8:], []byte(domain))
+	return key
+}
+
+func verificationRoundKey(roundStartUnix int64) []byte {
+	key := make([]byte, 8)
+	binary.BigEndian.PutUint64(key, uint64(roundStartUnix))
 	return key
 }
 

@@ -14,17 +14,23 @@ import (
 )
 
 type pendingReveal struct {
-	Key            string `json:"key"`
-	Domain         string `json:"domain"`
-	RoundStartUnix int64  `json:"round_start_unix"`
-	Verifier       string `json:"verifier"`
-	Passed         bool   `json:"passed"`
-	EvidenceHash   string `json:"evidence_hash"`
-	Nonce          string `json:"nonce"`
-	CommitHash     string `json:"commit_hash"`
-	CommitRecorded bool   `json:"commit_recorded"`
-	CreatedAtUnix  int64  `json:"created_at_unix"`
-	UpdatedAtUnix  int64  `json:"updated_at_unix"`
+	Key                    string `json:"key"`
+	Domain                 string `json:"domain"`
+	RoundStartUnix         int64  `json:"round_start_unix"`
+	Verifier               string `json:"verifier"`
+	Passed                 bool   `json:"passed"`
+	EvidenceHash           string `json:"evidence_hash"`
+	ObservedSimilarDomains int32  `json:"observed_similar_domains"`
+	MatchedSimilarDomains  int32  `json:"matched_similar_domains"`
+	ExpectedSimilarDomains int32  `json:"expected_similar_domains"`
+	ExpectedSetHash        string `json:"expected_set_hash"`
+	ObservedSetHash        string `json:"observed_set_hash"`
+	VerificationOwner      string `json:"verification_owner"`
+	Nonce                  string `json:"nonce"`
+	CommitHash             string `json:"commit_hash"`
+	CommitRecorded         bool   `json:"commit_recorded"`
+	CreatedAtUnix          int64  `json:"created_at_unix"`
+	UpdatedAtUnix          int64  `json:"updated_at_unix"`
 }
 
 func (a *Agent) pendingRevealForAssignment(assignment *registrypb.PublisherVerificationAssignment) (pendingReveal, bool, error) {
@@ -144,6 +150,52 @@ func (p pendingReveal) validateForAssignment(assignment *registrypb.PublisherVer
 	}
 	if strings.TrimSpace(p.CommitHash) == "" {
 		return fmt.Errorf("pending commit hash missing")
+	}
+	if registrypb.HasVerificationEvidence(
+		p.ObservedSimilarDomains,
+		p.MatchedSimilarDomains,
+		p.ExpectedSimilarDomains,
+		p.ExpectedSetHash,
+		p.ObservedSetHash,
+	) {
+		expectedEvidenceHash := registrypb.ComputeVerificationEvidenceHash(
+			p.ObservedSimilarDomains,
+			p.MatchedSimilarDomains,
+			p.ExpectedSimilarDomains,
+			p.ExpectedSetHash,
+			p.ObservedSetHash,
+		)
+		if !strings.EqualFold(strings.TrimSpace(p.EvidenceHash), expectedEvidenceHash) {
+			return fmt.Errorf("pending evidence hash mismatch")
+		}
+	}
+	assignmentOwner := strings.TrimSpace(assignment.GetVerificationOwner())
+	if strings.TrimSpace(p.VerificationOwner) != assignmentOwner {
+		return fmt.Errorf("pending verification owner mismatch")
+	}
+	var expectedCommitHash string
+	if assignmentOwner != "" {
+		expectedCommitHash = registrypb.ComputeVerificationCommitHashV2(
+			p.Domain,
+			p.RoundStartUnix,
+			p.Verifier,
+			assignmentOwner,
+			p.Passed,
+			p.EvidenceHash,
+			p.Nonce,
+		)
+	} else {
+		expectedCommitHash = registrypb.ComputeVerificationCommitHash(
+			p.Domain,
+			p.RoundStartUnix,
+			p.Verifier,
+			p.Passed,
+			p.EvidenceHash,
+			p.Nonce,
+		)
+	}
+	if !strings.EqualFold(strings.TrimSpace(p.CommitHash), expectedCommitHash) {
+		return fmt.Errorf("pending commit hash mismatch")
 	}
 	return nil
 }

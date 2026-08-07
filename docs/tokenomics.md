@@ -32,10 +32,15 @@ Registry verification rewards are paid during round finalization in `x/registry`
 
 ## Publisher Reward Rule
 
-- Publisher pool is split evenly across active assignments in that round.
-- A publisher can claim full share only if required external links threshold is met:
-  - `required_external_links_for_full_reward` (default `15`)
-- If below threshold, claim is proportional.
+- Rewards settle only after every publisher assignment in the round is finalized.
+- A publisher is active when the registered homepage passes badge verification: the official `congrid.net` anchor wraps a badge image whose publisher domain and wallet match the on-chain registration.
+- `owner` is both the registration-control wallet and the publisher-reward recipient. Re-registration may change owner/referrer, but verifier consensus must first confirm `pending_owner` in the homepage badge; the existing owner remains effective until then.
+- The publisher pool is split evenly across active publishers only. Inactive publishers do not dilute the split.
+- Each active publisher's claim is then adjusted by matching similar-site links:
+  - full-reward threshold: `required_external_links_for_full_reward` (default `15`)
+  - minimum claim: `publisher_min_reward_bps` (default `1000`, or 10%)
+  - formula: `max(10%, matched_links / required_links)`, capped at 100%
+- Similar-site links affect payout only, not active status. A publisher with zero matching links still receives 10% of its equal base share.
 - Unclaimed publisher amount is burned.
 
 ## Verifier Reward Rule

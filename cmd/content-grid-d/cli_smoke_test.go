@@ -5,12 +5,14 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 	"testing"
 
 	"content-grid-chain/app"
 
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
+	sdkversion "github.com/cosmos/cosmos-sdk/version"
 	"github.com/stretchr/testify/require"
 )
 
@@ -59,6 +61,47 @@ func TestVersionCommand(t *testing.T) {
 	homeDir := t.TempDir()
 	output := strings.TrimSpace(runCLI(t, homeDir, "version"))
 	require.NotEmpty(t, output, "expected version output")
+	require.NotEqual(t, "dev", output)
+	require.NotEmpty(t, sdkversion.Commit)
+}
+
+func TestConfigureVersionUsesVCSBuildInfo(t *testing.T) {
+	originalVersion := sdkversion.Version
+	originalCommit := sdkversion.Commit
+	t.Cleanup(func() {
+		sdkversion.Version = originalVersion
+		sdkversion.Commit = originalCommit
+	})
+
+	sdkversion.Version = ""
+	sdkversion.Commit = ""
+	commit := "0123456789abcdef0123456789abcdef01234567"
+	configureVersion(&debug.BuildInfo{Settings: []debug.BuildSetting{
+		{Key: "vcs.revision", Value: commit},
+		{Key: "vcs.modified", Value: "true"},
+	}}, true)
+
+	require.Equal(t, commit, sdkversion.Commit)
+	require.Equal(t, "publisher-rewards-v3-0123456789ab+dirty", sdkversion.Version)
+}
+
+func TestConfigureVersionPreservesLinkerValues(t *testing.T) {
+	originalVersion := sdkversion.Version
+	originalCommit := sdkversion.Commit
+	t.Cleanup(func() {
+		sdkversion.Version = originalVersion
+		sdkversion.Commit = originalCommit
+	})
+
+	sdkversion.Version = "v3.0.0"
+	sdkversion.Commit = "release-commit"
+	configureVersion(&debug.BuildInfo{Settings: []debug.BuildSetting{
+		{Key: "vcs.revision", Value: "ignored"},
+		{Key: "vcs.modified", Value: "true"},
+	}}, true)
+
+	require.Equal(t, "v3.0.0", sdkversion.Version)
+	require.Equal(t, "release-commit", sdkversion.Commit)
 }
 
 func TestDevnetCommand(t *testing.T) {

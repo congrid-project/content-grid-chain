@@ -18,7 +18,7 @@ Quick links: see `whitepaper.md` for the design (note: legacy sections may not r
 - Unix-like environment (macOS/Linux) recommended
 
 ## Build, Run, Test
-- Build: `go build -o content-grid-d ./cmd/content-grid-d`
+- Build with embedded version and commit: `make build`
 - Run: `./content-grid-d version` or `./content-grid-d init` (placeholder)
 - Test: `go test ./...`
 - Proto: `./scripts/proto-gen.sh` regenerates gRPC code after modifying `proto/`
@@ -34,7 +34,9 @@ The following example takes 3 nodes as an example. The process is: initializatio
 
 1. Initialization and keys
    ```bash
-   go build -o content-grid-d ./cmd/content-grid-d
+   make build
+   ./content-grid-d version
+   ./content-grid-d version --long | grep -E '^(version|commit):'
 
    CHAIN_ID=grid-local-1
    HOME1=./localnet/node1
@@ -137,6 +139,7 @@ The issuance split is controlled by registry params in genesis (`app_state.regis
     "emission_total_supply": "1000000000000000",
     "operator_reserve_bps": 4000,
     "publisher_emission_bps": 1000,
+    "publisher_min_reward_bps": 1000,
     "verifier_emission_bps": 5000,
     "emission_duration_hours": 876000
   }
@@ -182,12 +185,17 @@ For the current verifier determination rules, see `offchain/registry/verifier.go
 
 2. **Execute registration command** (or use the command generated on `/publishers`): Run `./content-grid-d publisher register <domain> --from <key-or-address> [--metadata-uri <link>] [--referrer <address>]`.
 - `--referrer`: optional, referrer address (used to affect the revenue weight of verifier; publisher recommendation publisher does not take effect).
+- The signing wallet selected by `--from` must exactly match the homepage badge `wallet`; the command checks that the address is present before broadcasting.
 - The system will automatically identify and lock the **first-level domain name** (Primary Domain, such as `example.com`) of the domain name.
 - Only one site can be registered under the same first-level domain name to prevent others from preemptively registering subdomain names. Supports non-default ports (such as `example.com:8080`).
-3. **Verification completed**: The command will access `https://<domain>/` to verify whether it contains the congrid official link; the off-chain verification node will also regularly crawl the homepage for confirmation.
+3. **Re-register / change the receiving wallet or referrer**: connect the new browser-extension wallet, change the homepage badge `wallet` to that address, and run the same `publisher register` command again. `owner` is both the control wallet and the publisher-reward receiving wallet; there is no separate reward-wallet field.
+- Re-registration creates a pending candidate and does not immediately overwrite the current owner.
+- The chain atomically replaces owner and referrer only after the next verifier round confirms the new wallet on the homepage. A failed candidate leaves the existing registration unchanged.
+- Query fields `pending_owner` / `pending_referrer` show a candidate awaiting verification. Omitting `--referrer` during re-registration clears the previous referrer after acceptance.
+4. **Verification completed**: The command will access `https://<domain>/` to verify the official Congrid link and signing wallet; off-chain verifier agents also crawl the homepage for consensus confirmation.
 - **No deposit/pledge required**: Publisher registration itself does not require locking or staking.
 - **Fee policy**: a transaction containing only `MsgRegisterPublisher` can be submitted with zero fee (e.g. `--fees 0ucongrid`). Other transaction types still follow validator min-gas-price policy unless covered by `feegrant`.
-4. **Query status**: After successful registration, it can be viewed through gRPC query or CLI `content-grid-d query registry publisher <domain>`.
+5. **Query status**: After successful registration, it can be viewed through gRPC query or CLI `content-grid-d query registry publisher <domain>`.
 
 ### Verifier Bond (normal address + escrow)
 

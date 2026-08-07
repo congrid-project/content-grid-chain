@@ -69,5 +69,5 @@ Unbond：
 
 ## 影响销毁的 publisher 侧门槛
 
-publisher 奖励会在该轮活跃 assignment 之间平均拆分，但 publisher 实际可领取的份额还受到外链门槛 `required_external_links_for_full_reward` 的限制。
+publisher 池会在通过徽章验证的 assignment 之间平均拆分。每个活跃 publisher 再按 `max(publisher_min_reward_bps, matched_links / required_external_links_for_full_reward)` 领取，最高不超过其基准份额的 100%。默认保底比例为 10%，15 条链接可领取完整份额；相似链接只影响奖励比例，不影响徽章通过状态。
 未被领取的 publisher 奖励会从池中烧毁。

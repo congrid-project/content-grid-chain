@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	registryoffchain "content-grid-chain/offchain/registry"
 	registry "content-grid-chain/x/registry"
 	typespb "content-grid-chain/x/registry/typespb"
 
@@ -37,7 +38,7 @@ func registryRegisterPublisherTxCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "register-publisher [domain]",
-		Short: "Register a publisher domain on-chain",
+		Short: "Register or re-register a publisher domain on-chain",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)
@@ -53,6 +54,10 @@ func registryRegisterPublisherTxCmd() *cobra.Command {
 			}
 
 			owner := clientCtx.GetFromAddress().String()
+			verifierClient := registryoffchain.HTTPContentVerifier{}
+			if err := verifierClient.Verify(cmd.Context(), domain, owner); err != nil {
+				return fmt.Errorf("publisher page does not contain the signing wallet %s: %w", owner, err)
+			}
 			msg := &typespb.MsgRegisterPublisher{
 				Owner:       owner,
 				Domain:      domain,

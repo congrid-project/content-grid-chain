@@ -1,16 +1,12 @@
 package registry
 
 import (
-	"math"
 	"sort"
 )
 
 const (
 	// SimilarTopN is the expected number of similar domains publishers embed.
 	SimilarTopN = int32(15)
-	// SimilarOverlapThreshold is the minimum overlap ratio (matched/expected) to consider consistent.
-	// With top-15, 0.6 means at least 9 matches.
-	SimilarOverlapThreshold = 0.6
 )
 
 type similarRoundStats struct {
@@ -30,31 +26,24 @@ func computeSimilarRoundStats(assigned int, subs []PublisherVerificationSubmissi
 		return st
 	}
 
-	// If no submission includes similar fields, fall back to legacy behaviour.
-	anySimilar := false
+	// Badge/owner verification alone determines whether the publisher is active.
+	// Similar-site observations only determine the payout multiplier.
+	passes, fails := 0, 0
 	for _, s := range subs {
-		if s.ExpectedSimilarDomains > 0 {
-			anySimilar = true
-			break
+		if s.Passed {
+			passes++
+		} else {
+			fails++
 		}
 	}
-	if !anySimilar {
-		passes, fails := 0, 0
-		for _, s := range subs {
-			if s.Passed {
-				passes++
-			} else {
-				fails++
-			}
-		}
-		st.Passes, st.Fails = passes, fails
-		return st
-	}
+	st.Passes, st.Fails = passes, fails
 
-	// Determine the majority expected hash among submissions that claim to have top-N.
+	// Determine the majority expected set among passing submissions. Indexes may
+	// contain fewer than SimilarTopN publishers during network bootstrap, so the
+	// actual expected count is intentionally not required to equal SimilarTopN.
 	hashCounts := map[string]int{}
 	for _, s := range subs {
-		if s.ExpectedSimilarDomains != SimilarTopN {
+		if !s.Passed {
 			continue
 		}
 		if s.ExpectedSetHash == "" {
@@ -70,35 +59,23 @@ func computeSimilarRoundStats(assigned int, subs []PublisherVerificationSubmissi
 			bestCount = c
 		}
 	}
+	if bestCount < st.Quorum {
+		bestHash = ""
+	}
 	st.MajorityExpectedHash = bestHash
 
-	// Count passes/fails using overlap threshold and majority expected hash.
+	// Use the median matched count from passing verifiers that agree on the
+	// expected set. Similar-link disagreement never changes badge verification.
 	passMatched := make([]int, 0)
-	passes, fails := 0, 0
 	for _, s := range subs {
-		ok := s.Passed
-		if !ok {
-			fails++
+		if !s.Passed || bestHash == "" {
 			continue
 		}
-		// Similar constraints
-		if s.ExpectedSimilarDomains != SimilarTopN {
-			fails++
+		if s.ExpectedSetHash != bestHash {
 			continue
 		}
-		if bestHash != "" && s.ExpectedSetHash != bestHash {
-			fails++
-			continue
-		}
-		minMatches := int32(math.Ceil(float64(SimilarTopN) * SimilarOverlapThreshold))
-		if s.MatchedSimilarDomains < minMatches {
-			fails++
-			continue
-		}
-		passes++
 		passMatched = append(passMatched, int(s.MatchedSimilarDomains))
 	}
-	st.Passes, st.Fails = passes, fails
 
 	if len(passMatched) == 0 {
 		st.VerifiedSimilarDomains = 0
