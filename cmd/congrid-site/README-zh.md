@@ -135,6 +135,7 @@ curl -fsSL https://congrid.net/downloads/install.sh | bash
 - `/verifiers` — verifier 加入
 - `/docs` — 指向存储库文档的指针
 - `/airdrop` — 验证主页徽章并为每个主域发送一次性可选启动空投（启用时）
-- `/badge.png` — 可嵌入验证徽章（保留查询参数以供将来归因）
+- `/badge.svg` — 使用 Congrid 标准 SVG logo 的可嵌入验证徽章（保留查询参数用于归因）
+- `/badge.png` — 兼容旧代码片段的别名，返回相同的 SVG 内容
 - `/static/*` — CSS + 资源
 - `/downloads/{filename}` — 发布归档下载（支持 HEAD 和 Range，不提供目录列表）

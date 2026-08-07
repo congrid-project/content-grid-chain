@@ -169,12 +169,15 @@ For the current verifier determination rules, see `offchain/registry/verifier.go
 
 **Recommended format:**
    ```html
-   <a href="https://congrid.net">
-     <img
-       alt="Verified by Congrid"
-       src="https://congrid.net/badge.png?publisher=example.com&wallet=<bech32-owner-address>"
-     />
-   </a>
+   <div id="congrid-similar">
+     <a href="https://congrid.net">
+       <img
+         alt="Verified by Congrid"
+         src="https://congrid.net/badge.svg?publisher=example.com&wallet=<bech32-owner-address>"
+       />
+     </a>
+     <!-- Add links for all 15 domains returned by indexerd here. -->
+   </div>
    ```
 
 2. **Execute registration command** (or use the command generated on `/publishers`): Run `./content-grid-d publisher register <domain> --from <key-or-address> [--metadata-uri <link>] [--referrer <address>]`.

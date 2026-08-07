@@ -237,8 +237,8 @@
     ].filter(Boolean);
     const registerCommand = parts.join(" \\\n");
 
-    const badgeSrc = `${baseURL}/badge.png?publisher=${encodeURIComponent(domain)}&wallet=${encodeURIComponent(wallet)}`;
-    const badgeSnippet = `<a href="${baseURL}">\n  <img\n    alt="Verified by Congrid"\n    src="${badgeSrc}"\n  />\n</a>`;
+    const badgeSrc = `${baseURL}/badge.svg?publisher=${encodeURIComponent(domain)}&wallet=${encodeURIComponent(wallet)}`;
+    const badgeSnippet = `<div id="congrid-similar">\n  <a href="${baseURL}">\n    <img\n      alt="Verified by Congrid"\n      src="${badgeSrc}"\n    />\n  </a>\n  <!-- Add links for all 15 domains returned by indexerd here. -->\n</div>`;
 
     commandCode.textContent = registerCommand;
     snippetCode.textContent = badgeSnippet;

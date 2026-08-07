@@ -144,7 +144,8 @@ This site is intentionally served by Go so we can add first-party analytics, att
 - `/verifiers` — verifier onboarding
 - `/docs` — pointers to repository docs
 - `/airdrop` — verify homepage badge and send an optional one-time starter airdrop per primary domain (when enabled)
-- `/badge.png` — embeddable verification badge (query params preserved for future attribution)
+- `/badge.svg` — embeddable verification badge using the canonical Congrid SVG logo (query params preserved for attribution)
+- `/badge.png` — legacy alias that serves the same SVG content for existing snippets
 - `/static/*` — CSS + assets
 - `/downloads/{filename}` — release artifact download with HEAD/Range support and no directory listing
 

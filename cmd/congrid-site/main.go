@@ -8,10 +8,6 @@ import (
 	"flag"
 	"fmt"
 	"html/template"
-	"image"
-	"image/color"
-	"image/draw"
-	"image/png"
 	"io/fs"
 	"log"
 	"net"
@@ -189,7 +185,10 @@ func main() {
 	mux.HandleFunc("POST /marketplace/lease", s.handleMarketplaceLease(*baseURL))
 	mux.HandleFunc("GET /publisher/dashboard", s.handlePublisherDashboard(*baseURL))
 	mux.HandleFunc("POST /publisher/dashboard", s.handlePublisherDashboardPost(*baseURL))
-	mux.HandleFunc("GET /badge.png", s.handleBadgePNG)
+	mux.HandleFunc("GET /badge.svg", s.handleBadgeSVG)
+	// Keep the old URL working for already-published snippets. Both routes now
+	// serve the canonical SVG logo.
+	mux.HandleFunc("GET /badge.png", s.handleBadgeSVG)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))
@@ -577,53 +576,16 @@ func (s *server) handleDocs(baseURL string) http.HandlerFunc {
 	}
 }
 
-func (s *server) handleBadgePNG(w http.ResponseWriter, r *http.Request) {
-	publisher := strings.TrimSpace(r.URL.Query().Get("publisher"))
-	wallet := strings.TrimSpace(r.URL.Query().Get("wallet"))
-
-	// A small, deterministic badge that can be embedded by publishers.
-	// The query params are not required to render, but are preserved for future attribution/analytics.
-	const (
-		wPx = 320
-		hPx = 84
-	)
-
-	img := image.NewRGBA(image.Rect(0, 0, wPx, hPx))
-	bg := color.RGBA{R: 18, G: 24, B: 38, A: 255}
-	draw.Draw(img, img.Bounds(), &image.Uniform{C: bg}, image.Point{}, draw.Src)
-
-	// Border
-	border := color.RGBA{R: 96, G: 165, B: 250, A: 255}
-	for x := 0; x < wPx; x++ {
-		img.Set(x, 0, border)
-		img.Set(x, hPx-1, border)
-	}
-	for y := 0; y < hPx; y++ {
-		img.Set(0, y, border)
-		img.Set(wPx-1, y, border)
+func (s *server) handleBadgeSVG(w http.ResponseWriter, _ *http.Request) {
+	logo, err := siteFS.ReadFile("static/assets/congrid-logo.svg")
+	if err != nil {
+		http.Error(w, "badge unavailable", http.StatusInternalServerError)
+		return
 	}
 
-	// Render simple text using a tiny built-in raster font.
-	// This keeps the binary self-contained with no external font deps.
-	lines := []string{"Verified by Congrid"}
-	if publisher != "" {
-		lines = append(lines, "publisher: "+publisher)
-	}
-	if wallet != "" {
-		lines = append(lines, "wallet: "+shorten(wallet, 18))
-	}
-
-	writeText(img, 14, 18, lines[0], color.RGBA{R: 255, G: 255, B: 255, A: 255})
-	if len(lines) > 1 {
-		writeText(img, 14, 42, lines[1], color.RGBA{R: 203, G: 213, B: 225, A: 255})
-	}
-	if len(lines) > 2 {
-		writeText(img, 14, 62, lines[2], color.RGBA{R: 148, G: 163, B: 184, A: 255})
-	}
-
-	w.Header().Set("Content-Type", "image/png")
+	w.Header().Set("Content-Type", "image/svg+xml; charset=utf-8")
 	w.Header().Set("Cache-Control", "public, max-age=3600")
-	_ = png.Encode(w, img)
+	_, _ = w.Write(logo)
 }
 
 func withRequestLog(next http.Handler) http.Handler {
@@ -641,126 +603,3 @@ func mustSub(efs embed.FS, dir string) fs.FS {
 	}
 	return sub
 }
-
-func shorten(s string, n int) string {
-	if len(s) <= n {
-		return s
-	}
-	if n < 8 {
-		return s[:n]
-	}
-	return s[:n-5] + "…" + s[len(s)-4:]
-}
-
-// ---- Tiny bitmap font renderer (uppercase/lowercase/digits/basic punctuation). ----
-
-var font = map[rune][7]byte{
-	' ': {0, 0, 0, 0, 0, 0, 0},
-	':': {0, 8, 8, 0, 8, 8, 0},
-	'-': {0, 0, 0, 31, 0, 0, 0},
-	'.': {0, 0, 0, 0, 0, 12, 12},
-	'/': {1, 2, 4, 8, 16, 0, 0},
-	'_': {0, 0, 0, 0, 0, 0, 31},
-	'…': {0, 0, 0, 0, 21, 0, 0},
-	'a': {0, 14, 1, 15, 17, 15, 0},
-	'b': {16, 16, 30, 17, 17, 30, 0},
-	'c': {0, 14, 16, 16, 16, 14, 0},
-	'd': {1, 1, 15, 17, 17, 15, 0},
-	'e': {0, 14, 17, 31, 16, 14, 0},
-	'f': {6, 8, 30, 8, 8, 8, 0},
-	'g': {0, 15, 17, 15, 1, 14, 0},
-	'h': {16, 16, 30, 17, 17, 17, 0},
-	'i': {4, 0, 12, 4, 4, 14, 0},
-	'j': {2, 0, 6, 2, 18, 12, 0},
-	'k': {16, 18, 20, 24, 20, 18, 0},
-	'l': {12, 4, 4, 4, 4, 14, 0},
-	'm': {0, 26, 21, 21, 21, 21, 0},
-	'n': {0, 30, 17, 17, 17, 17, 0},
-	'o': {0, 14, 17, 17, 17, 14, 0},
-	'p': {0, 30, 17, 30, 16, 16, 0},
-	'q': {0, 15, 17, 15, 1, 1, 0},
-	'r': {0, 22, 24, 16, 16, 16, 0},
-	's': {0, 15, 16, 14, 1, 30, 0},
-	't': {8, 8, 30, 8, 8, 6, 0},
-	'u': {0, 17, 17, 17, 19, 13, 0},
-	'v': {0, 17, 17, 17, 10, 4, 0},
-	'w': {0, 17, 17, 21, 21, 10, 0},
-	'x': {0, 17, 10, 4, 10, 17, 0},
-	'y': {0, 17, 17, 15, 1, 14, 0},
-	'z': {0, 31, 2, 4, 8, 31, 0},
-	'A': {14, 17, 17, 31, 17, 17, 0},
-	'B': {30, 17, 30, 17, 17, 30, 0},
-	'C': {15, 16, 16, 16, 16, 15, 0},
-	'D': {30, 17, 17, 17, 17, 30, 0},
-	'E': {31, 16, 30, 16, 16, 31, 0},
-	'F': {31, 16, 30, 16, 16, 16, 0},
-	'G': {15, 16, 16, 19, 17, 15, 0},
-	'H': {17, 17, 31, 17, 17, 17, 0},
-	'I': {14, 4, 4, 4, 4, 14, 0},
-	'J': {7, 2, 2, 2, 18, 12, 0},
-	'K': {17, 18, 28, 18, 17, 17, 0},
-	'L': {16, 16, 16, 16, 16, 31, 0},
-	'M': {17, 27, 21, 17, 17, 17, 0},
-	'N': {17, 25, 21, 19, 17, 17, 0},
-	'O': {14, 17, 17, 17, 17, 14, 0},
-	'P': {30, 17, 30, 16, 16, 16, 0},
-	'Q': {14, 17, 17, 17, 19, 15, 0},
-	'R': {30, 17, 30, 18, 17, 17, 0},
-	'S': {15, 16, 14, 1, 1, 30, 0},
-	'T': {31, 4, 4, 4, 4, 4, 0},
-	'U': {17, 17, 17, 17, 17, 14, 0},
-	'V': {17, 17, 17, 17, 10, 4, 0},
-	'W': {17, 17, 17, 21, 21, 10, 0},
-	'X': {17, 10, 4, 4, 10, 17, 0},
-	'Y': {17, 10, 4, 4, 4, 4, 0},
-	'Z': {31, 2, 4, 8, 16, 31, 0},
-	'0': {14, 17, 19, 21, 25, 14, 0},
-	'1': {4, 12, 4, 4, 4, 14, 0},
-	'2': {14, 17, 2, 4, 8, 31, 0},
-	'3': {31, 2, 4, 2, 17, 14, 0},
-	'4': {2, 6, 10, 18, 31, 2, 0},
-	'5': {31, 16, 30, 1, 17, 14, 0},
-	'6': {6, 8, 30, 17, 17, 14, 0},
-	'7': {31, 1, 2, 4, 8, 8, 0},
-	'8': {14, 17, 14, 17, 17, 14, 0},
-	'9': {14, 17, 17, 15, 1, 6, 0},
-}
-
-func writeText(img *image.RGBA, x, y int, s string, c color.Color) {
-	x0 := x
-	for _, r := range s {
-		if r == '\n' {
-			y += 10
-			x = x0
-			continue
-		}
-		glyph, ok := font[r]
-		if !ok {
-			glyph = font['?']
-		}
-		drawGlyph(img, x, y, glyph, c)
-		x += 6
-	}
-}
-
-func drawGlyph(img *image.RGBA, x, y int, g [7]byte, c color.Color) {
-	for row := 0; row < 7; row++ {
-		bits := g[row]
-		for col := 0; col < 5; col++ {
-			if bits&(1<<(4-col)) != 0 {
-				img.Set(x+col, y+row, c)
-			}
-		}
-	}
-}
-
-func init() {
-	// Add a fallback '?' glyph.
-	if _, ok := font['?']; !ok {
-		font['?'] = [7]byte{14, 17, 2, 4, 0, 4, 0}
-	}
-}
-
-// Ensure unused imports remain pruned by referencing path package where needed.
-var _ = fmt.Sprintf
-var _ = path.Clean

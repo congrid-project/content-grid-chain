@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -48,8 +50,29 @@ func TestHomePageIncludesPublisherVerificationBadge(t *testing.T) {
 
 	body := rendered.String()
 	require.Contains(t, body, `<a href="https://congrid.net">`)
-	require.Contains(t, body, `src="https://congrid.net/badge.png?publisher=congrid.net&wallet=congrid18cepycc5rv3dpe24n0mmdkdqwaruptvkuuurxf"`)
+	require.Contains(t, body, `src="https://congrid.net/badge.svg?publisher=congrid.net&wallet=congrid18cepycc5rv3dpe24n0mmdkdqwaruptvkuuurxf"`)
 	require.NotContains(t, body, "congrid1c6vuutzwzq0fxqw8fpscwdytnc08qnfq3ufp2t")
+}
+
+func TestBadgeSVGMatchesStaticLogo(t *testing.T) {
+	expected, err := siteFS.ReadFile("static/assets/congrid-logo.svg")
+	require.NoError(t, err)
+
+	for _, requestPath := range []string{
+		"/badge.svg?publisher=example.com&wallet=congrid1owner",
+		"/badge.png?publisher=example.com&wallet=congrid1owner",
+	} {
+		t.Run(requestPath, func(t *testing.T) {
+			recorder := httptest.NewRecorder()
+			request := httptest.NewRequest(http.MethodGet, requestPath, nil)
+
+			(&server{}).handleBadgeSVG(recorder, request)
+
+			require.Equal(t, http.StatusOK, recorder.Code)
+			require.Equal(t, "image/svg+xml; charset=utf-8", recorder.Header().Get("Content-Type"))
+			require.Equal(t, expected, recorder.Body.Bytes())
+		})
+	}
 }
 
 func TestHomePageFooterIncludesSourceCodeLink(t *testing.T) {
@@ -92,6 +115,25 @@ func TestPublisherPageSupportsVerifierReferrer(t *testing.T) {
 	require.Contains(t, body, `name="referrer"`)
 	require.Contains(t, body, `data-wallet-register-referrer`)
 	require.Contains(t, body, "--referrer ${referrer}")
+}
+
+func TestPublisherPageGeneratesSVGLogoFirstInSimilarSites(t *testing.T) {
+	templates, err := buildPageTemplates(siteFS)
+	require.NoError(t, err)
+
+	var rendered bytes.Buffer
+	err = templates["publishers.html"].ExecuteTemplate(&rendered, "publishers.html", pageData{
+		Title:   "Become a Publisher — Congrid",
+		BaseURL: "https://congrid.net",
+		Path:    "/publishers",
+	})
+	require.NoError(t, err)
+
+	body := rendered.String()
+	require.Contains(t, body, "const badgeSrc = `${baseURL}/badge.svg?publisher=${encodeURIComponent(domain)}&wallet=${encodeURIComponent(wallet)}`;")
+	require.Contains(t, body, "const badgeSnippet = `<div id=\"congrid-similar\">\\n  <a href=\"${baseURL}\">")
+	require.Contains(t, body, "Add links for all 15 domains returned by indexerd here.")
+	require.NotContains(t, body, "/badge.png?publisher=${encodeURIComponent(domain)}")
 }
 
 func TestPublisherWalletEncodesReferrerAsProtoFieldSix(t *testing.T) {

@@ -138,7 +138,7 @@ write_homepage() {
   cat >"$dir/index.html" <<HTML
 <!doctype html>
 <html><body>
-<a href="https://congrid.net"><img src="https://congrid.net/badge.png?publisher=$PUBLISHER_DOMAIN&wallet=$PUBLISHER_ADDR" /></a>
+<a href="https://congrid.net"><img src="https://congrid.net/badge.svg?publisher=$PUBLISHER_DOMAIN&wallet=$PUBLISHER_ADDR" /></a>
 </body></html>
 HTML
 }
@@ -148,7 +148,7 @@ add_lease_anchor() {
   cat >"$dir/index.html" <<HTML
 <!doctype html>
 <html><body>
-<a href="https://congrid.net"><img src="https://congrid.net/badge.png?publisher=$PUBLISHER_DOMAIN&wallet=$PUBLISHER_ADDR" /></a>
+<a href="https://congrid.net"><img src="https://congrid.net/badge.svg?publisher=$PUBLISHER_DOMAIN&wallet=$PUBLISHER_ADDR" /></a>
 <a href="$TARGET_URL" data-congrid-slot="$SLOT_ID" data-congrid-lease="$LEASE_ID">Link</a>
 </body></html>
 HTML
