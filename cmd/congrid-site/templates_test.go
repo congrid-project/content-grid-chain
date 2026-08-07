@@ -52,6 +52,23 @@ func TestHomePageIncludesPublisherVerificationBadge(t *testing.T) {
 	require.NotContains(t, body, "congrid1c6vuutzwzq0fxqw8fpscwdytnc08qnfq3ufp2t")
 }
 
+func TestHomePageFooterIncludesSourceCodeLink(t *testing.T) {
+	templates, err := buildPageTemplates(siteFS)
+	require.NoError(t, err)
+
+	var rendered bytes.Buffer
+	err = templates["home.html"].ExecuteTemplate(&rendered, "home.html", pageData{
+		Title:   "Congrid — Content Grid Protocol",
+		BaseURL: "https://congrid.net",
+		Path:    "/",
+	})
+	require.NoError(t, err)
+
+	body := rendered.String()
+	require.Contains(t, body, `href="https://github.com/congrid-project/content-grid-chain"`)
+	require.Contains(t, body, `>Source code on GitHub</a>`)
+}
+
 func TestPublisherPageSupportsVerifierReferrer(t *testing.T) {
 	templates, err := buildPageTemplates(siteFS)
 	require.NoError(t, err)
