@@ -33,3 +33,21 @@ func TestVerifierPageUsesNativeInstaller(t *testing.T) {
 	require.NotContains(t, body, "verifier-oneclick.sh")
 	require.NotContains(t, body, ".env.verifier")
 }
+
+func TestHomePageIncludesPublisherVerificationBadge(t *testing.T) {
+	templates, err := buildPageTemplates(siteFS)
+	require.NoError(t, err)
+
+	var rendered bytes.Buffer
+	err = templates["home.html"].ExecuteTemplate(&rendered, "home.html", pageData{
+		Title:   "Congrid — Content Grid Protocol",
+		BaseURL: "https://congrid.net",
+		Path:    "/",
+	})
+	require.NoError(t, err)
+
+	body := rendered.String()
+	require.Contains(t, body, `<a href="https://congrid.net">`)
+	require.Contains(t, body, `src="https://congrid.net/badge.png?publisher=congrid.net&wallet=congrid18cepycc5rv3dpe24n0mmdkdqwaruptvkuuurxf"`)
+	require.NotContains(t, body, "congrid1c6vuutzwzq0fxqw8fpscwdytnc08qnfq3ufp2t")
+}
