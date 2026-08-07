@@ -66,6 +66,7 @@
     <h2>Step 2 — Enter domain + owner wallet</h2>
     <p>
       We will generate: (1) a CLI register command and (2) an exact badge snippet.
+      If a verifier referred you, you can credit that verifier during registration.
     </p>
 
     <form class="card"
@@ -79,6 +80,18 @@
 
       <label class="label" for="publisher-wallet">Owner wallet address</label>
       <input class="input" id="publisher-wallet" name="wallet" placeholder="congrid1..." required />
+
+      <label class="label" for="publisher-referrer">Referrer verifier address (optional)</label>
+      <input
+        class="input"
+        id="publisher-referrer"
+        name="referrer"
+        placeholder="congrid1..."
+        aria-describedby="publisher-referrer-help"
+      />
+      <p class="muted" id="publisher-referrer-help">
+        Enter the Congrid address of the verifier that referred you. The referrer is recorded with the initial registration and cannot currently be changed.
+      </p>
 
       <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
         <button class="btn" type="submit">Generate command + badge snippet</button>
@@ -107,6 +120,7 @@
       <form data-wallet-publisher-register>
         <input type="hidden" name="domain" value="" data-wallet-register-domain />
         <input type="hidden" name="wallet" value="" data-wallet-register-wallet />
+        <input type="hidden" name="referrer" value="" data-wallet-register-referrer />
         <button class="btn" type="submit">Register with connected wallet</button>
         <div class="callout" data-wallet-flash hidden style="margin-top: 10px;"></div>
       </form>
@@ -130,6 +144,7 @@
 
   const domainInput = form.querySelector("input[name='domain']");
   const walletInput = form.querySelector("input[name='wallet']");
+  const referrerInput = form.querySelector("input[name='referrer']");
   const useConnectedBtn = form.querySelector("[data-use-connected-wallet]");
   const connectedWalletEl = document.querySelector("[data-wallet-address]");
 
@@ -139,6 +154,7 @@
   const snippetCode = document.querySelector("[data-publisher-badge-snippet]");
   const walletRegisterDomainInput = document.querySelector("[data-wallet-register-domain]");
   const walletRegisterWalletInput = document.querySelector("[data-wallet-register-wallet]");
+  const walletRegisterReferrerInput = document.querySelector("[data-wallet-register-referrer]");
 
   const baseURL = (form.dataset.baseUrl || "https://congrid.net").replace(/\/$/, "");
   const chainID = String(form.dataset.chainId || "").trim();
@@ -170,6 +186,9 @@
   walletInput?.addEventListener("input", () => {
     if (walletRegisterWalletInput) walletRegisterWalletInput.value = String(walletInput.value || "").trim();
   });
+  referrerInput?.addEventListener("input", () => {
+    if (walletRegisterReferrerInput) walletRegisterReferrerInput.value = String(referrerInput.value || "").trim();
+  });
 
   useConnectedBtn?.addEventListener("click", () => {
     const addr = String(connectedWalletEl?.textContent || "").trim();
@@ -187,6 +206,7 @@
 
     const domain = normalizeDomain(domainInput.value);
     const wallet = String(walletInput.value || "").trim();
+    const referrer = String(referrerInput?.value || "").trim();
 
     if (!domain) {
       alert("Please enter a valid website domain.");
@@ -200,10 +220,15 @@
       alert("Wallet address format looks invalid. Use congrid1... address.");
       return;
     }
+    if (referrer && !isLikelyGridAddress(referrer)) {
+      alert("Referrer verifier address format looks invalid. Use congrid1... address.");
+      return;
+    }
 
     const parts = [
       `./content-grid-d publisher register ${domain}`,
       `  --from <local-key-name>`,
+      referrer ? `  --referrer ${referrer}` : "",
       chainID ? `  --chain-id ${chainID}` : "",
       rpc ? `  --node ${rpc}` : "",
       gasPrice ? `  --gas-prices ${gasPrice}` : "",
@@ -219,6 +244,7 @@
     snippetCode.textContent = badgeSnippet;
     if (walletRegisterDomainInput) walletRegisterDomainInput.value = domain;
     if (walletRegisterWalletInput) walletRegisterWalletInput.value = wallet;
+    if (walletRegisterReferrerInput) walletRegisterReferrerInput.value = referrer;
     commandWrap.hidden = false;
     snippetWrap.hidden = false;
   });

@@ -172,11 +172,14 @@ function makeMsgRegisterPublisher(_m0) {
       if (message.metadataUri !== "") {
         writer.uint32(26).string(message.metadataUri);
       }
+      if (message.proof !== "") {
+        writer.uint32(34).string(message.proof);
+      }
       if (message.verifier !== "") {
-        writer.uint32(34).string(message.verifier);
+        writer.uint32(42).string(message.verifier);
       }
       if (message.referrer !== "") {
-        writer.uint32(42).string(message.referrer);
+        writer.uint32(50).string(message.referrer);
       }
       return writer;
     },
@@ -185,12 +188,14 @@ function makeMsgRegisterPublisher(_m0) {
         owner: "",
         domain: "",
         metadataUri: "",
+        proof: "",
         verifier: "",
         referrer: "",
       };
       message.owner = object.owner ?? "";
       message.domain = object.domain ?? "";
       message.metadataUri = object.metadataUri ?? "";
+      message.proof = object.proof ?? "";
       message.verifier = object.verifier ?? "";
       message.referrer = object.referrer ?? "";
       return message;
@@ -270,6 +275,11 @@ function updateWalletAddress(address) {
   document.querySelectorAll("[data-wallet-address]").forEach((el) => {
     el.textContent = address || "Not connected";
   });
+}
+
+function isLikelyGridAddress(address) {
+  const value = String(address || "").trim();
+  return /^congrid1[0-9a-z]+$/.test(value) && value.length >= 20 && value.length <= 90;
 }
 
 function getWalletProviders() {
@@ -605,6 +615,7 @@ function bindPublisherRegisterForms() {
         const data = new FormData(form);
         const domain = String(data.get("domain") || "").trim().toLowerCase();
         const wallet = String(data.get("wallet") || "").trim();
+        const referrer = String(data.get("referrer") || "").trim();
         if (!domain) {
           throw new Error("Please generate registration details first (missing domain).");
         }
@@ -614,6 +625,9 @@ function bindPublisherRegisterForms() {
         if (wallet !== state.address) {
           throw new Error(`Connected wallet mismatch. connected=${state.address} form=${wallet}`);
         }
+        if (referrer && !isLikelyGridAddress(referrer)) {
+          throw new Error("Referrer verifier address format looks invalid. Use congrid1... address.");
+        }
 
         const msg = {
           typeUrl: "/contentgrid.registry.v1.MsgRegisterPublisher",
@@ -621,8 +635,9 @@ function bindPublisherRegisterForms() {
             owner: state.address,
             domain,
             metadataUri: "",
+            proof: "",
             verifier: "",
-            referrer: "",
+            referrer,
           },
         };
         const txHash = await submitTx([msg], 220000);
