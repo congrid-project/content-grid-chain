@@ -239,7 +239,7 @@
     const registerCommand = parts.join(" \\\n");
 
     const badgeSrc = `${baseURL}/badge.svg?publisher=${encodeURIComponent(domain)}&wallet=${encodeURIComponent(wallet)}`;
-    const badgeSnippet = `<div id="congrid-similar">\n  <a href="${baseURL}">\n    <img\n      alt="Verified by Congrid"\n      src="${badgeSrc}"\n    />\n  </a>\n  <!-- Add links for all 15 domains returned by indexerd here. -->\n</div>`;
+    const badgeSnippet = `<div id="congrid-similar">\n  <a href="${baseURL}" style="display: inline-flex; align-items: center; gap: 8px;">\n    <img\n      alt="Verified by Congrid"\n      src="${badgeSrc}"\n      width="32"\n      height="32"\n      style="display: block;"\n    />\n    <span>Congrid — Content Grid Protocol</span>\n  </a>\n  <!-- Add links for all 15 domains returned by indexerd here. -->\n</div>`;
 
     commandCode.textContent = registerCommand;
     snippetCode.textContent = badgeSnippet;

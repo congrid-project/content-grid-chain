@@ -175,11 +175,15 @@ node1 不需要配置 node2/node3。node2 和 node3 启动后会先连接 seed�
 **推荐格式：**
    ```html
    <div id="congrid-similar">
-     <a href="https://congrid.net">
+     <a href="https://congrid.net" style="display: inline-flex; align-items: center; gap: 8px;">
        <img
          alt="Verified by Congrid"
          src="https://congrid.net/badge.svg?publisher=example.com&wallet=<bech32-owner-address>"
+         width="32"
+         height="32"
+         style="display: block;"
        />
+       <span>Congrid — Content Grid Protocol</span>
      </a>
      <!-- 在此添加 indexerd 返回的全部 15 个域名链接。 -->
    </div>

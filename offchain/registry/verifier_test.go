@@ -32,6 +32,11 @@ func TestHTTPContentVerifier(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name:    "standard div badge size alignment and label do not affect verification",
+			body:    `<div id="congrid-similar"><a href="https://congrid.net" style="display:inline-flex;align-items:center;gap:8px"><img src="https://congrid.net/badge.svg?publisher={{publisher}}&wallet=cosmos1owner" width="32" height="32" style="display:block" /><span>Congrid — Content Grid Protocol</span></a></div>`,
+			wantErr: false,
+		},
+		{
 			name:    "official badge publisher must match registered domain",
 			body:    `<a href="https://congrid.net"><img src="https://congrid.net/badge.svg?publisher=wrong.example&wallet=cosmos1owner" /></a>`,
 			wantErr: true,

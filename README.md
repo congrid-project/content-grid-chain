@@ -173,11 +173,15 @@ For the current verifier determination rules, see `offchain/registry/verifier.go
 **Recommended format:**
    ```html
    <div id="congrid-similar">
-     <a href="https://congrid.net">
+     <a href="https://congrid.net" style="display: inline-flex; align-items: center; gap: 8px;">
        <img
          alt="Verified by Congrid"
          src="https://congrid.net/badge.svg?publisher=example.com&wallet=<bech32-owner-address>"
+         width="32"
+         height="32"
+         style="display: block;"
        />
+       <span>Congrid — Content Grid Protocol</span>
      </a>
      <!-- Add links for all 15 domains returned by indexerd here. -->
    </div>
