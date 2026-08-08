@@ -6,18 +6,22 @@
       <span>Congrid</span>
     </a>
     <nav class="links" aria-label="Primary">
-      <a href="/marketplace" {{if eq .Path "/marketplace"}}aria-current="page"{{end}}>Marketplace</a>
-      <a href="/leases" {{if eq .Path "/leases"}}aria-current="page"{{end}}>Leases</a>
+      <a href="/airdrop" {{if eq .Path "/airdrop"}}aria-current="page"{{end}}>Airdrop</a>
       <a href="/publishers" {{if eq .Path "/publishers"}}aria-current="page"{{end}}>Publishers</a>
       <a href="/verifiers" {{if eq .Path "/verifiers"}}aria-current="page"{{end}}>Verifiers</a>
-      <a href="/publisher/dashboard" {{if eq .Path "/publisher/dashboard"}}aria-current="page"{{end}}>Dashboard</a>
       <a href="/docs" {{if eq .Path "/docs"}}aria-current="page"{{end}}>Guides</a>
-      <a href="/airdrop" {{if eq .Path "/airdrop"}}aria-current="page"{{end}}>Airdrop</a>
     </nav>
-    <div class="cta">
-      <a class="btn" href="/publishers">Join as Publisher</a>
-      <a class="btn btn-outline" href="/verifiers">Run a Verifier</a>
-    </div>
+    <details class="nav-more">
+      <summary class="nav-menu-button" aria-label="Open more navigation">
+        <span class="nav-menu-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">More</span>
+      </summary>
+      <nav class="nav-menu-panel" aria-label="More">
+        <a href="/marketplace" {{if eq .Path "/marketplace"}}aria-current="page"{{end}}>Marketplace</a>
+        <a href="/leases" {{if eq .Path "/leases"}}aria-current="page"{{end}}>Leases</a>
+        <a href="/publisher/dashboard" {{if eq .Path "/publisher/dashboard"}}aria-current="page"{{end}}>Publisher Dashboard</a>
+      </nav>
+    </details>
   </div>
 </header>
 {{end}}

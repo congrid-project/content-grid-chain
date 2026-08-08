@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -49,8 +50,12 @@ func TestHomePageIncludesPublisherVerificationBadge(t *testing.T) {
 	require.NoError(t, err)
 
 	body := rendered.String()
-	require.Contains(t, body, `<a href="https://congrid.net">`)
+	require.Contains(t, body, `<div id="congrid-similar">`)
+	require.Contains(t, body, `<a href="https://congrid.net" class="protocol-badge-link">`)
 	require.Contains(t, body, `src="https://congrid.net/badge.svg?publisher=congrid.net&wallet=congrid18cepycc5rv3dpe24n0mmdkdqwaruptvkuuurxf"`)
+	require.Contains(t, body, `width="32"`)
+	require.Contains(t, body, `height="32"`)
+	require.Contains(t, body, `Congrid — Content Grid Protocol`)
 	require.NotContains(t, body, "congrid1c6vuutzwzq0fxqw8fpscwdytnc08qnfq3ufp2t")
 }
 
@@ -90,6 +95,41 @@ func TestHomePageFooterIncludesSourceCodeLink(t *testing.T) {
 	body := rendered.String()
 	require.Contains(t, body, `href="https://github.com/congrid-project/content-grid-chain"`)
 	require.Contains(t, body, `>Source code on GitHub</a>`)
+}
+
+func TestNavigationPrioritizesPrimaryLinksAndHidesSecondaryLinks(t *testing.T) {
+	templates, err := buildPageTemplates(siteFS)
+	require.NoError(t, err)
+
+	var rendered bytes.Buffer
+	err = templates["home.html"].ExecuteTemplate(&rendered, "home.html", pageData{
+		Title: "Congrid — Content Grid Protocol",
+		Path:  "/",
+	})
+	require.NoError(t, err)
+
+	body := rendered.String()
+	primaryStart := strings.Index(body, `<nav class="links"`)
+	require.NotEqual(t, -1, primaryStart)
+	primaryEnd := strings.Index(body[primaryStart:], `</nav>`)
+	require.NotEqual(t, -1, primaryEnd)
+	primary := body[primaryStart : primaryStart+primaryEnd]
+
+	previous := -1
+	for _, label := range []string{"Airdrop", "Publishers", "Verifiers", "Guides"} {
+		index := strings.Index(primary, ">"+label+"</a>")
+		require.Greater(t, index, previous, "primary navigation order for %s", label)
+		previous = index
+	}
+	require.NotContains(t, primary, "Marketplace")
+	require.NotContains(t, primary, "Leases")
+	require.NotContains(t, primary, "Publisher Dashboard")
+
+	require.Contains(t, body, `<details class="nav-more">`)
+	require.Contains(t, body, `<nav class="nav-menu-panel" aria-label="More">`)
+	require.Contains(t, body, `>Marketplace</a>`)
+	require.Contains(t, body, `>Leases</a>`)
+	require.Contains(t, body, `>Publisher Dashboard</a>`)
 }
 
 func TestPublisherPageSupportsVerifierReferrer(t *testing.T) {
@@ -133,7 +173,10 @@ func TestPublisherPageGeneratesSVGLogoFirstInSimilarSites(t *testing.T) {
 
 	body := rendered.String()
 	require.Contains(t, body, "const badgeSrc = `${baseURL}/badge.svg?publisher=${encodeURIComponent(domain)}&wallet=${encodeURIComponent(wallet)}`;")
-	require.Contains(t, body, "const badgeSnippet = `<div id=\"congrid-similar\">\\n  <a href=\"${baseURL}\">")
+	require.Contains(t, body, "const badgeSnippet = `<div id=\"congrid-similar\">\\n  <a href=\"${baseURL}\" style=\"display: inline-flex; align-items: center; gap: 8px;\">")
+	require.Contains(t, body, `width="32"`)
+	require.Contains(t, body, `height="32"`)
+	require.Contains(t, body, `Congrid — Content Grid Protocol`)
 	require.Contains(t, body, "Add links for all 15 domains returned by indexerd here.")
 	require.NotContains(t, body, "/badge.png?publisher=${encodeURIComponent(domain)}")
 }

@@ -67,12 +67,18 @@
 
     <h2>Badge snippet (example)</h2>
     <div class="code">
-<pre><code>&lt;a href="{{.BaseURL}}"&gt;
-  &lt;img
-    alt="Verified by Congrid"
-    src="{{.BaseURL}}/badge.svg?publisher=example.com&amp;wallet=congrid1..."
-  /&gt;
-&lt;/a&gt;</code></pre>
+<pre><code>&lt;div id="congrid-similar"&gt;
+  &lt;a href="{{.BaseURL}}" style="display: inline-flex; align-items: center; gap: 8px;"&gt;
+    &lt;img
+      alt="Verified by Congrid"
+      src="{{.BaseURL}}/badge.svg?publisher=example.com&amp;wallet=congrid1..."
+      width="32"
+      height="32"
+      style="display: block;"
+    /&gt;
+    &lt;span&gt;Congrid — Content Grid Protocol&lt;/span&gt;
+  &lt;/a&gt;
+&lt;/div&gt;</code></pre>
     </div>
   </div>
 </section>
