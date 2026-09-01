@@ -8,8 +8,6 @@ import (
 	"strings"
 	"time"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	registry "content-grid-chain/x/registry"
 )
 
@@ -31,7 +29,7 @@ func (s *server) handlePublisherRegister(baseURL string) http.HandlerFunc {
 			s.renderPublishersFlash(w, r, baseURL, "Invalid domain format.")
 			return
 		}
-		if _, err := sdk.AccAddressFromBech32(wallet); err != nil || !strings.HasPrefix(wallet, "congrid1") {
+		if err := validateCongridAccountAddress(wallet); err != nil {
 			s.renderPublishersFlash(w, r, baseURL, "Invalid wallet address. Use a congrid1... address.")
 			return
 		}
@@ -91,7 +89,7 @@ func (s *server) handlePublisherVerify() http.HandlerFunc {
 			writeResponse(w, http.StatusBadRequest, verifyResponse{Error: "invalid domain format"})
 			return
 		}
-		if _, err := sdk.AccAddressFromBech32(wallet); err != nil || !strings.HasPrefix(wallet, "congrid1") {
+		if err := validateCongridAccountAddress(wallet); err != nil {
 			writeResponse(w, http.StatusBadRequest, verifyResponse{Error: "invalid wallet address"})
 			return
 		}
