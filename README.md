@@ -1,242 +1,168 @@
 # Content Grid Chain
 
-Core protocol implementation for the Content Grid project — a decentralized content network and search protocol.
+Content Grid Chain is the on-chain coordination and settlement layer for a decentralized publisher-discovery network. It records publisher ownership, assigns independent verifiers, reaches consensus on website proofs, and settles publisher/verifier rewards plus link-marketplace payments.
 
-## About
-This chain (Cosmos SDK–based) coordinates a publisher registry and a verifier network that:
-- Registers publisher domains on-chain
-- Assigns verification rounds to bonded verifiers
-- Confirms publisher badges and records verification outcomes
-- Distributes publisher/verifier rewards via on-chain parameters
+[中文说明](README-zh.md) · [Protocol whitepaper](whitepaper.md) · [Contributor guide](CONTRIBUTING.md)
 
-Terminology: `validator` means a Cosmos consensus validator; `verifier` means the Congrid publisher-verification role.
+> Project status: the chain runtime, publisher registry, verifier workflow, drand randomness, rewards, and slot/lease marketplace are implemented. A production mainnet release bundle (binary, genesis, and peers) is not published by this repository yet. Where the whitepaper and code differ, the current code and protocol documents are authoritative.
 
-Quick links: see `whitepaper.md` for the design (note: legacy sections may not reflect current scope), `docs/tokenomics.md` for the economic blueprint, and `AGENTS.md` for contribution guidelines.
+## Protocol overview
 
-## Requirements
-- Go 1.22+ (use the latest stable release)
-- Unix-like environment (macOS/Linux) recommended
+Content Grid connects four roles:
 
-## Build, Run, Test
-- Build with embedded version and commit: `make build`
-- Run: `./content-grid-d version` or `./content-grid-d init` (placeholder)
-- Test: `go test ./...`
-- Proto: `./scripts/proto-gen.sh` regenerates gRPC code after modifying `proto/`
+- **Publishers** register a domain and prove control by placing a wallet-bound Congrid badge on the homepage.
+- **Verifiers** bond `CONGRID`, independently inspect assigned publishers, and submit results through commit–reveal.
+- **Consensus validators** run the Cosmos chain, order transactions, and finalize protocol state.
+- **Consumers and advertisers** discover publishers or lease verified link slots.
 
-### Local single node startup
+A normal publisher verification moves through this flow:
 
-1. Run `./content-grid-d devnet --home ./devnet-home --chain-id grid-dev-1`, the CLI will automatically complete `init → keys add → add-genesis-account → gentx → collect-gentxs`, and generate a single-node genesis file with the default consensus-validator key (name `validator`, keyring backend is `test`).
-2. Execute `./content-grid-d start --home ./devnet-home` to start the local node. If reinitialization is required, append `--force` to clear the old home directory.
+1. The publisher registers a domain. The record starts as `PENDING`.
+2. At a verification-round boundary, the chain obtains the required drand beacon and derives an auditable round seed.
+3. Eligible, non-suspended verifiers are selected deterministically using stake-weighted sampling without replacement.
+4. Selected verifiers inspect the homepage and first commit, then reveal, their result and evidence.
+5. Once quorum is reached, the chain finalizes the majority result, updates the publisher status, applies verifier penalties where needed, and settles rewards.
+6. Verified publishers may list link slots. Lease payments remain in escrow until the lease completes or verification causes a refund.
 
-### Local multi-node network (manual)
+## Consensus model
 
-The following example takes 3 nodes as an example. The process is: initialization → generate key → generate gentx on the same genesis → collect gentx → distribute the final genesis → configure ports and interconnections.
+Content Grid uses two related but distinct consensus layers.
 
-1. Initialization and keys
-   ```bash
-   make build
-   ./content-grid-d version
-   ./content-grid-d version --long | grep -E '^(version|commit):'
+### Chain consensus
 
-   CHAIN_ID=grid-local-1
-   HOME1=./localnet/node1
-   HOME2=./localnet/node2
-   HOME3=./localnet/node3
+The blockchain is built with Cosmos SDK v0.53 and CometBFT v0.38. Cosmos consensus validators provide Byzantine-fault-tolerant block ordering and finality; staking, slashing, governance, bank, and distribution use the standard Cosmos modules wired into the application.
 
-   ./content-grid-d init node1 --chain-id $CHAIN_ID --home $HOME1
-   ./content-grid-d init node2 --chain-id $CHAIN_ID --home $HOME2
-   ./content-grid-d init node3 --chain-id $CHAIN_ID --home $HOME3
+### Publisher-verification consensus
 
-   ./content-grid-d keys add node1 --home $HOME1 --keyring-backend test
-   ./content-grid-d keys add node2 --home $HOME2 --keyring-backend test
-   ./content-grid-d keys add node3 --home $HOME3 --keyring-backend test
-   ```
+Website verification is application-level consensus recorded by the chain:
 
-2. Generate the address and join the genesis account (operate on the genesis of node1)
-   ```bash
-   ADDR1=$(./content-grid-d keys show node1 --home $HOME1 --keyring-backend test --address)
-   ADDR2=$(./content-grid-d keys show node2 --home $HOME2 --keyring-backend test --address)
-   ADDR3=$(./content-grid-d keys show node3 --home $HOME3 --keyring-backend test --address)
+- Rounds are one hour by default; timing and thresholds are on-chain parameters.
+- drand is enabled in strict mode by default. The chain accepts exactly the beacon required for the next round, verifies its BLS signature, and does not fall back to block-hash-only randomness.
+- Verifier selection is deterministic, stake-weighted, and without replacement, so any observer can reproduce it from the round seed and on-chain verifier set.
+- Commit–reveal keeps votes hidden during the commit window. A result needs quorum, and a pass requires more pass reveals than fail reveals.
+- Missed submissions or votes against the finalized result accumulate penalties; repeated penalties can temporarily suspend a verifier from assignments.
+- Publisher states are `PENDING`, `VERIFIED`, and `REVOKED`. A verified publisher that changes its owner or referrer keeps its current record until a new verification round accepts the pending change.
 
-   ./content-grid-d genesis add-genesis-account $ADDR1 100000000ucongrid --home $HOME1
-   ./content-grid-d genesis add-genesis-account $ADDR2 100000000ucongrid --home $HOME1
-   ./content-grid-d genesis add-genesis-account $ADDR3 100000000ucongrid --home $HOME1
-   ```
+`validator` always means a Cosmos consensus validator. `verifier` means the separate Content Grid website-verification role; one account does not need to perform both roles.
 
-3. Distribute the same copy of genesis, and then generate gentx separately.
-   ```bash
-   cp $HOME1/config/genesis.json $HOME2/config/genesis.json
-   cp $HOME1/config/genesis.json $HOME3/config/genesis.json
+See [verifier rules](docs/verifiers.md) and [drand rules](docs/drand.md) for exact behavior.
 
-   ./content-grid-d genesis gentx node1 1000000ucongrid --chain-id $CHAIN_ID --home $HOME1 --keyring-backend test
-   ./content-grid-d genesis gentx node2 1000000ucongrid --chain-id $CHAIN_ID --home $HOME2 --keyring-backend test
-   ./content-grid-d genesis gentx node3 1000000ucongrid --chain-id $CHAIN_ID --home $HOME3 --keyring-backend test
-   ```
+## Protocol components
 
-4. Collect gentx and distribute final genesis
-   ```bash
-   cp $HOME2/config/gentx/*.json $HOME1/config/gentx/
-   cp $HOME3/config/gentx/*.json $HOME1/config/gentx/
-   ./content-grid-d genesis collect-gentxs --home $HOME1
+| Component | Responsibility |
+| --- | --- |
+| `x/registry` | Publisher records, verification rounds, commit–reveal, similar-site evidence, slots, leases, and settlement |
+| `x/verifiers` | Verifier bond escrow and eligibility |
+| `x/tokenomics` | Issuance-pool funding, transfers, and burns |
+| `offchain/verifierd` | Fetches assignments, checks publisher pages, submits commits/reveals, and delivers required drand beacons |
+| `offchain/indexerd` | Indexes publisher homepages and produces similarity results and compact signatures |
+| `cmd/congrid-site` | Publisher onboarding, dashboards, downloads, and marketplace web entry points |
 
-   cp $HOME1/config/genesis.json $HOME2/config/genesis.json
-   cp $HOME1/config/genesis.json $HOME3/config/genesis.json
-   ```
+The default economic reference is 1 billion `CONGRID` (`1 CONGRID = 1,000,000 ucongrid`): 40% operator reserve, 10% publisher emissions, and 50% verifier emissions over 100 years. Publisher rewards depend on badge validity and matching similar-site links. Verifier rewards combine an equal base share with a stake-and-referral-weighted share. Unclaimed round emissions are burned. These values are genesis parameters and may differ on a deployed network. Automated operator-reserve distribution, the complete consumer payment rail, and the full slash-compensation rail are not yet wired end to end.
 
-5. Configure ports and seed discovery (to avoid local port conflicts)
-- Edit `config/config.toml`: set `p2p.laddr` and `rpc.laddr`.
-- Edit `config/app.toml`: set `api.address` and `grpc.address`.
-- Keep peer exchange enabled on every node in the `[p2p]` section:
-   ```toml
-   pex = true
-   ```
-- For local/private addresses such as `127.0.0.1`, disable strict routability checks:
-   ```toml
-   addr_book_strict = false
-   ```
-- Example port assignment:
-     - node1: p2p `26656`, rpc `26657`, api `1317`, grpc `9090`
-     - node2: p2p `26666`, rpc `26667`, api `1417`, grpc `9190`
-     - node3: p2p `26676`, rpc `26677`, api `1517`, grpc `9290`
+See [tokenomics](docs/tokenomics.md), [marketplace](docs/marketplace.md), and [governance](docs/governance.md) for the complete rules and current scope.
 
-6. Configure node1 as the bootstrap seed for the new nodes
-   ```bash
-   NODE1_ID=$(./content-grid-d tendermint show-node-id --home $HOME1)
-   echo "${NODE1_ID}@127.0.0.1:26656"
-   ```
-Set only the printed seed value in the `[p2p]` section of `config/config.toml` for node2 and node3:
-   ```
-   seeds = "<NODE1_ID>@127.0.0.1:26656"
-   persistent_peers = ""
-   ```
-Node1 does not need to list node2/node3. When node2 and node3 start, they dial the seed, exchange peer addresses through PEX, and maintain their peer set through the CometBFT address book.
+## Use the protocol
 
-7. Start the nodes separately (different terminals)
-   ```bash
-   ./content-grid-d start --home $HOME1
-   ./content-grid-d start --home $HOME2
-   ./content-grid-d start --home $HOME3
-   ```
+Network-specific values such as the chain ID, RPC endpoint, genesis file, and seed peers must come from the network operator or official release bundle.
 
-### Production deployment (mainnet)
+### Register a publisher
 
-Production deployment is not fully automated in this repo yet. Use the official release bundle (binary + genesis + peers) when mainnet is announced. Operational baselines live in `docs/runbook.md` and `docs/launch-checklist.md`.
+Browser-wallet users can use the onboarding helper at [congrid.net/publishers](https://congrid.net/publishers) to generate the badge snippet and registration command.
 
-1. Build or download the pinned release, then verify `./content-grid-d version`.
-2. Initialize a home directory and replace `config/genesis.json` with the official mainnet genesis.
-3. Update `config/config.toml` (seed peers, p2p/rpc ports) and `config/app.toml` (api/grpc, minimum gas prices). New nodes should set `p2p.seeds` to the published seed list and leave `p2p.persistent_peers` empty unless an operator explicitly needs pinned peer connections.
-4. Start the node as a service and validate RPC/gRPC health.
+Place a Congrid link on the registered domain's homepage. The link must wrap an image whose URL carries the domain and signing wallet:
 
-Containerized operator stack: see `docs/docker-operator.md` for a Docker/Compose example that joins an existing network and runs `verifierd` plus its support services.
-
-**Operator reserve and issuance pool allocation**
-
-The issuance split is controlled by registry params in genesis (`app_state.registry.params`). The defaults align with the whitepaper:
-
-```json
-"registry": {
-  "params": {
-    "emission_total_supply": "1000000000000000",
-    "operator_reserve_bps": 4000,
-    "publisher_emission_bps": 1000,
-    "publisher_min_reward_bps": 1000,
-    "verifier_emission_bps": 5000,
-    "emission_duration_hours": 876000
-  }
-}
+```html
+<div id="congrid-similar">
+  <a href="https://congrid.net">
+    <img
+      src="https://congrid.net/badge.svg?publisher=example.com&wallet=<congrid-address>"
+      alt="Verified by Congrid"
+      width="32"
+      height="32"
+    />
+    <span>Congrid — Content Grid Protocol</span>
+  </a>
+  <!-- Add the similar-publisher links returned by the network here. -->
+</div>
 ```
 
-The issuance pool (publisher + verifier emission) is maintained by the `tokenomics` module account at runtime and funded on-demand during round finalization. If you want to pre-fund it at genesis, add a balance for the `tokenomics` module account in `app_state.bank.balances` and include it in `app_state.bank.supply`.
+The anchor must target `https://congrid.net` or `https://www.congrid.net/` without a query or fragment. The image must be hosted below one of those origins and encode `publisher=<domain>` and `wallet=<owner>` in its path or query. The wallet must match the signer.
 
-The operator reserve portion is not yet distributed by on-chain logic in this repo. Allocate it explicitly in genesis (for example to a multisig treasury or vesting account) using `app_state.bank.balances` or `content-grid-d genesis add-genesis-account`.
+Register the domain:
 
-**Other node / publisher / verifier deployment**
+```bash
+./content-grid-d publisher register example.com \
+  --from <publisher-key> \
+  --chain-id <chain-id> \
+  --node <rpc-url> \
+  --fees 0ucongrid
+```
 
-- Additional full nodes: repeat the production node steps with a separate `--home` and ports, set `p2p.seeds` to the mainnet seed list, and rely on PEX/address-book discovery for the rest of the peer set.
-- Publishers: deploy your site, add the verification badge, then use the "Publisher Registration" flow below against the mainnet RPC/gRPC endpoints.
-- Verifiers (publisher verification agents): create and fund a verifier account, bond with `content-grid-d verifier bond`, and run `verifierd` using `docs/verifierd.md`.
-- Consensus validators: use the standard Cosmos `gentx` flow for genesis validators or `content-grid-d tx staking create-validator` after launch.
+Optional flags include `--metadata-uri` and `--referrer`. Registration itself requires no bond. A transaction containing only `MsgRegisterPublisher` may use zero fees; mixed transactions still follow the network's minimum-gas-price policy.
 
-### Publisher Registration
+Query the record:
 
-**Website onboarding helper (recommended for third-party wallets):** Open `https://congrid.net/publishers`, connect a third-party wallet (Keplr/Leap) to read your bech32 address, then fill domain + wallet to generate a ready-to-paste badge snippet and registration command.
+```bash
+./content-grid-d query registry publisher \
+  --domain example.com \
+  --node <rpc-url>
+```
 
-1. **Add Congrid official link + attribution image (required for verification)**: You must add a link to the Congrid official website on the homepage (`/`) of the website you want to bind, and the link must be wrapped with an attribution image (badge).
+The `owner` is both the control wallet and reward recipient. To change the owner or referrer, update the homepage badge and submit the same registration command with the new signer. `pending_owner` and `pending_referrer` remain candidates until verifier consensus accepts them; a failed change leaves the current registration intact.
 
-For the current verifier determination rules, see `offchain/registry/verifier.go`:
-- The official website link must be **`<a href="https://congrid.net">`** (or `https://www.congrid.net/`). **The official website address itself is not allowed to contain query/fragment**.
-- `<img src="...">` must be included within `a`.
-- `img src` must be `https://congrid.net/...` (or `https://www.congrid.net/...`) and carried in **path or query**:
-- `publisher=<your-domain>` (allowed without port), for statistical attribution
-- `wallet=<bech32-owner-address>`, must be equal to the owner address of the registered transaction (`publisher register --from`), used to prevent squatting
+The registry reserves a primary-domain key to prevent competing subdomain claims. The current implementation derives that key from the final two hostname labels after removing a port, so operators of multi-label public suffixes should check the resulting scope before registering.
 
-**Recommended format:**
-   ```html
-   <div id="congrid-similar">
-     <a href="https://congrid.net" style="display: inline-flex; align-items: center; gap: 8px;">
-       <img
-         alt="Verified by Congrid"
-         src="https://congrid.net/badge.svg?publisher=example.com&wallet=<bech32-owner-address>"
-         width="32"
-         height="32"
-         style="display: block;"
-       />
-       <span>Congrid — Content Grid Protocol</span>
-     </a>
-     <!-- Add links for all 15 domains returned by indexerd here. -->
-   </div>
-   ```
+### Run a verifier
 
-2. **Execute registration command** (or use the command generated on `/publishers`): Run `./content-grid-d publisher register <domain> --from <key-or-address> [--metadata-uri <link>] [--referrer <address>]`.
-- `--referrer`: optional, referrer address (used to affect the revenue weight of verifier; publisher recommendation publisher does not take effect).
-- The signing wallet selected by `--from` must exactly match the homepage badge `wallet`; the command checks that the address is present before broadcasting.
-- The system will automatically identify and lock the **first-level domain name** (Primary Domain, such as `example.com`) of the domain name.
-- Only one site can be registered under the same first-level domain name to prevent others from preemptively registering subdomain names. Supports non-default ports (such as `example.com:8080`).
-3. **Re-register / change the receiving wallet or referrer**: connect the new browser-extension wallet, change the homepage badge `wallet` to that address, and run the same `publisher register` command again. `owner` is both the control wallet and the publisher-reward receiving wallet; there is no separate reward-wallet field.
-- Re-registration creates a pending candidate and does not immediately overwrite the current owner.
-- The chain atomically replaces owner and referrer only after the next verifier round confirms the new wallet on the homepage. A failed candidate leaves the existing registration unchanged.
-- Query fields `pending_owner` / `pending_referrer` show a candidate awaiting verification. Omitting `--referrer` during re-registration clears the previous referrer after acceptance.
-4. **Verification completed**: The command will access `https://<domain>/` to verify the official Congrid link and signing wallet; off-chain verifier agents also crawl the homepage for consensus confirmation.
-- **No deposit/pledge required**: Publisher registration itself does not require locking or staking.
-- **Fee policy**: a transaction containing only `MsgRegisterPublisher` can be submitted with zero fee (e.g. `--fees 0ucongrid`). Other transaction types still follow validator min-gas-price policy unless covered by `feegrant`.
-5. **Query status**: After successful registration, it can be viewed through gRPC query or CLI `content-grid-d query registry publisher <domain>`.
+Bond tokens from a normal `congrid1...` account:
 
-### Verifier Bond (normal address + escrow)
+```bash
+./content-grid-d verifier bond 1000000 --denom ucongrid --from <verifier-key>
+./content-grid-d verifier assignments --from <verifier-key>
+```
 
-Verifier participates in the verification network with a normal account address (`congrid1...`), and first bonds the token to the module escrow account** (escrow) before it is considered eligible.
+Then run `verifierd` to process assignments and participate in drand delivery. Unbond with:
 
-- Bond：`./content-grid-d verifier bond <amount> --denom ucongrid --from <key>`
-- Unbond：`./content-grid-d verifier unbond <amount> --denom ucongrid --from <key>`
+```bash
+./content-grid-d verifier unbond 1000000 --denom ucongrid --from <verifier-key>
+```
 
-See `docs/verifiers.md` for more information.
+Follow the [verifierd guide](docs/verifierd.md) for configuration, keys, fees, and health checks. For a containerized node plus verifier stack, see the [Docker operator guide](docs/docker-operator.md).
 
-### Economics utilities
+### Run a full node or validator
 
-- Simulate supply, generate genesis templates, or craft airdrop tables with `go run ./cmd/tokenomics <subcommand>`.
-- See `docs/tokenomics.md` for parameter details and `docs/governance.md` for proposal processes.
+Use the official binary, genesis, and peer list for a public network. The [production runbook](docs/runbook.md) covers node health and incident handling; the [launch checklist](docs/launch-checklist.md) describes release readiness. Consensus validators join through the standard Cosmos `gentx` flow at genesis or `tx staking create-validator` after launch.
 
-Notes:
-- Do not commit build artifacts (see `.gitignore`).
-- The CLI is a minimal skeleton pending full server/runtime wiring.
+For local development networks, builds, tests, and protobuf generation, use the [contributor guide](CONTRIBUTING.md).
 
-## Off-chain Components
-- `offchain/indexerd`: publisher homepage indexing + embeddings + similarity signatures (see `docs/indexerd.md`).
-- `offchain/verifierd`: chain-driven publisher verification agent with exact-round drand delivery (see `docs/verifierd.md` and `docs/drand.md`).
+### Use the link marketplace
 
-## Project Status
-Phase 1 skeleton. The `app/` package provides module basics, encoding, and default genesis helpers for Cosmos SDK v0.53.
-- `x/registry`: Publisher registration and verification logic.
-- `x/tokenomics`: Issuance/funding helpers, fee/slash routing params, and settlement keeper.
+A verified publisher can list a slot, an advertiser can lease it, and the protocol escrows payment while the lease is active. The publisher must expose the required `data-congrid-slot-id` and `data-congrid-lease` markup so verifiers can check delivery. See the [marketplace guide](docs/marketplace.md) for lifecycle states and CLI examples.
 
-## Roadmap (High Level)
-1) [x] Runtime wiring: depinject + `runtime.App`, keepers for auth/bank/staking, ABCI services
-2) [x] CLI/server: `init`, `start`, config/home management, keys
-3) [x] Publisher registry + verifier reward parameters
-4) [x] Economics/Governance: rewards, slashing, parameters, proposals
-5) Testnet: reproducible genesis, docs, and CI
+### Query the network
 
-## Licensing
+The daemon exposes Cosmos RPC/gRPC services and registry REST routes. Useful CLI queries include:
+
+```bash
+./content-grid-d query registry publisher --domain example.com --node <rpc-url>
+./content-grid-d query registry drand-requirement --node <rpc-url>
+./content-grid-d query registry slots --publisher <congrid-address> --node <rpc-url>
+./content-grid-d query registry leases --slot-id <slot-id> --node <rpc-url>
+```
+
+The API definitions live under [`proto/contentgrid`](proto/contentgrid).
+
+## Documentation
+
+- Protocol design: [whitepaper](whitepaper.md) (some legacy sections describe planned or removed scope)
+- Verification and indexing: [verifiers](docs/verifiers.md), [verifierd](docs/verifierd.md), [drand](docs/drand.md), [indexerd](docs/indexerd.md)
+- Economics and marketplace: [tokenomics](docs/tokenomics.md), [marketplace](docs/marketplace.md), [governance](docs/governance.md)
+- Operations: [Docker operator](docs/docker-operator.md), [runbook](docs/runbook.md), [launch checklist](docs/launch-checklist.md)
+- Development: [contributor guide](CONTRIBUTING.md)
+
+## License
 
 Source code and documentation are licensed under the [MIT License](LICENSE).
 
-Distinct non-code ecosystem intellectual property is made available under the [Chain Inspiring License v1.0](CHAIN-INSPIRING-LICENSE.md). Within its legal scope, CIL-1.0 requires an Inspired Project to use the same ecosystem license; Content Grid's default terms require an allocation of at least 0.01% of each Project Token's Issued Supply and provide an eighteen-month protection period against operating a Simple Operational Fork. A compliant adopting project may publish a Project Schedule customizing the competitive-use terms and allocation percentage for its own added ecosystem IP, without reducing obligations owed upstream. Use of MIT-licensed code or documentation alone does not trigger CIL-1.0. CIL-1.0 is a custom ecosystem intellectual-property license, not an OSI-approved open-source software license.
+Distinct non-code ecosystem intellectual property is available under the [Chain Inspiring License v1.0](CHAIN-INSPIRING-LICENSE.md). Using MIT-licensed code or documentation alone does not trigger CIL-1.0. CIL-1.0 is a custom ecosystem intellectual-property license and is not an OSI-approved open-source software license; read the license text before adopting protected ecosystem material.

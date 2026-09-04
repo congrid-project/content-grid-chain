@@ -1,244 +1,168 @@
-# 内容网格链
+# 内容网格链（Content Grid Chain）
 
-内容网格项目的核心协议实现——去中心化的内容网络和搜索协议。
+Content Grid Chain 是去中心化内容发现网络的链上协调与结算层。它记录 Publisher 的域名归属，向独立 Verifier 分配任务，就网站证明达成共识，并结算 Publisher/Verifier 奖励与链接市场款项。
 
-＃＃ 关于
-该链（基于 Cosmos SDK）协调 publisher 注册与 verifier 核验网络：
-- Publisher 域名上链注册
-- verifier 参与验证轮次并提交结果
-- 确认 Badge 与归属关系
-- 通过链上参数分配 Publisher 与 Verifier 奖励
+[English](README.md) · [协议白皮书](whitepaper.md) · [贡献者指南](CONTRIBUTING-zh.md)
 
-术语说明：`validator` 专指 Cosmos 共识验证人；`verifier` 专指 ConGrid 的发布者核验角色。
+> 项目状态：链运行时、Publisher 注册表、Verifier 核验流程、drand 随机数、奖励与 slot/lease 市场均已实现。本仓库尚未发布正式主网所需的完整发布包（二进制、genesis 和 peer 列表）。如果白皮书与代码存在差异，以当前代码和协议文档为准。
 
-快速链接：有关设计，请参阅 `whitepaper.md`（注意：部分历史内容可能与当前范围不同）；有关经济蓝图，请参阅 `docs/tokenomics-zh.md`；有关贡献指南，请参阅 `AGENTS.md`。
+## 协议概览
 
-＃＃ 要求
-- Go 1.22+（使用最新的稳定版本）
-- 推荐类 Unix 环境 (macOS/Linux)
+Content Grid 连接四类参与者：
 
-## 构建、运行、测试
-- 构建并写入版本与 commit：`make build`
-- 运行：`./content-grid-d version` 或 `./content-grid-d init`（占位符）
-- 测试：`go test ./...`
-- 原型：`./scripts/proto-gen.sh` 修改 `proto/` 后重新生成 gRPC 代码
+- **Publisher（发布者）**注册域名，并在首页放置绑定钱包的 Congrid Badge，证明对网站的控制权。
+- **Verifier（核验者）**绑定 `CONGRID`，独立检查分配到的 Publisher，并通过 commit–reveal 提交结果。
+- **Consensus Validator（共识验证人）**运行 Cosmos 链，对交易排序并最终确认协议状态。
+- **消费者与广告主**发现 Publisher，或租用已经核验的链接 slot。
 
-### 本地单节点启动
+一次常规的 Publisher 核验流程如下：
 
-1. 运行`./content-grid-d devnet --home ./devnet-home --chain-id grid-dev-1`，CLI将自动完成`init → keys add → add-genesis-account → gentx → collect-gentxs`，并使用默认共识验证人密钥（名称`validator`，密钥环后端为`test`）生成单节点创世文件。
-2. 执行`./content-grid-d start --home ./devnet-home`启动本地节点。如果需要重新初始化，请附加 `--force` 以清除旧的主目录。
+1. Publisher 注册域名，记录初始状态为 `PENDING`。
+2. 到达核验轮次边界后，链获取指定的 drand beacon，并生成可审计的轮次种子。
+3. 链从符合条件且未被暂停的 Verifier 中，按质押权重进行确定性无放回抽样。
+4. 入选 Verifier 检查网站首页，先提交 commit，再 reveal 核验结果与证据。
+5. 达到 quorum 后，链最终确认多数结果，更新 Publisher 状态，记录必要的 Verifier 处罚并结算奖励。
+6. 已核验的 Publisher 可以发布链接 slot；lease 款项在租约完成前由协议托管，核验失败时可触发退款。
 
-### 本地多节点网络（手动）
+## 共识模型
 
-下面以3个节点为例。流程为：初始化→生成密钥→在同一创世上生成gentx→收集gentx→分发最终创世→配置端口和互连。
+Content Grid 包含两个相互关联但职责不同的共识层。
 
-1. 初始化和按键
-   ```bash
-   make build
-   ./content-grid-d version
-   ./content-grid-d version --long | grep -E '^(version|commit):'
+### 链共识
 
-   CHAIN_ID=grid-local-1
-   HOME1=./localnet/node1
-   HOME2=./localnet/node2
-   HOME3=./localnet/node3
+区块链基于 Cosmos SDK v0.53 与 CometBFT v0.38。Cosmos 共识验证人提供拜占庭容错的区块排序和最终性；应用接入了标准的 staking、slashing、governance、bank 与 distribution 模块。
 
-   ./content-grid-d init node1 --chain-id $CHAIN_ID --home $HOME1
-   ./content-grid-d init node2 --chain-id $CHAIN_ID --home $HOME2
-   ./content-grid-d init node3 --chain-id $CHAIN_ID --home $HOME3
+### Publisher 核验共识
 
-   ./content-grid-d keys add node1 --home $HOME1 --keyring-backend test
-   ./content-grid-d keys add node2 --home $HOME2 --keyring-backend test
-   ./content-grid-d keys add node3 --home $HOME3 --keyring-backend test
-   ```
+网站核验是记录在链上的应用层共识：
 
-2. 生成地址并加入创世账户（对node1的创世进行操作）
-   ```bash
-   ADDR1=$(./content-grid-d keys show node1 --home $HOME1 --keyring-backend test --address)
-   ADDR2=$(./content-grid-d keys show node2 --home $HOME2 --keyring-backend test --address)
-   ADDR3=$(./content-grid-d keys show node3 --home $HOME3 --keyring-backend test --address)
+- 默认每小时一个轮次；时间窗口和阈值均为链上参数。
+- 默认启用严格 drand 模式。链只接受下一核验轮次指定的 beacon，在链上校验其 BLS 签名，不回退到仅依赖区块哈希的随机数。
+- Verifier 选择采用确定性的、按质押加权的无放回抽样，任何观察者都可以根据轮次种子和链上 Verifier 集合复算结果。
+- Commit–reveal 在 commit 窗口内隐藏投票内容。最终结果必须达到 quorum；只有 pass 票数多于 fail 票数时才通过。
+- 漏交结果或投票偏离最终结果会累积处罚；多次处罚可导致 Verifier 暂时无法获得任务。
+- Publisher 状态包括 `PENDING`、`VERIFIED` 和 `REVOKED`。已核验 Publisher 修改 owner 或 referrer 时，原记录继续生效，直到新一轮核验接受候选变更。
 
-   ./content-grid-d genesis add-genesis-account $ADDR1 100000000ucongrid --home $HOME1
-   ./content-grid-d genesis add-genesis-account $ADDR2 100000000ucongrid --home $HOME1
-   ./content-grid-d genesis add-genesis-account $ADDR3 100000000ucongrid --home $HOME1
-   ```
+本文中的 `validator` 始终指 Cosmos 共识验证人；`verifier` 指独立的 Content Grid 网站核验角色。两种角色不要求由同一账户承担。
 
-3. 分发相同的 genesis 副本，然后单独生成 gentx。
-   ```bash
-   cp $HOME1/config/genesis.json $HOME2/config/genesis.json
-   cp $HOME1/config/genesis.json $HOME3/config/genesis.json
+精确规则请参阅 [Verifier 规则](docs/verifiers-zh.md)和 [drand 规则](docs/drand-zh.md)。
 
-   ./content-grid-d genesis gentx node1 1000000ucongrid --chain-id $CHAIN_ID --home $HOME1 --keyring-backend test
-   ./content-grid-d genesis gentx node2 1000000ucongrid --chain-id $CHAIN_ID --home $HOME2 --keyring-backend test
-   ./content-grid-d genesis gentx node3 1000000ucongrid --chain-id $CHAIN_ID --home $HOME3 --keyring-backend test
-   ```
+## 协议组成
 
-4. 收集gentx并分发最终创世币
-   ```bash
-   cp $HOME2/config/gentx/*.json $HOME1/config/gentx/
-   cp $HOME3/config/gentx/*.json $HOME1/config/gentx/
-   ./content-grid-d genesis collect-gentxs --home $HOME1
+| 组件 | 职责 |
+| --- | --- |
+| `x/registry` | Publisher 记录、核验轮次、commit–reveal、相似站点证据、slot、lease 与结算 |
+| `x/verifiers` | Verifier 质押托管与资格管理 |
+| `x/tokenomics` | 发行池注资、转账与销毁 |
+| `offchain/verifierd` | 获取任务、检查 Publisher 页面、提交 commit/reveal，并投递指定的 drand beacon |
+| `offchain/indexerd` | 索引 Publisher 首页，生成相似性结果与紧凑签名 |
+| `cmd/congrid-site` | Publisher 引导、Dashboard、下载与链接市场的 Web 入口 |
 
-   cp $HOME1/config/genesis.json $HOME2/config/genesis.json
-   cp $HOME1/config/genesis.json $HOME3/config/genesis.json
-   ```
+默认经济参数以 10 亿枚 `CONGRID` 为参考总量（`1 CONGRID = 1,000,000 ucongrid`）：40% 为运营储备，10% 用于 Publisher 排放，50% 用于 Verifier 排放，周期为 100 年。Publisher 奖励取决于 Badge 是否有效以及相似站点链接的匹配情况；Verifier 奖励由平均分配的基础部分和按质押、推荐关系加权的部分组成；无人领取的当轮排放会被销毁。以上为默认 genesis 参数，实际网络可能不同。运营储备自动分配、完整消费者支付链路和完整罚没补偿链路目前尚未端到端接通。
 
-5. 配置端口和 seed 发现（以避免本地端口冲突）
-- 编辑`config/config.toml`：设置`p2p.laddr`和`rpc.laddr`。
-- 编辑`config/app.toml`：设置`api.address`和`grpc.address`。
-- 在所有节点的 `[p2p]` 段保持 peer exchange 开启：
-   ```toml
-   pex = true
-   ```
-- 本地或私有地址（如 `127.0.0.1`）需要关闭严格可路由检查：
-   ```toml
-   addr_book_strict = false
-   ```
-- 端口分配示例：
-     - 节点1：p2p `26656`，rpc `26657`，api `1317`，grpc `9090`
-     - 节点2：p2p `26666`，rpc `26667`，api `1417`，grpc `9190`
-     - 节点3：p2p `26676`，rpc `26677`，api `1517`，grpc `9290`
+完整规则和当前实现范围请参阅 [Tokenomics](docs/tokenomics-zh.md)、[链接市场](docs/marketplace-zh.md)与[治理手册](docs/governance-zh.md)。
 
-6. 将 node1 配置为新节点的引导 seed
-   ```bash
-   NODE1_ID=$(./content-grid-d tendermint show-node-id --home $HOME1)
-   echo "${NODE1_ID}@127.0.0.1:26656"
-   ```
-只在 node2 和 node3 的 `config/config.toml` 的 `[p2p]` 段写入上面输出的 seed 值：
-   ```
-   seeds = "<NODE1_ID>@127.0.0.1:26656"
-   persistent_peers = ""
-   ```
-node1 不需要配置 node2/node3。node2 和 node3 启动后会先连接 seed，再通过 CometBFT PEX 和地址簿自动发现其他 peer。
+## 使用协议
 
-7. 分别启动节点（不同终端）
-   ```bash
-   ./content-grid-d start --home $HOME1
-   ./content-grid-d start --home $HOME2
-   ./content-grid-d start --home $HOME3
-   ```
+Chain ID、RPC 地址、genesis 和 seed peer 等网络专属信息，应以网络运营方或官方发布包提供的值为准。
 
-### 线上正式环境部署（主网）
+### 注册 Publisher
 
-本仓库尚未提供一键主网上线脚本，主网上线请使用官方发布包（binary + genesis + peers）。运维基线见 `docs/runbook-zh.md` 与 `docs/launch-checklist-zh.md`。
+使用浏览器钱包时，可以通过 [congrid.net/publishers](https://congrid.net/publishers) 引导页生成 Badge 代码和注册命令。
 
-若当前阶段尚无官方发布包，请按 `docs/gentx-zh.md` 的“无发布包场景”流程生成并冻结 final genesis。
+在待注册域名的首页加入 Congrid 链接。链接必须包裹一张图片，图片 URL 中包含域名和签名钱包：
 
-1. 构建或下载固定版本的发布包，并确认 `./content-grid-d version`。
-2. 初始化节点主目录，用官方主网 `genesis.json` 替换 `config/genesis.json`。
-3. 配置 `config/config.toml`（seed peers、p2p/rpc 端口）与 `config/app.toml`（api/grpc、`minimum-gas-prices`）。新节点只需要把 `p2p.seeds` 设置为官方 seed 列表，除非运维上明确需要固定连接，否则保持 `p2p.persistent_peers` 为空。
-4. 以服务方式启动节点并完成 RPC/gRPC 健康检查。
-
-容器化 operator 栈见 `docs/docker-operator-zh.md`，其中包含加入现有网络并同时运行 `verifierd` 与其支撑组件的 Docker/Compose 示例。
-
-**运营商保留与发行池代币分配**
-
-发行拆分由创世参数 `app_state.registry.params` 控制，默认与白皮书一致：
-
-```json
-"registry": {
-  "params": {
-    "emission_total_supply": "1000000000000000",
-    "operator_reserve_bps": 4000,
-    "publisher_emission_bps": 1000,
-    "publisher_min_reward_bps": 1000,
-    "verifier_emission_bps": 5000,
-    "emission_duration_hours": 876000
-  }
-}
+```html
+<div id="congrid-similar">
+  <a href="https://congrid.net">
+    <img
+      src="https://congrid.net/badge.svg?publisher=example.com&wallet=<congrid-address>"
+      alt="Verified by Congrid"
+      width="32"
+      height="32"
+    />
+    <span>Congrid — Content Grid Protocol</span>
+  </a>
+  <!-- 在这里加入网络返回的相似 Publisher 链接。 -->
+</div>
 ```
 
-发行池（发布者 + verifier）由 `tokenomics` 模块账户在运行时维护，在每轮结算时按需补足。若希望在创世时预置发行池余额，需要在 `app_state.bank.balances` 为 `tokenomics` 模块账户添加余额，并同步更新 `app_state.bank.supply`。
+`a` 必须指向不带 query 或 fragment 的 `https://congrid.net` 或 `https://www.congrid.net/`。图片必须位于上述任一域名下，并在 path 或 query 中编码 `publisher=<domain>` 和 `wallet=<owner>`；其中 wallet 必须与交易签名者一致。
 
-运营商保留部分目前未在链上自动分发，请在创世时显式分配（例如分配给多签金库或锁仓账户），可通过 `app_state.bank.balances` 或 `content-grid-d genesis add-genesis-account` 完成。
+注册域名：
 
-**其他节点 / 发布者 / verifier 部署**
+```bash
+./content-grid-d publisher register example.com \
+  --from <publisher-key> \
+  --chain-id <chain-id> \
+  --node <rpc-url> \
+  --fees 0ucongrid
+```
 
-- 其他全节点：重复主网节点步骤，使用独立 `--home` 和端口，将 `p2p.seeds` 设置为主网 seed 列表，并依赖 PEX/地址簿自动发现其他 peer。
-- 发布者：部署站点、挂载验证徽章，并按下方“出版商注册”流程在主网 RPC/gRPC 上执行注册。
-- verifier（发布者核验代理）：创建并充值 verifier 地址，执行 `content-grid-d verifier bond` 绑定，再按 `docs/verifierd-zh.md` 部署 `verifierd`。
-- 共识验证人：创世期走标准 Cosmos `gentx` 流程；主网运行后可用 `content-grid-d tx staking create-validator`。
+可选参数包括 `--metadata-uri` 和 `--referrer`。注册本身不要求质押。只包含 `MsgRegisterPublisher` 的交易可以使用零手续费；混合交易仍需遵循网络的 minimum gas price 策略。
 
-### 出版商注册
+查询记录：
 
-**官网引导（推荐第三方钱包用户）：** 打开 `https://congrid.net/publishers`，连接第三方钱包（Keplr/Leap）读取 bech32 地址，填写域名 + 钱包地址后可自动生成可粘贴的徽章代码片段和注册命令。
+```bash
+./content-grid-d query registry publisher \
+  --domain example.com \
+  --node <rpc-url>
+```
 
-1. **添加Congrid官方链接+归因图片（验证所需）**：您必须在要绑定的网站首页（`/`）添加Congrid官方网站的链接，并且该链接必须用归因图片（徽章）包裹。
+`owner` 同时是控制钱包和奖励接收钱包。修改 owner 或 referrer 时，先更新首页 Badge，再用新签名者重复提交注册命令。`pending_owner` 与 `pending_referrer` 会保持候选状态，直到 Verifier 共识接受；候选核验失败不会影响当前注册。
 
-目前 verifier 判定规则参见`offchain/registry/verifier.go`：
-- 官方网站链接必须为**`<a href="https://congrid.net">`**（或`https://www.congrid.net/`）。 **官网地址本身不允许包含查询/片段**。
-- `<img src="...">` 必须包含在 `a` 内。
-- `img src` 必须是 `https://congrid.net/...` （或 `https://www.congrid.net/...`）并在 **路径或查询** 中携带：
-- `publisher=<your-domain>`（允许不带端口），用于统计归因
-- `wallet=<bech32-owner-address>`，必须等于注册交易的所有者地址（`publisher register --from`），用于防止抢注
+注册表会占用一个主域名键，防止相互冲突的子域名抢注。当前实现会去掉端口并取主机名最后两段作为该键，因此使用多段公共后缀的站点应在注册前确认实际占用范围。
 
-**推荐格式：**
-   ```html
-   <div id="congrid-similar">
-     <a href="https://congrid.net" style="display: inline-flex; align-items: center; gap: 8px;">
-       <img
-         alt="Verified by Congrid"
-         src="https://congrid.net/badge.svg?publisher=example.com&wallet=<bech32-owner-address>"
-         width="32"
-         height="32"
-         style="display: block;"
-       />
-       <span>Congrid — Content Grid Protocol</span>
-     </a>
-     <!-- 在此添加 indexerd 返回的全部 15 个域名链接。 -->
-   </div>
-   ```
+### 运行 Verifier
 
-2. **执行注册命令**（或使用 `/publishers` 页面生成的命令）：运行`./content-grid-d publisher register <domain> --from <key-or-address> [--metadata-uri <link>] [--referrer <address>]`。
-- `--referrer`：可选，referrer地址（用于影响 verifier 的收益权重；publisher 推荐 publisher 不生效）。
-- `--from` 对应的签名钱包必须与首页 badge 的 `wallet` 完全一致；命令会在广播交易前检查该地址确实出现在页面上。
-- 系统会自动识别并锁定域名的**一级域名**（Primary Domain，如`example.com`）。
-- 同一一级域名下只能注册一个站点，防止他人抢注子域名。支持非默认端口（例如 `example.com:8080`）。
-3. **重新注册 / 修改收款钱包或 referrer**：先用新的浏览器扩展钱包连接并把首页 badge 的 `wallet` 改成该地址，然后再次执行同一条 `publisher register` 命令。`owner` 同时是控制权钱包和 publisher 奖励收款钱包，不存在第二个收益钱包字段。
-- 重注册交易只创建待验证候选，不会立刻覆盖现有 owner。
-- 下一轮 verifier 在首页确认新钱包后，链上才会原子替换 owner 和 referrer；验证失败时旧注册保持不变。
-- 查询结果中的 `pending_owner` / `pending_referrer` 表示正在等待页面验证的重注册候选。重注册时省略 `--referrer` 表示清空原 referrer。
-4. **验证完成**：命令会访问`https://<domain>/`来验证是否包含 congrid 官方链接和签名钱包；链下 verifier 代理也会定期抓取主页进行确认。
-- **无需押金/质押**：发布者注册本身不需要锁定或质押。
-- **手续费策略**：当交易只包含 `MsgRegisterPublisher` 时，可使用 0 手续费提交（例如 `--fees 0ucongrid`）。其他交易类型仍遵循共识验证人最小 gas price 策略，除非使用 `feegrant`。
-5. **查询状态**：注册成功后，可以通过gRPC查询或CLI `content-grid-d query registry publisher <domain>`查看。
+使用普通 `congrid1...` 账户绑定代币：
 
-### verifier 债券（普通地址 + 托管）
+```bash
+./content-grid-d verifier bond 1000000 --denom ucongrid --from <verifier-key>
+./content-grid-d verifier assignments --from <verifier-key>
+```
 
-verifier 以普通账户地址（`congrid1...`）参与验证网络，首先将代币绑定到模块托管账户 **（escrow）** 后才被认为符合资格。
+随后运行 `verifierd` 处理任务并参与 drand 投递。解除绑定：
 
-- 债券：`./content-grid-d verifier bond <amount> --denom ucongrid --from <key>`
-- 解绑：`./content-grid-d verifier unbond <amount> --denom ucongrid --from <key>`
+```bash
+./content-grid-d verifier unbond 1000000 --denom ucongrid --from <verifier-key>
+```
 
-有关详细信息，请参阅 `docs/verifiers-zh.md`。
+配置、密钥、手续费和健康检查见 [verifierd 指南](docs/verifierd-zh.md)。容器化的节点与 Verifier 组合部署见 [Docker Operator 指南](docs/docker-operator-zh.md)。
 
-### 经济公用事业
+### 运行全节点或共识验证人
 
-- 使用 `go run ./cmd/tokenomics <subcommand>` 模拟供应、生成创世模板或制作空投表。
-- 有关参数详细信息，请参阅 `docs/tokenomics-zh.md`；有关提案流程，请参阅 `docs/governance-zh.md`。
+接入公开网络时，应使用官方二进制、genesis 和 peer 列表。[生产运行手册](docs/runbook-zh.md)包含节点健康检查和故障处理，[启动清单](docs/launch-checklist-zh.md)说明发布前的验收要求。共识验证人在创世期通过标准 Cosmos `gentx` 流程加入，网络启动后则使用 `tx staking create-validator`。
 
-笔记：
-- 不要提交构建工件（请参阅 `.gitignore`）。
-- CLI 是一个最小的框架，等待完整的服务器/运行时连接。
+本地开发网络、构建、测试与 Protobuf 生成统一放在[贡献者指南](CONTRIBUTING-zh.md)中。
 
-## 链下组件
-- `offchain/indexerd`：发布者主页索引 + 嵌入 + 相似性签名（请参阅`docs/indexerd-zh.md`）。
-- `offchain/verifierd`：链驱动的发布者核验代理，并负责指定 round 的 drand 信标投递（请参阅`docs/verifierd-zh.md`和`docs/drand-zh.md`）。
+### 使用链接市场
 
-## 项目状态
-第一阶段骨架。 `app/` 包为 Cosmos SDK v0.53 提供模块基础知识、编码和默认创世帮助程序。
-- `x/registry`：发布者注册和验证逻辑。
-- `x/tokenomics`：经济参数、通货膨胀逻辑和结算管理员。
+已核验的 Publisher 可以发布 slot，广告主可以租用 slot；协议会在 lease 生效期间托管款项。Publisher 必须提供规定的 `data-congrid-slot-id` 和 `data-congrid-lease` 标记，以供 Verifier 检查履约情况。生命周期与 CLI 示例见[链接市场指南](docs/marketplace-zh.md)。
 
-## 路线图（高级）
-1) [x] 运行时连接：depinject + `runtime.App`，auth/bank/stake 的守护者，ABCI 服务
-2) [x] CLI/服务器：`init`、`start`、配置/主目录管理、密钥
-3) [x] Publisher 注册 + Verifier 激励参数
-4) [x] 经济/治理：奖励、削减、参数、建议
-5) 测试网：可复制的起源、文档和 CI
+### 查询网络
+
+Daemon 提供 Cosmos RPC/gRPC 服务与 registry REST 路由。常用 CLI 查询包括：
+
+```bash
+./content-grid-d query registry publisher --domain example.com --node <rpc-url>
+./content-grid-d query registry drand-requirement --node <rpc-url>
+./content-grid-d query registry slots --publisher <congrid-address> --node <rpc-url>
+./content-grid-d query registry leases --slot-id <slot-id> --node <rpc-url>
+```
+
+API 定义位于 [`proto/contentgrid`](proto/contentgrid)。
+
+## 文档导航
+
+- 协议设计：[白皮书](whitepaper.md)（部分历史章节仍描述规划中或已移除的范围）
+- 核验与索引：[Verifier](docs/verifiers-zh.md)、[verifierd](docs/verifierd-zh.md)、[drand](docs/drand-zh.md)、[indexerd](docs/indexerd-zh.md)
+- 经济与市场：[Tokenomics](docs/tokenomics-zh.md)、[链接市场](docs/marketplace-zh.md)、[治理手册](docs/governance-zh.md)
+- 运维：[Docker Operator](docs/docker-operator-zh.md)、[生产运行手册](docs/runbook-zh.md)、[启动清单](docs/launch-checklist-zh.md)
+- 开发：[贡献者指南](CONTRIBUTING-zh.md)
 
 ## 许可
 
-源代码和文档依据 [MIT 许可证](LICENSE) 授权。
+源代码和文档采用 [MIT License](LICENSE)。
 
-本项目中特有的非代码生态知识产权依据[《链启许可 v1.0》](CHAIN-INSPIRING-LICENSE-zh.md)提供。在其合法适用范围内，CIL-1.0 要求受启发项目对生态知识产权采用相同许可；Content Grid 的默认条款要求向灵感来源分配每一种项目代币发行总量至少 0.01% 的代币，并设有十八个月的简单运营分叉保护期。合规采用本许可的项目可以通过项目附表，为其自己新增的生态知识产权自定义竞争性使用条款和回馈比例，但不得减少对上游项目所负的义务。仅使用 MIT 许可的代码或文档不会触发 CIL-1.0。CIL-1.0 是自定义的生态知识产权许可，不是经 OSI 批准的开源软件许可证。
+独立的非代码生态知识产权采用 [Chain Inspiring License v1.0](CHAIN-INSPIRING-LICENSE.md)。仅使用 MIT 许可的代码或文档不会触发 CIL-1.0。CIL-1.0 是自定义生态知识产权许可，并非 OSI 批准的开源软件许可证；采用受保护的生态材料前请阅读完整许可文本。
