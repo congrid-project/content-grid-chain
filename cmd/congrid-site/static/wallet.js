@@ -458,6 +458,10 @@ function bindConnectButtons() {
     btn.addEventListener("click", async () => {
       try {
         await ensureWalletConnected();
+        document.querySelectorAll("input[data-wallet-autofill]").forEach((input) => {
+          input.value = state.address;
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+        });
         showFlash(`Connected: ${state.address}`);
       } catch (err) {
         showFlash(err.message || String(err), true);

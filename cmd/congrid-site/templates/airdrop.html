@@ -27,11 +27,23 @@
         <h3>Address + key safety</h3>
         <ol>
           <li>Install Keplr or Leap from the official site, then create a wallet or import the one you already use.</li>
-          <li>Copy your public Congrid address (<code>congrid1...</code>) into the airdrop form below.</li>
+          <li>Connect your wallet below to fill in your public Congrid address (<code>congrid1...</code>), or paste it into the airdrop form.</li>
           <li>Keep your recovery phrase or private key inside the wallet and backed up offline.</li>
           <li>Never paste your recovery phrase or private key into Congrid. This page only needs your public address.</li>
         </ol>
       </div>
+    </div>
+
+    <div class="card" style="margin:16px 0;">
+      <h2>Connect wallet (optional)</h2>
+      <p class="muted">Connect Keplr/Leap to get your public Congrid address and automatically fill in the airdrop form.</p>
+      <div class="callout" style="margin-top:10px; overflow-wrap:anywhere;">
+        <strong>Wallet:</strong> <span data-wallet-address aria-live="polite">Not connected</span>
+        <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn btn-ghost" type="button" data-wallet-connect>Connect wallet</button>
+        </div>
+      </div>
+      <div class="callout" data-wallet-flash role="status" hidden style="overflow-wrap:anywhere;"></div>
     </div>
 
     <div class="grid two">
@@ -54,13 +66,13 @@
           <label class="label">Website domain</label>
           <input class="input" name="domain" placeholder="example.com" required />
 
-          <label class="label">Wallet address</label>
-          <input class="input" name="wallet" placeholder="congrid1..." required />
+          <label class="label" for="airdrop-wallet">Wallet address</label>
+          <input class="input" id="airdrop-wallet" name="wallet" placeholder="congrid1..." data-wallet-autofill required />
 
           <button class="btn" type="submit">Verify &amp; Queue Airdrop</button>
         </form>
         <p class="muted" style="margin-top:10px;">
-          We do not create wallets on this website. Use Keplr or Leap to manage your address and secret recovery phrase securely, then paste only your public address here.
+          We do not create wallets on this website. Use Keplr or Leap to manage your wallet securely, then connect above or paste only your public address here.
         </p>
       </div>
     </div>
