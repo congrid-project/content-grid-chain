@@ -56,6 +56,9 @@ import (
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	_ "github.com/cosmos/cosmos-sdk/x/staking"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	transfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
+	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
+	ibctm "github.com/cosmos/ibc-go/v10/modules/light-clients/07-tendermint"
 
 	"content-grid-chain/x/nodes"
 	"content-grid-chain/x/registry"
@@ -77,6 +80,7 @@ var (
 		{Account: stakingtypes.NotBondedPoolName, Permissions: []string{authtypes.Burner, authtypes.Staking}},
 		{Account: govtypes.ModuleName, Permissions: []string{authtypes.Burner}},
 		{Account: "verifiers"},
+		{Account: transfertypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner}},
 	}
 
 	blockAccAddrs = []string{
@@ -85,6 +89,7 @@ var (
 		minttypes.ModuleName,
 		stakingtypes.BondedPoolName,
 		stakingtypes.NotBondedPoolName,
+		transfertypes.ModuleName,
 	}
 
 	runtimePreBlockersOrder = []string{
@@ -106,6 +111,7 @@ var (
 	}
 
 	runtimeBeginBlockersOrder = []string{
+		ibcexported.ModuleName,
 		minttypes.ModuleName,
 		distributiontypes.ModuleName,
 		slashingtypes.ModuleName,
@@ -162,6 +168,9 @@ var (
 		verifiers.ModuleName,
 		registry.ModuleName,
 		tokenomics.ModuleName,
+		ibcexported.ModuleName,
+		transfertypes.ModuleName,
+		ibctm.ModuleName,
 	}
 
 	runtimeExportGenesisOrder = []string{
@@ -184,6 +193,9 @@ var (
 		verifiers.ModuleName,
 		registry.ModuleName,
 		tokenomics.ModuleName,
+		ibcexported.ModuleName,
+		transfertypes.ModuleName,
+		ibctm.ModuleName,
 	}
 
 	ModuleConfig = []*appv1alpha1.ModuleConfig{

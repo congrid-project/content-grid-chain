@@ -62,6 +62,10 @@ Content Grid 包含两个相互关联但职责不同的共识层。
 
 完整规则和当前实现范围请参阅 [Tokenomics](docs/tokenomics-zh.md)、[链接市场](docs/marketplace-zh.md)与[治理手册](docs/governance-zh.md)。
 
+IBC Core 与 ICS-20 转账已接入，并提供双链应用测试和 Hermes 本地联调脚本。
+已运行网络需要通过 `ibc-transfer-v1` 升级启用；Osmosis 正式通道与流动性池需另外建立。
+参阅 [IBC 测试与上线手册](docs/ibc-zh.md)。
+
 ## 使用协议
 
 Chain ID、RPC 地址、genesis 和 seed peer 等网络专属信息，应以网络运营方或官方发布包提供的值为准。

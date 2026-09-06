@@ -39,10 +39,7 @@ import (
 	"github.com/spf13/cast"
 
 	"content-grid-chain/app"
-	"content-grid-chain/x/nodes"
-	"content-grid-chain/x/registry"
 	"content-grid-chain/x/tokenomics"
-	"content-grid-chain/x/verifiers"
 )
 
 // NewRootCmd returns the root command for the content-grid-d binary.
@@ -69,13 +66,7 @@ func NewRootCmd() *cobra.Command {
 	// The depinject-provided basic manager only includes modules declared in AppConfig.
 	// Our chain wires several custom modules manually; they still need to be present here
 	// so `init`/`devnet` genesis includes their state (params, etc.).
-	customBasics := []module.AppModuleBasic{
-		nodes.AppModuleBasic{},
-		registry.AppModuleBasic{},
-		verifiers.AppModuleBasic{},
-		tokenomics.AppModuleBasic{},
-	}
-	for _, b := range customBasics {
+	for _, b := range app.ModuleBasics {
 		moduleBasicManager[b.Name()] = b
 		b.RegisterInterfaces(clientCtx.InterfaceRegistry)
 		b.RegisterLegacyAminoCodec(clientCtx.LegacyAmino)
@@ -240,6 +231,7 @@ func queryCommand() *cobra.Command {
 		registryQueryCmd(),
 	)
 
+	app.IBCModuleBasics.AddQueryCommands(cmd)
 	return cmd
 }
 
@@ -265,6 +257,7 @@ func txCommand() *cobra.Command {
 		registryTxCmd(),
 	)
 
+	app.IBCModuleBasics.AddTxCommands(cmd)
 	return cmd
 }
 

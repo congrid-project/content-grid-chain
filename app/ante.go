@@ -10,6 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
+	ibcante "github.com/cosmos/ibc-go/v10/modules/core/ante"
 
 	registrytypespb "content-grid-chain/x/registry/typespb"
 )
@@ -18,23 +19,27 @@ func setCustomAnteHandler(app *App) error {
 	if app == nil {
 		return fmt.Errorf("nil app")
 	}
-	if app.AccountKeeper == nil {
-		return fmt.Errorf("account keeper unavailable for custom ante handler")
-	}
 
-	anteHandler, err := authante.NewAnteHandler(authante.HandlerOptions{
-		AccountKeeper:   app.AccountKeeper,
-		BankKeeper:      app.BankKeeper,
-		SignModeHandler: app.txConfig.SignModeHandler(),
-		FeegrantKeeper:  app.FeeGrantKeeper,
-		SigGasConsumer:  authante.DefaultSigVerificationGasConsumer,
-		TxFeeChecker:    publisherScopedTxFeeChecker,
-	})
-	if err != nil {
-		return fmt.Errorf("create custom ante handler: %w", err)
+	if app.IBCKeeper == nil || app.txConfig == nil {
+		return fmt.Errorf("IBC keeper and transaction config are required for ante handler")
 	}
-
-	app.SetAnteHandler(anteHandler)
+	// Keep the SDK v0.53 authentication/fee sequence, then apply IBC's
+	// redundant-relay check inside the setup decorator's gas recovery scope.
+	app.SetAnteHandler(sdk.ChainAnteDecorators(
+		authante.NewSetUpContextDecorator(),
+		authante.NewExtensionOptionsDecorator(nil),
+		authante.NewValidateBasicDecorator(),
+		authante.NewTxTimeoutHeightDecorator(),
+		authante.NewValidateMemoDecorator(app.AccountKeeper),
+		authante.NewConsumeGasForTxSizeDecorator(app.AccountKeeper),
+		authante.NewDeductFeeDecorator(app.AccountKeeper, app.BankKeeper, app.FeeGrantKeeper, publisherScopedTxFeeChecker),
+		authante.NewSetPubKeyDecorator(app.AccountKeeper),
+		authante.NewValidateSigCountDecorator(app.AccountKeeper),
+		authante.NewSigGasConsumeDecorator(app.AccountKeeper, authante.DefaultSigVerificationGasConsumer),
+		authante.NewSigVerificationDecorator(app.AccountKeeper, app.txConfig.SignModeHandler()),
+		authante.NewIncrementSequenceDecorator(app.AccountKeeper),
+		ibcante.NewRedundantRelayDecorator(app.IBCKeeper),
+	))
 	return nil
 }
 

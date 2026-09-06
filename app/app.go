@@ -26,13 +26,15 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
+	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+	transferkeeper "github.com/cosmos/ibc-go/v10/modules/apps/transfer/keeper"
+	ibckeeper "github.com/cosmos/ibc-go/v10/modules/core/keeper"
 
 	"content-grid-chain/x/nodes"
 	"content-grid-chain/x/registry"
 	"content-grid-chain/x/tokenomics"
 	"content-grid-chain/x/verifiers"
-
-	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 )
 
 const (
@@ -67,22 +69,32 @@ type App struct {
 	interfaceRegistry codectypes.InterfaceRegistry
 	basicManager      module.BasicManager
 	BankKeeper        bankkeeper.Keeper
-	AccountKeeper     authante.AccountKeeper
+	AccountKeeper     authkeeper.AccountKeeper
 	FeeGrantKeeper    authante.FeegrantKeeper
 	UpgradeKeeper     *upgradekeeper.Keeper
+	IBCKeeper         *ibckeeper.Keeper
+	TransferKeeper    transferkeeper.Keeper
 
 	RegistryKeeper   registry.Keeper
 	TokenomicsKeeper tokenomics.Keeper
 	VerifiersKeeper  verifiers.Keeper
 }
 
-// ModuleBasics contains the Content Grid-specific module basics used for genesis helpers.
-var ModuleBasics = module.NewBasicManager(
-	nodes.AppModuleBasic{},
-	registry.AppModuleBasic{},
-	verifiers.AppModuleBasic{},
-	tokenomics.AppModuleBasic{},
-)
+// ModuleBasics contains all manually wired module basics used by genesis and CLI helpers.
+var ModuleBasics = newModuleBasics()
+
+func newModuleBasics() module.BasicManager {
+	basics := module.NewBasicManager(
+		nodes.AppModuleBasic{},
+		registry.AppModuleBasic{},
+		verifiers.AppModuleBasic{},
+		tokenomics.AppModuleBasic{},
+	)
+	for name, basic := range IBCModuleBasics {
+		basics[name] = basic
+	}
+	return basics
+}
 
 // NewApp creates a fully configured application using the depinject wiring defined in AppConfig.
 func NewApp(
@@ -120,6 +132,7 @@ func NewApp(
 	application.basicManager = basicMgr
 
 	application.App = appBuilder.Build(db, traceStore, baseAppOptions...)
+	registerIBCModules(application)
 
 	if err := setCustomAnteHandler(application); err != nil {
 		panic(err)
@@ -129,6 +142,9 @@ func NewApp(
 	application.UpgradeKeeper.SetInitVersionMap(application.ModuleManager.GetVersionMap())
 	registerCustomModuleOrders(application)
 	registerUpgradeHandlers(application)
+	if err := configureIBCStoreLoader(application); err != nil {
+		panic(err)
+	}
 
 	if err := application.Load(loadLatest); err != nil {
 		panic(err)
@@ -284,6 +300,8 @@ func NewEncodingConfig() (codec.Codec, *codec.LegacyAmino, codectypes.InterfaceR
 		panic(err)
 	}
 
+	ModuleBasics.RegisterInterfaces(registry)
+	ModuleBasics.RegisterLegacyAminoCodec(amino)
 	return cdc, amino, registry
 }
 
@@ -302,6 +320,12 @@ func DefaultGenesis() map[string]json.RawMessage {
 	}
 
 	genesis := appBuilder.DefaultGenesis()
+	cdc, _, _ := NewEncodingConfig()
+	for name, raw := range ModuleBasics.DefaultGenesis(cdc) {
+		if len(raw) != 0 {
+			genesis[name] = raw
+		}
+	}
 	patchDefaultDenoms(genesis, tokenomics.DefaultDenom)
 	return genesis
 }

@@ -62,6 +62,10 @@ The default economic reference is 1 billion `CONGRID` (`1 CONGRID = 1,000,000 uc
 
 See [tokenomics](docs/tokenomics.md), [marketplace](docs/marketplace.md), and [governance](docs/governance.md) for the complete rules and current scope.
 
+IBC Core and ICS-20 transfers are integrated, with application-level cross-chain tests and a Hermes localnet script.
+Existing networks require the `ibc-transfer-v1` upgrade; an Osmosis connection and liquidity pool must be established separately.
+See the [IBC testing and deployment runbook](docs/ibc.md).
+
 ## Use the protocol
 
 Network-specific values such as the chain ID, RPC endpoint, genesis file, and seed peers must come from the network operator or official release bundle.

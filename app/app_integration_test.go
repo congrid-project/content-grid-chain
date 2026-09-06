@@ -15,6 +15,7 @@ import (
 	pruningtypes "cosmossdk.io/store/pruning/types"
 
 	"content-grid-chain/app"
+	"content-grid-chain/x/tokenomics"
 )
 
 func TestContentGridAppNetwork(t *testing.T) {
@@ -22,6 +23,8 @@ func TestContentGridAppNetwork(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg.NumValidators = 1
+	cfg.GenesisState = app.DefaultGenesis()
+	cfg.BondDenom = tokenomics.DefaultDenom
 	cfg.TimeoutCommit = time.Second
 	cfg.MinGasPrices = app.MinGasPrice()
 	cfg.PruningStrategy = pruningtypes.PruningOptionNothing
