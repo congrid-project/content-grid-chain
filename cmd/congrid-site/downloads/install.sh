@@ -5,7 +5,7 @@ umask 027
 export LC_ALL=C
 export LANG=C
 
-INSTALLER_VERSION="1.4.3"
+INSTALLER_VERSION="1.5.0"
 
 case "$(uname -s)" in
   Linux)
@@ -62,10 +62,13 @@ SEEDS_SHA256="${CONGRID_SEEDS_SHA256:-}"
 NON_INTERACTIVE="${CONGRID_NON_INTERACTIVE:-false}"
 START_SERVICES="${CONGRID_START_SERVICES:-true}"
 COMPONENTS_ONLY="${CONGRID_COMPONENTS_ONLY:-false}"
-PRE_UPGRADE_NAME="drand-strict-v2"
-PRE_UPGRADE_HEIGHT=13000
-PRE_UPGRADE_BINARY_VERSION="pre-drand-strict-v2-ef331816"
-INCOMPATIBLE_HEIGHT_ONE_APP_HASH="YyNzspIwNZkJl3wNQ4vcJAEQ4baLcIsZ50eOsKp5JxM="
+RELEASE_TAG="${CONGRID_RELEASE_TAG:-native-ibc-transfer-v1-r1}"
+RELEASE_BASE_URL="${CONGRID_RELEASE_BASE_URL:-https://github.com/congrid-project/content-grid-chain/releases/download/$RELEASE_TAG}"
+EXPECTED_NODE_VERSION="ibc-transfer-v1"
+EXPECTED_SOURCE_COMMIT="5907b65faa971afd9e0c29e74284baa03675e37c"
+GENESIS_SHA256="779abab0b56bf4b0edf6951cf63f1cc950d2ba1faee9317b41205400ee7481d2"
+STATE_SYNC_RPC_SERVERS=""
+STATE_SYNC_REQUIRED=false
 
 ROOT_CMD=()
 TMP_WORK=""
@@ -122,7 +125,7 @@ Recommended:
   curl -fsSL https://congrid.net/downloads/install.sh | bash
 
 Options (when piping, pass options after "bash -s --"):
-  --download-base-url URL   Release directory (default: https://congrid.net/downloads)
+  --download-base-url URL   Network files directory (default: https://congrid.net/downloads)
   --components-only         Install chromad, indexerd, and verifierd for an existing node
   --non-interactive         Read all settings from CONGRID_* environment variables
   --no-start                Install and configure without starting services
@@ -151,7 +154,18 @@ Existing-node mode (--components-only):
 Artifact overrides:
   CONGRID_BUNDLE_URL                   Full native bundle URL
   CONGRID_BUNDLE_SHA256                Expected lowercase/uppercase SHA-256
-  CONGRID_DOWNLOAD_BASE_URL            Base URL used when BUNDLE_URL is unset
+  CONGRID_RELEASE_TAG                  Default: native-ibc-transfer-v1-r1 (never latest)
+  CONGRID_RELEASE_BASE_URL             Bundle/checksum mirror directory override
+  CONGRID_DOWNLOAD_BASE_URL            Genesis and seeds directory; not the bundle source
+
+New-node state sync:
+  CONGRID_STATE_SYNC_RPC_SERVERS       Two comma-separated RPC URLs of different nodes
+  CONGRID_PERSISTENT_PEERS             Include a snapshot provider; otherwise use RPC-advertised peers
+
+New nodes use post-90000 state sync with ibc-transfer-v1, without historical
+binaries. RPCs must serve recent history; a connected peer must serve snapshots.
+Existing unmanaged node homes are never reset or migrated; use --components-only.
+Stop previously installed services before reinstalling their binaries.
 
 Advanced operational override:
   CONGRID_DRAND_DELIVERY_DISABLED      true disables this verifier's drand relay
@@ -760,8 +774,11 @@ PY
 }
 
 NODE_ALREADY_INITIALIZED=false
-NODE_BOOTSTRAP_MODE="legacy"
-RESET_INCOMPATIBLE_CHAIN_DATA=false
+if [ "$COMPONENTS_ONLY" != "true" ] &&
+  ! run_root test -s "$CONGRID_HOME_DIR/config/config.toml" &&
+  { run_root test -d "$CONGRID_HOME_DIR/data/application.db" || run_root test -d "$CONGRID_HOME_DIR/data/blockstore.db"; }; then
+  die "chain databases exist without a node configuration; choose an empty node home"
+fi
 if [ "$COMPONENTS_ONLY" = "true" ] &&
   run_root test -s "$CONGRID_HOME_DIR/config/config.toml"; then
   die "component state directory $CONGRID_HOME_DIR is an existing node home; choose a separate CONGRID_COMPONENT_HOME"
@@ -769,62 +786,46 @@ fi
 if [ "$COMPONENTS_ONLY" != "true" ] &&
   run_root test -s "$CONGRID_HOME_DIR/config/config.toml"; then
   NODE_ALREADY_INITIALIZED=true
-  log "existing node home detected at $CONGRID_HOME_DIR; chain data and genesis will be preserved"
-
-  if run_root test -s "$CONGRID_HOME_DIR/config/congrid-bootstrap-mode" &&
-    [ "$(run_root tr -d '[:space:]' "$CONGRID_HOME_DIR/config/congrid-bootstrap-mode")" = "current" ]; then
-    NODE_BOOTSTRAP_MODE="current"
-  elif run_root test -s "$CONGRID_HOME_DIR/data/upgrade-info.json" &&
-    run_root python3 - "$CONGRID_HOME_DIR/data/upgrade-info.json" "$PRE_UPGRADE_NAME" "$PRE_UPGRADE_HEIGHT" <<'PY'
+  if ! run_root python3 - "$CONGRID_HOME_DIR/config/congrid-install-owner.json" <<'PY_OWNER'
 import json
 import sys
-
-path, expected_name, raw_expected_height = sys.argv[1:]
 try:
-    with open(path, "r", encoding="utf-8") as handle:
-        value = json.load(handle)
-    matched = (
-        value.get("name") == expected_name
-        and int(value.get("height", 0)) == int(raw_expected_height)
-    )
-except (OSError, ValueError, TypeError):
-    matched = False
-raise SystemExit(0 if matched else 1)
-PY
+    with open(sys.argv[1]) as handle:
+        owner = json.load(handle)
+    valid = owner == {"chain_id": "congrid-main", "node_version": "ibc-transfer-v1", "bootstrap": "statesync"}
+except (OSError, ValueError):
+    valid = False
+raise SystemExit(0 if valid else 1)
+PY_OWNER
   then
-    NODE_BOOTSTRAP_MODE="current"
-  else
-    rpc_status="$(
-      curl --fail --silent --show-error --max-time 5 \
-        http://127.0.0.1:26657/status 2>/dev/null || true
-    )"
-    rpc_abci_info="$(
-      curl --fail --silent --show-error --max-time 5 \
-        http://127.0.0.1:26657/abci_info 2>/dev/null || true
-    )"
-    node_rpc_height="$(
-      python3 -c 'import json,sys; print(int(json.load(sys.stdin)["result"]["sync_info"]["latest_block_height"]))' \
-        <<<"$rpc_status" 2>/dev/null || true
-    )"
-    node_rpc_app_hash="$(
-      python3 -c 'import json,sys; print(json.load(sys.stdin)["result"]["response"].get("last_block_app_hash", ""))' \
-        <<<"$rpc_abci_info" 2>/dev/null || true
-    )"
-
-    if [ -n "$node_rpc_height" ] && [ "$node_rpc_height" -ge "$PRE_UPGRADE_HEIGHT" ]; then
-      NODE_BOOTSTRAP_MODE="current"
-    elif [ "$node_rpc_height" = "1" ] &&
-      [ "$node_rpc_app_hash" = "$INCOMPATIBLE_HEIGHT_ONE_APP_HASH" ]; then
-      RESET_INCOMPATIBLE_CHAIN_DATA=true
-      warn "detected incompatible height-1 data created by installer 1.2.x; it will be backed up and replayed safely"
-    fi
+    die "existing node home is not managed by this state-sync installer; use --components-only or a new CONGRID_HOME on macOS. Existing data has not been changed"
   fi
 fi
-if [ "$COMPONENTS_ONLY" = "true" ]; then
-  log "existing-node mode: the chain node will not be modified or managed"
-else
-  log "node bootstrap mode: $NODE_BOOTSTRAP_MODE"
+if [ "$COMPONENTS_ONLY" != "true" ] &&
+  ! run_root test -s "$CONGRID_HOME_DIR/config/state-sync-complete.json"; then
+  STATE_SYNC_REQUIRED=true
 fi
+
+# Never overwrite a binary or configuration belonging to a running service.
+run_root python3 - "$COMPONENTS_ONLY" "$BIN_DIR" "$LIBEXEC_DIR" "$CONGRID_HOME_DIR" <<'PY_RUNNING'
+import os
+import shlex
+import subprocess
+import sys
+components, binary, libexec, home = sys.argv[1:]
+targets = {os.path.join(binary, "verifierd"), os.path.join(binary, "indexerd")}
+if components != "true":
+    targets.add(os.path.join(binary, "content-grid-d"))
+for line in subprocess.check_output(["ps", "-axo", "pid=,command="], text=True).splitlines():
+    try:
+        pid, command = line.strip().split(None, 1)
+        args = shlex.split(command)
+    except ValueError:
+        continue
+    same_home = components != "true" and "--home" in args and home in args and any("content-grid-d" in a for a in args[:2])
+    if args and (args[0] in targets or same_home):
+        raise SystemExit("An existing service is running (PID " + pid + "). Stop the affected installer-managed services before reinstalling; use --components-only for an independently managed node.")
+PY_RUNNING
 
 printf '\nContent Grid native operator setup\n' >&2
 if [ "$HOST_OS" = "linux" ]; then
@@ -842,6 +843,11 @@ default_gas_prices="$(env_or_saved CONGRID_VERIFIER_GAS_PRICES verifier_gas_pric
 CHAIN_ID="${CONGRID_CHAIN_ID:-congrid-main}"
 GENESIS_URL="${CONGRID_GENESIS_URL:-$DOWNLOAD_BASE_URL/genesis.json}"
 log "using chain ID: $CHAIN_ID"
+if [ "$COMPONENTS_ONLY" != "true" ]; then
+  [ "$CHAIN_ID" = "congrid-main" ] || die "ibc-transfer-v1 full-node installation supports congrid-main only"
+  default_state_sync_rpc="$(env_or_saved CONGRID_STATE_SYNC_RPC_SERVERS state_sync_rpc_servers "")"
+  prompt_value STATE_SYNC_RPC_SERVERS "Two state-sync RPC URLs, comma-separated (different nodes)" "$default_state_sync_rpc" true
+fi
 if [ "$COMPONENTS_ONLY" = "true" ]; then
   MONIKER="$default_moniker"
   P2P_SEEDS=""
@@ -958,6 +964,8 @@ if actual_chain_id != expected_chain_id:
         file=sys.stderr,
     )
     raise SystemExit(3)
+if expected_chain_id == "congrid-main" and int(height) <= 90000:
+    raise SystemExit("Existing node has not progressed beyond the IBC upgrade height")
 print(f"height={height} catching_up={catching_up}")
 PY
   )" || die "existing node RPC validation failed"
@@ -993,7 +1001,7 @@ validate_single_line "verifier keyring passphrase" "$VERIFIER_PASSPHRASE"
 
 BUNDLE_NAME="${CONGRID_BUNDLE_NAME:-congrid-native-${HOST_OS}-${RELEASE_ARCH}.tar.gz}"
 if [ -z "$BUNDLE_URL" ]; then
-  BUNDLE_URL="$DOWNLOAD_BASE_URL/$BUNDLE_NAME"
+  BUNDLE_URL="${RELEASE_BASE_URL%/}/$BUNDLE_NAME"
 else
   BUNDLE_NAME="${BUNDLE_URL##*/}"
   BUNDLE_NAME="${BUNDLE_NAME%%\?*}"
@@ -1006,7 +1014,7 @@ CHECKSUM_PATH="$TMP_WORK/$BUNDLE_NAME.sha256"
 
 log "downloading native release bundle for $HOST_OS/$RELEASE_ARCH"
 curl --fail --location --silent --show-error --retry 3 --retry-delay 2 \
-  "$BUNDLE_URL" --output "$BUNDLE_PATH"
+  "$BUNDLE_URL" --output "$BUNDLE_PATH" || die "cannot download native bundle; publish the complete $RELEASE_TAG release or set CONGRID_BUNDLE_URL/CONGRID_RELEASE_BASE_URL"
 
 if [ -z "$BUNDLE_SHA256" ]; then
   if [ -n "${CONGRID_BUNDLE_SHA256_URL:-}" ]; then
@@ -1059,27 +1067,280 @@ for required_file in \
   [ -f "$required_file" ] && [ ! -L "$required_file" ] ||
     die "native release bundle is missing $(basename "$required_file")"
 done
-if [ "$COMPONENTS_ONLY" != "true" ]; then
-  [ -f "$BUNDLE_ROOT/bin/content-grid-d-pre-upgrade" ] &&
-    [ ! -L "$BUNDLE_ROOT/bin/content-grid-d-pre-upgrade" ] ||
-    die "native release bundle is missing content-grid-d-pre-upgrade"
-fi
-
+[ -f "$BUNDLE_ROOT/BUILD-INFO" ] || die "native bundle is missing BUILD-INFO"
+python3 - "$BUNDLE_ROOT/BUILD-INFO" "$EXPECTED_SOURCE_COMMIT" "$EXPECTED_NODE_VERSION" "$HOST_OS/$RELEASE_ARCH" <<'PY_BUILD'
+import sys
+path, commit, version, target = sys.argv[1:]
+with open(path) as handle:
+    values = dict(line.strip().split("=", 1) for line in handle if "=" in line)
+for key, expected in {"source_commit": commit, "source_version": version, "target": target}.items():
+    if values.get(key) != expected:
+        raise SystemExit(f"Bundle {key} mismatch: expected {expected}, got {values.get(key)}")
+PY_BUILD
 for binary_file in content-grid-d verifierd indexerd; do
   chmod 0755 "$BUNDLE_ROOT/bin/$binary_file"
 done
+actual_version="$("$BUNDLE_ROOT/bin/content-grid-d" version)" || die "node binary cannot run on this host"
+[ "$actual_version" = "$EXPECTED_NODE_VERSION" ] || die "expected $EXPECTED_NODE_VERSION, got $actual_version"
+
+# BEGIN EMBEDDED STATE SYNC
+cat >"$TMP_WORK/congrid-state-sync.py" <<'PY_STATE_SYNC'
+#!/usr/bin/env python3
+"""Embedded into install.sh. Verify a trust anchor and supervise a state-sync node."""
+import argparse
+import base64
+from datetime import datetime, timezone
+import fcntl
+import ipaddress
+import json
+import os
+from pathlib import Path
+import re
+import signal
+import socket
+import subprocess
+import sys
+import time
+from urllib.parse import urlencode, urlsplit
+
+CHAIN_ID = "congrid-main"
+UPGRADE_HEIGHT = 90000
+TRUST_SECONDS = 86400
+
+
+def rpc(base, method, **params):
+    url = base.rstrip("/") + "/" + method
+    if params:
+        url += "?" + urlencode(params)
+    response = json.loads(subprocess.check_output([
+        "curl", "--fail", "--silent", "--show-error", "--connect-timeout", "5",
+        "--max-time", "20", url,
+    ]))
+    if "error" in response:
+        raise ValueError(f"{method}: {response['error']}")
+    return response["result"]
+
+
+def fields(data):
+    """Decode the varint/length-delimited fields used by staking Query/Params."""
+    index = 0
+
+    def varint():
+        nonlocal index
+        value = 0
+        for shift in range(0, 70, 7):
+            byte = data[index]
+            index += 1
+            value |= (byte & 127) << shift
+            if byte < 128:
+                return value
+        raise ValueError("Invalid protobuf varint")
+
+    result = {}
+    while index < len(data):
+        tag = varint()
+        wire = tag & 7
+        if wire == 0:
+            value = varint()
+        elif wire == 2:
+            size = varint()
+            if index + size > len(data):
+                raise ValueError("Truncated protobuf field")
+            value = data[index:index + size]
+            index += size
+        else:
+            raise ValueError(f"Unexpected protobuf wire type: {wire}")
+        result[tag >> 3] = value
+    return result
+
+
+def trust_anchor(settings):
+    if settings["chain_id"] != CHAIN_ID:
+        raise ValueError("State-sync bootstrap supports congrid-main only")
+    servers = [value.strip().rstrip("/") for value in settings["rpc_servers"]]
+    if len(servers) != 2 or len(set(servers)) != 2:
+        raise ValueError("Provide exactly two distinct state-sync RPC URLs")
+    for server in servers:
+        parsed = urlsplit(server)
+        if (parsed.scheme not in ("https", "http") or not parsed.hostname
+                or parsed.username or parsed.password or parsed.query or parsed.fragment):
+            raise ValueError("State-sync RPC must be an HTTP(S) URL without credentials or query")
+    statuses = [rpc(server, "status") for server in servers]
+    ids = [status["node_info"]["id"] for status in statuses]
+    if len(set(ids)) != 2 or any(not re.fullmatch(r"[0-9a-fA-F]{40}", value) for value in ids):
+        raise ValueError("RPC URLs must identify two different nodes")
+    for status in statuses:
+        if status["node_info"]["network"] != CHAIN_ID or status["sync_info"]["catching_up"]:
+            raise ValueError("RPC node has the wrong chain ID or is still catching up")
+    height = min(int(s["sync_info"]["latest_block_height"]) for s in statuses) - 20
+    if height <= UPGRADE_HEIGHT:
+        raise ValueError("Trust height must be after ibc-transfer-v1@90000")
+    blocks = [rpc(server, "block", height=str(height)) for server in servers]
+    hashes = [block["block_id"]["hash"].upper() for block in blocks]
+    if hashes[0] != hashes[1] or not re.fullmatch(r"[0-9A-F]{64}", hashes[0]):
+        raise ValueError("The two RPC nodes disagree on the trusted block hash")
+    for block in blocks:
+        header = block["block"]["header"]
+        if header["chain_id"] != CHAIN_ID or int(header["height"]) != height:
+            raise ValueError("Incorrect trust block height or chain ID")
+        stamp = re.sub(r"(\.\d{6})\d+", r"\1", header["time"]).replace("Z", "+00:00")
+        age = (datetime.now(timezone.utc) - datetime.fromisoformat(stamp)).total_seconds()
+        if not -60 <= age <= 3600:
+            raise ValueError("Trusted block is stale; check the RPCs and local clock")
+    for server in servers:
+        response = rpc(server, "abci_query", path=json.dumps("/cosmos.staking.v1beta1.Query/Params"),
+                       data="0x", height=str(height))["response"]
+        if int(response.get("code", 0)):
+            raise ValueError("Cannot verify the chain's unbonding period")
+        params = fields(base64.b64decode(response["value"]))[1]
+        duration = fields(params)[1]
+        if fields(duration).get(1, 0) <= TRUST_SECONDS * 2:
+            raise ValueError("Unbonding period is too short for the 24-hour trust period")
+
+    peers = [p.strip() for p in settings.get("peers", "").split(",") if p.strip()]
+    if not peers:
+        for status in statuses:
+            info = status["node_info"]
+            address = re.sub(r"^tcp://", "", info["listen_addr"])
+            host, port = address.rsplit(":", 1)
+            try:
+                if not ipaddress.ip_address(host.strip("[]")).is_global:
+                    continue
+            except ValueError:
+                continue
+            peers.append(info["id"] + "@" + address)
+    if not peers:
+        raise ValueError("Set persistent peers including a reachable snapshot provider")
+    for peer in peers:
+        if not re.fullmatch(r"[0-9a-fA-F]{40}@[^\s,]+:[0-9]+", peer):
+            raise ValueError("Invalid state-sync persistent peer")
+        address = peer.split("@", 1)[1]
+        host, port = address.rsplit(":", 1)
+        with socket.create_connection((host.strip("[]"), int(port)), timeout=5):
+            pass
+    return {"chain_id": CHAIN_ID, "rpc_servers": servers, "trust_height": height,
+            "trust_hash": hashes[0], "trust_period": "24h0m0s", "peers": ",".join(dict.fromkeys(peers)),
+            "verified_at": datetime.now(timezone.utc).isoformat()}
+
+
+def atomic_json(path, value):
+    path = Path(path)
+    temporary = path.with_name(path.name + f".tmp.{os.getpid()}")
+    temporary.write_text(json.dumps(value, indent=2) + "\n")
+    temporary.chmod(0o640)
+    os.replace(temporary, path)
+
+
+def configure(home, anchor):
+    path = Path(home) / "config/config.toml"
+    text = path.read_text()
+    updates = {"statesync": {"enable": "true", "rpc_servers": json.dumps(",".join(anchor["rpc_servers"])),
+                             "trust_height": str(anchor["trust_height"]), "trust_hash": json.dumps(anchor["trust_hash"]),
+                             "trust_period": json.dumps(anchor["trust_period"])},
+               "p2p": {"persistent_peers": json.dumps(anchor["peers"])}}
+    for section, values in updates.items():
+        match = re.search(r"(?ms)^\[" + section + r"\][^\n]*\n(.*?)(?=^\[|\Z)", text)
+        if not match:
+            raise ValueError(f"Missing [{section}] configuration")
+        body = match.group(1)
+        for key, value in values.items():
+            body, count = re.subn(r"(?m)^" + key + r"\s*=.*$", lambda _: f"{key} = {value}", body)
+            if count != 1:
+                raise ValueError(f"Expected exactly one [{section}].{key}")
+        text = text[:match.start(1)] + body + text[match.end(1):]
+    temporary = path.with_name(path.name + f".tmp.{os.getpid()}")
+    temporary.write_text(text)
+    temporary.chmod(path.stat().st_mode & 0o777)
+    os.replace(temporary, path)
+    atomic_json(Path(home) / "config/state-sync-trust.json", anchor)
+
+
+def run_node(binary, home, settings):
+    home = Path(home).resolve()
+    # Keep this lock in the supervisor for the entire lifetime of the child.
+    with (home / ".congrid-node.lock").open("a") as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise ValueError("A managed node is already running for this home")
+        # Do not start another process when an unmanaged daemon already owns RPC.
+        with socket.socket() as probe:
+            probe.bind(("127.0.0.1", 26657))
+        complete = home / "config/state-sync-complete.json"
+        if complete.exists() and not all((home / "data" / name).is_dir()
+                                         for name in ("application.db", "blockstore.db")):
+            raise ValueError("Completed state-sync marker exists but chain databases are missing; use a new node home")
+        if not complete.exists():
+            configure(home, trust_anchor(settings))
+        child = subprocess.Popen([binary, "start", "--home", str(home)])
+        stopping = False
+
+        def stop(signum, frame):
+            nonlocal stopping
+            stopping = True
+            if child.poll() is None:
+                child.terminate()
+
+        signal.signal(signal.SIGTERM, stop)
+        signal.signal(signal.SIGINT, stop)
+        while child.poll() is None:
+            if not stopping and not complete.exists():
+                try:
+                    status = rpc("http://127.0.0.1:26657", "status")
+                    sync = status["sync_info"]
+                    if (status["node_info"]["network"] == CHAIN_ID
+                            and int(sync["latest_block_height"]) > UPGRADE_HEIGHT
+                            and not sync["catching_up"]):
+                        atomic_json(complete, {"chain_id": CHAIN_ID,
+                                              "height": sync["latest_block_height"],
+                                              "node_id": status["node_info"]["id"]})
+                        print("State sync completed; subsequent restarts use local state", flush=True)
+                except (OSError, ValueError, KeyError, subprocess.SubprocessError):
+                    pass
+            time.sleep(2)
+        return child.returncode
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("action", choices=["preflight", "configure", "run"])
+    parser.add_argument("--settings", required=True)
+    parser.add_argument("--output")
+    parser.add_argument("--home")
+    parser.add_argument("--binary")
+    args = parser.parse_args()
+    settings = json.loads(Path(args.settings).read_text())
+    if args.action == "preflight":
+        atomic_json(args.output, trust_anchor(settings))
+    elif args.action == "configure":
+        configure(args.home, settings)
+    else:
+        return run_node(args.binary, args.home, settings)
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except (OSError, ValueError, KeyError, IndexError, subprocess.SubprocessError) as error:
+        print(f"State-sync bootstrap stopped: {error}", file=sys.stderr)
+        sys.exit(1)
+PY_STATE_SYNC
+# END EMBEDDED STATE SYNC
+
 if [ "$COMPONENTS_ONLY" != "true" ]; then
-  chmod 0755 "$BUNDLE_ROOT/bin/content-grid-d-pre-upgrade"
-fi
-if ! "$BUNDLE_ROOT/bin/content-grid-d" version >/dev/null 2>&1; then
-  die "content-grid-d in the release bundle cannot run on this $HOST_OS/$RELEASE_ARCH host"
-fi
-if [ "$COMPONENTS_ONLY" != "true" ]; then
-  pre_upgrade_binary_version="$(
-    "$BUNDLE_ROOT/bin/content-grid-d-pre-upgrade" version 2>/dev/null || true
-  )"
-  if [ "$pre_upgrade_binary_version" != "$PRE_UPGRADE_BINARY_VERSION" ]; then
-    die "content-grid-d-pre-upgrade must report version $PRE_UPGRADE_BINARY_VERSION (got ${pre_upgrade_binary_version:-no output})"
+  python3 - "$CHAIN_ID" "$STATE_SYNC_RPC_SERVERS" "$PERSISTENT_PEERS" "$TMP_WORK/state-sync.json" <<'PY_SETTINGS'
+import json
+import sys
+chain, servers, peers, path = sys.argv[1:]
+with open(path, "w") as handle:
+    json.dump({"chain_id": chain, "rpc_servers": servers.split(","), "peers": peers}, handle)
+PY_SETTINGS
+  if [ "$STATE_SYNC_REQUIRED" = "true" ]; then
+    log "verifying fresh state-sync trust block with both RPC nodes"
+    python3 "$TMP_WORK/congrid-state-sync.py" preflight \
+      --settings "$TMP_WORK/state-sync.json" --output "$TMP_WORK/state-sync-trust.json"
+    PERSISTENT_PEERS="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["peers"])' "$TMP_WORK/state-sync-trust.json")"
   fi
 fi
 
@@ -1092,16 +1353,17 @@ if [ "$HOST_OS" = "linux" ]; then
 fi
 if [ "$COMPONENTS_ONLY" = "true" ]; then
   CLIENT_BINARY="$LIBEXEC_DIR/content-grid-d-client"
-  run_root install -m 0755 "$BUNDLE_ROOT/bin/content-grid-d" "$CLIENT_BINARY"
+  run_root install -m 0755 "$BUNDLE_ROOT/bin/content-grid-d" "$CLIENT_BINARY.install.$$"
+  run_root mv -f "$CLIENT_BINARY.install.$$" "$CLIENT_BINARY"
 else
   CLIENT_BINARY="$BIN_DIR/content-grid-d"
-  run_root install -m 0755 "$BUNDLE_ROOT/bin/content-grid-d" "$CLIENT_BINARY"
-  run_root install -m 0755 \
-    "$BUNDLE_ROOT/bin/content-grid-d-pre-upgrade" \
-    "$LIBEXEC_DIR/content-grid-d-pre-upgrade"
+  run_root install -m 0755 "$BUNDLE_ROOT/bin/content-grid-d" "$CLIENT_BINARY.install.$$"
+  run_root mv -f "$CLIENT_BINARY.install.$$" "$CLIENT_BINARY"
 fi
-run_root install -m 0755 "$BUNDLE_ROOT/bin/verifierd" "$BIN_DIR/verifierd"
-run_root install -m 0755 "$BUNDLE_ROOT/bin/indexerd" "$BIN_DIR/indexerd"
+run_root install -m 0755 "$BUNDLE_ROOT/bin/verifierd" "$BIN_DIR/verifierd.install.$$"
+run_root mv -f "$BIN_DIR/verifierd.install.$$" "$BIN_DIR/verifierd"
+run_root install -m 0755 "$BUNDLE_ROOT/bin/indexerd" "$BIN_DIR/indexerd.install.$$"
+run_root mv -f "$BIN_DIR/indexerd.install.$$" "$BIN_DIR/indexerd"
 run_root install -m 0644 "$BUNDLE_ROOT/chromad/server.py" "$CHROMAD_DIR/server.py"
 run_root install -m 0644 "$BUNDLE_ROOT/chromad/requirements.txt" "$CHROMAD_DIR/requirements.txt"
 
@@ -1206,6 +1468,7 @@ elif [ "$NODE_ALREADY_INITIALIZED" != "true" ]; then
   log "downloading network genesis"
   curl --fail --location --silent --show-error --retry 3 --retry-delay 2 \
     "$GENESIS_URL" --output "$GENESIS_TMP"
+  [ "$(file_sha256 "$GENESIS_TMP")" = "$GENESIS_SHA256" ] || die "genesis SHA-256 differs from the verified mainnet genesis"
   python3 - "$GENESIS_TMP" "$CHAIN_ID" <<'PY' || die "genesis.json is invalid or belongs to a different chain"
 import json
 import sys
@@ -1226,6 +1489,12 @@ PY
   run_as_service "$CLIENT_BINARY" init "$MONIKER" \
     --home "$CONGRID_HOME_DIR" \
     --chain-id "$CHAIN_ID" >/dev/null 2>&1
+  run_as_service python3 - "$CONGRID_HOME_DIR/config/congrid-install-owner.json" <<'PY_OWNER'
+import json
+import sys
+with open(sys.argv[1], "w") as handle:
+    json.dump({"chain_id": "congrid-main", "node_version": "ibc-transfer-v1", "bootstrap": "statesync"}, handle)
+PY_OWNER
   if [ "$HOST_OS" = "linux" ]; then
     run_root install -o "$SERVICE_USER" -g "$SERVICE_GROUP" -m 0640 \
       "$GENESIS_TMP" "$CONGRID_HOME_DIR/config/genesis.json"
@@ -1509,6 +1778,7 @@ env \
   CFG_NODE_GRPC_ADDR="$NODE_GRPC_ADDR" \
   CFG_NODE_CLI_RPC="$NODE_CLI_RPC" \
   CFG_CLIENT_BINARY="$CLIENT_BINARY" \
+  CFG_STATE_SYNC_RPC_SERVERS="$STATE_SYNC_RPC_SERVERS" \
   CFG_BUNDLE_URL="$BUNDLE_URL" \
   CFG_BUNDLE_SHA256="$BUNDLE_SHA256" \
   CFG_INSTALLER_VERSION="$INSTALLER_VERSION" \
@@ -1596,6 +1866,8 @@ write_json(
             if os.environ["CFG_COMPONENTS_ONLY"] == "true"
             else "full-stack"
         ),
+        "state_sync_rpc_servers": os.environ["CFG_STATE_SYNC_RPC_SERVERS"],
+        "node_version": "ibc-transfer-v1",
         "bundle_url": os.environ["CFG_BUNDLE_URL"],
         "bundle_sha256": os.environ["CFG_BUNDLE_SHA256"],
         "moniker": os.environ["CFG_MONIKER"],
@@ -1761,130 +2033,27 @@ chmod 0755 "$TMP_WORK/indexerd-launcher"
 run_root install -m 0755 "$TMP_WORK/indexerd-launcher" "$LIBEXEC_DIR/indexerd-launcher"
 
 if [ "$COMPONENTS_ONLY" != "true" ]; then
+  run_root install -m 0755 "$TMP_WORK/congrid-state-sync.py" "$LIBEXEC_DIR/congrid-state-sync.py"
+  run_root install -m 0640 "$TMP_WORK/state-sync.json" "$CONGRID_HOME_DIR/config/state-sync.json"
+  if [ "$STATE_SYNC_REQUIRED" = "true" ]; then
+    run_root python3 "$LIBEXEC_DIR/congrid-state-sync.py" configure \
+      --settings "$TMP_WORK/state-sync-trust.json" --home "$CONGRID_HOME_DIR"
+  fi
+  printf '%s\n' '{"chain_id":"congrid-main","node_version":"ibc-transfer-v1","bootstrap":"statesync"}' >"$TMP_WORK/congrid-install-owner.json"
+  run_root install -m 0640 "$TMP_WORK/congrid-install-owner.json" "$CONGRID_HOME_DIR/config/congrid-install-owner.json"
+  if [ "$HOST_OS" = "linux" ]; then
+    run_root chown -R "$SERVICE_USER:$SERVICE_GROUP" "$CONGRID_HOME_DIR/config"
+  fi
 cat >"$TMP_WORK/content-grid-node-bootstrap" <<'SH'
 #!/usr/bin/env bash
-set -u
-
-legacy_binary="${1:?pre-upgrade content-grid-d required}"
-current_binary="${2:?current content-grid-d required}"
-home_dir="${3:?node home required}"
-upgrade_name="${4:-drand-strict-v2}"
-upgrade_height="${5:-13000}"
-mode_file="$home_dir/config/congrid-bootstrap-mode"
-upgrade_info="$home_dir/data/upgrade-info.json"
-
-uses_current_binary() {
-  if [ -s "$mode_file" ] &&
-    [ "$(tr -d '[:space:]' <"$mode_file")" = "current" ]; then
-    return 0
-  fi
-  [ -s "$upgrade_info" ] || return 1
-  python3 - "$upgrade_info" "$upgrade_name" "$upgrade_height" <<'PY'
-import json
-import sys
-
-path, expected_name, raw_expected_height = sys.argv[1:]
-try:
-    with open(path, "r", encoding="utf-8") as handle:
-        value = json.load(handle)
-    matched = (
-        value.get("name") == expected_name
-        and int(value.get("height", 0)) == int(raw_expected_height)
-    )
-except (OSError, ValueError, TypeError):
-    matched = False
-raise SystemExit(0 if matched else 1)
-PY
-}
-
-mark_current_binary() {
-  temporary="$mode_file.tmp.$$"
-  printf 'current\n' >"$temporary"
-  chmod 0640 "$temporary"
-  mv -f "$temporary" "$mode_file"
-}
-
-if uses_current_binary; then
-  mark_current_binary
-  printf '[congrid-node-bootstrap] using current binary\n' >&2
-  exec "$current_binary" start --home "$home_dir"
-fi
-
-printf '[congrid-node-bootstrap] replaying with pre-upgrade binary until %s@%s\n' \
-  "$upgrade_name" "$upgrade_height" >&2
-"$legacy_binary" start --home "$home_dir" &
-child_pid=$!
-
-forward_signal() {
-  kill -TERM "$child_pid" >/dev/null 2>&1 || true
-}
-trap forward_signal INT TERM
-
-wait "$child_pid"
-legacy_status=$?
-
-if uses_current_binary; then
-  mark_current_binary
-  printf '[congrid-node-bootstrap] upgrade reached; switching to current binary\n' >&2
-  exec "$current_binary" start --home "$home_dir"
-fi
-
-exit "$legacy_status"
+set -euo pipefail
+binary="${1:?content-grid-d required}"
+home_dir="${2:?node home required}"
+helper_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+exec python3 "$helper_dir/congrid-state-sync.py" run \
+  --settings "$home_dir/config/state-sync.json" --binary "$binary" --home "$home_dir"
 SH
-chmod 0755 "$TMP_WORK/content-grid-node-bootstrap"
-run_root install -m 0755 \
-  "$TMP_WORK/content-grid-node-bootstrap" \
-  "$LIBEXEC_DIR/content-grid-node-bootstrap"
-
-if [ "$RESET_INCOMPATIBLE_CHAIN_DATA" = "true" ]; then
-  repair_timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
-  if [ "$HOST_OS" = "linux" ]; then
-    repair_backup="/var/backups/congrid-incompatible-height1-$repair_timestamp"
-    run_root systemctl stop \
-      congrid-verifier.service \
-      congrid-indexer.service \
-      congrid-chroma.service \
-      congrid-node.service >/dev/null 2>&1 || true
-    run_root install -d -m 0700 "$repair_backup"
-    run_root cp -a "$CONGRID_HOME_DIR/data" "$repair_backup/data"
-  else
-    repair_backup="$CONGRID_HOME_DIR/backups/incompatible-height1-$repair_timestamp"
-    install -d -m 0700 "$CONGRID_HOME_DIR/backups" "$repair_backup"
-    cp -pR "$CONGRID_HOME_DIR/data" "$repair_backup/data"
-    launch_uid="$(id -u)"
-    if launchctl print "gui/$launch_uid" >/dev/null 2>&1; then
-      repair_launch_domain="gui/$launch_uid"
-    else
-      repair_launch_domain="user/$launch_uid"
-    fi
-    for launch_label in \
-      net.congrid.verifier \
-      net.congrid.indexer \
-      net.congrid.chroma \
-      net.congrid.node; do
-      launchctl bootout \
-        "$repair_launch_domain" \
-        "$LAUNCHD_DIR/$launch_label.plist" >/dev/null 2>&1 || true
-    done
-  fi
-
-  log "backed up incompatible height-1 data to $repair_backup"
-  run_as_service "$BIN_DIR/content-grid-d" comet unsafe-reset-all \
-    --home "$CONGRID_HOME_DIR" \
-    --keep-addr-book
-  NODE_BOOTSTRAP_MODE="legacy"
-fi
-
-printf '%s\n' "$NODE_BOOTSTRAP_MODE" >"$TMP_WORK/congrid-bootstrap-mode"
-if [ "$HOST_OS" = "linux" ]; then
-  run_root install -o "$SERVICE_USER" -g "$SERVICE_GROUP" -m 0640 \
-    "$TMP_WORK/congrid-bootstrap-mode" \
-    "$CONGRID_HOME_DIR/config/congrid-bootstrap-mode"
-else
-  install -m 0600 \
-    "$TMP_WORK/congrid-bootstrap-mode" \
-    "$CONGRID_HOME_DIR/config/congrid-bootstrap-mode"
-fi
+  run_root install -m 0755 "$TMP_WORK/content-grid-node-bootstrap" "$LIBEXEC_DIR/content-grid-node-bootstrap"
 fi
 
 if [ "$HOST_OS" = "linux" ]; then
@@ -1904,7 +2073,7 @@ Group=congrid
 # Keep cwd outside --home for compatibility with older content-grid-d builds
 # whose relative-database safety check misidentified the normal home database.
 WorkingDirectory=/var/lib
-ExecStart=/usr/local/libexec/congrid/content-grid-node-bootstrap /usr/local/libexec/congrid/content-grid-d-pre-upgrade /usr/local/bin/content-grid-d /var/lib/congrid
+ExecStart=/usr/local/libexec/congrid/content-grid-node-bootstrap /usr/local/bin/content-grid-d /var/lib/congrid
 Restart=on-failure
 RestartSec=5s
 LimitNOFILE=65535
@@ -2126,7 +2295,7 @@ def service(label, arguments, working_directory, stdout_name, environment=None):
         "ProcessType": "Background",
         "StandardOutPath": os.path.join(logs, stdout_name + ".log"),
         "StandardErrorPath": os.path.join(logs, stdout_name + ".log"),
-        "EnvironmentVariables": {"HOME": login_home},
+        "EnvironmentVariables": {"HOME": login_home, "PATH": os.environ.get("PATH", "/usr/local/bin:/usr/bin:/bin")},
     }
     if environment:
         value["EnvironmentVariables"].update(environment)
@@ -2183,7 +2352,6 @@ if not components_only:
         "net.congrid.node",
         [
             os.path.join(libexec, "content-grid-node-bootstrap"),
-            os.path.join(libexec, "content-grid-d-pre-upgrade"),
             os.path.join(binary, "content-grid-d"),
             home,
         ],

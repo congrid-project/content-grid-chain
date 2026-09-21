@@ -12,6 +12,7 @@ TARGET_ARCH=""
 OUTPUT_DIR=""
 PRE_UPGRADE_REF="${CONGRID_PRE_UPGRADE_REF:-ef331816c0c213a145e26f7719bc4fb395e03c0a}"
 PRE_UPGRADE_VERSION="pre-drand-strict-v2-ef331816"
+INCLUDE_PRE_UPGRADE="${CONGRID_INCLUDE_PRE_UPGRADE:-false}"
 
 usage() {
   cat <<'USAGE'
@@ -23,6 +24,10 @@ Usage:
 
 When the OS or architecture is omitted, the host value is used. The command
 produces congrid-native-<os>-<arch>.tar.gz and its .sha256 file.
+
+The default bundle uses the current binaries for post-upgrade state sync and
+components-only installation. CONGRID_INCLUDE_PRE_UPGRADE=true additionally
+builds the historical replay helper and requires its original source commit.
 USAGE
 }
 
@@ -82,6 +87,19 @@ command -v go >/dev/null 2>&1 || die "Go is required"
 command -v tar >/dev/null 2>&1 || die "tar is required"
 command -v git >/dev/null 2>&1 || die "Git is required"
 
+case "$INCLUDE_PRE_UPGRADE" in
+  true|false) ;;
+  *) die "CONGRID_INCLUDE_PRE_UPGRADE must be true or false" ;;
+esac
+
+# Check historical sources before spending time compiling the current binaries.
+PRE_UPGRADE_COMMIT=""
+if [ "$INCLUDE_PRE_UPGRADE" = "true" ]; then
+  PRE_UPGRADE_COMMIT="$(
+    git -C "$ROOT_DIR" rev-parse --verify "$PRE_UPGRADE_REF^{commit}" 2>/dev/null
+  )" || die "cannot resolve pre-upgrade source ref: $PRE_UPGRADE_REF; for a bundle without historical replay, set CONGRID_INCLUDE_PRE_UPGRADE=false"
+fi
+
 WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/congrid-native-release.XXXXXXXX")"
 trap 'rm -rf -- "$WORK_DIR"' EXIT
 
@@ -110,23 +128,22 @@ build_binary content-grid-d ./cmd/content-grid-d
 build_binary verifierd ./offchain/verifierd
 build_binary indexerd ./offchain/indexerd
 
-PRE_UPGRADE_COMMIT="$(
-  git -C "$ROOT_DIR" rev-parse --verify "$PRE_UPGRADE_REF^{commit}" 2>/dev/null
-)" || die "cannot resolve pre-upgrade source ref: $PRE_UPGRADE_REF"
-PRE_UPGRADE_SOURCE="$WORK_DIR/pre-upgrade-source"
-mkdir -p "$PRE_UPGRADE_SOURCE"
-git -C "$ROOT_DIR" archive "$PRE_UPGRADE_COMMIT" |
-  tar -x -C "$PRE_UPGRADE_SOURCE"
-printf '[congrid-release] building content-grid-d-pre-upgrade from %s for %s/%s\n' \
-  "$PRE_UPGRADE_COMMIT" "$TARGET_OS" "$TARGET_ARCH" >&2
-(
-  cd "$PRE_UPGRADE_SOURCE"
-  CGO_ENABLED=0 GOOS="$TARGET_OS" GOARCH="$TARGET_ARCH" \
-    go build -trimpath \
-      -ldflags "-X github.com/cosmos/cosmos-sdk/version.Version=$PRE_UPGRADE_VERSION -X github.com/cosmos/cosmos-sdk/version.Commit=$PRE_UPGRADE_COMMIT" \
-      -o "$STAGE_DIR/bin/content-grid-d-pre-upgrade" \
-      ./cmd/content-grid-d
-)
+if [ "$INCLUDE_PRE_UPGRADE" = "true" ]; then
+  PRE_UPGRADE_SOURCE="$WORK_DIR/pre-upgrade-source"
+  mkdir -p "$PRE_UPGRADE_SOURCE"
+  git -C "$ROOT_DIR" archive "$PRE_UPGRADE_COMMIT" |
+    tar -x -C "$PRE_UPGRADE_SOURCE"
+  printf '[congrid-release] building content-grid-d-pre-upgrade from %s for %s/%s\n' \
+    "$PRE_UPGRADE_COMMIT" "$TARGET_OS" "$TARGET_ARCH" >&2
+  (
+    cd "$PRE_UPGRADE_SOURCE"
+    CGO_ENABLED=0 GOOS="$TARGET_OS" GOARCH="$TARGET_ARCH" \
+      go build -trimpath \
+        -ldflags "-X github.com/cosmos/cosmos-sdk/version.Version=$PRE_UPGRADE_VERSION -X github.com/cosmos/cosmos-sdk/version.Commit=$PRE_UPGRADE_COMMIT" \
+        -o "$STAGE_DIR/bin/content-grid-d-pre-upgrade" \
+        ./cmd/content-grid-d
+  )
+fi
 
 install -m 0644 "$ROOT_DIR/offchain/chromad/server.py" "$STAGE_DIR/chromad/server.py"
 install -m 0644 "$ROOT_DIR/offchain/chromad/requirements.txt" "$STAGE_DIR/chromad/requirements.txt"
@@ -134,12 +151,17 @@ install -m 0644 "$ROOT_DIR/offchain/chromad/requirements.txt" "$STAGE_DIR/chroma
 cat >"$STAGE_DIR/BUILD-INFO" <<EOF
 source_version=$SOURCE_VERSION
 source_commit=$SOURCE_COMMIT
-pre_upgrade_source_commit=$PRE_UPGRADE_COMMIT
-pre_upgrade_plan=drand-strict-v2
-pre_upgrade_height=13000
+includes_pre_upgrade=$INCLUDE_PRE_UPGRADE
 target=$TARGET_OS/$TARGET_ARCH
 built_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 EOF
+if [ "$INCLUDE_PRE_UPGRADE" = "true" ]; then
+  cat >>"$STAGE_DIR/BUILD-INFO" <<EOF
+pre_upgrade_source_commit=$PRE_UPGRADE_COMMIT
+pre_upgrade_plan=drand-strict-v2
+pre_upgrade_height=13000
+EOF
+fi
 
 tar -czf "$ARCHIVE_PATH.tmp" -C "$WORK_DIR" congrid-native
 mv "$ARCHIVE_PATH.tmp" "$ARCHIVE_PATH"

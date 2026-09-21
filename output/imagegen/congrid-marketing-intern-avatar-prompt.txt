@@ -1,0 +1,11 @@
+Generated using the built-in image_gen tool.
+
+Use case: photorealistic-natural.
+Asset type: one square social media profile avatar, 1:1 composition, high resolution.
+Primary request: Create a photorealistic portrait of a fictional adult woman, about 21 years old, a third-year student at Université de Montréal and a marketing intern at Congrid. She enjoys her work and feels optimistic about Congrid's future; convey this through her warm, genuine smile, engaged eyes and relaxed confidence.
+Scene/backdrop: a softly blurred, sunlit Montreal campus-adjacent coworking space, neutral understated background with a hint of greenery.
+Subject: one approachable young adult woman, natural shoulder-length chestnut-brown hair, simple smart-casual clothing, understated accessories, realistic facial proportions, natural skin texture and minimal makeup. Youthful university-student energy, comfortable and professional.
+Style/medium: authentic editorial portrait photography, polished but candid, like a thoughtful photograph taken by a colleague, not a glossy fashion campaign.
+Composition/framing: head and shoulders, facing the camera with a slight natural angle, face clearly readable at thumbnail size, eyes in sharp focus. Center the face and keep the entire head and shoulders within a generous circular-crop safe area, with breathing room above the hair. Single subject only.
+Lighting/mood: soft window daylight, warm and optimistic, true-to-life colors, subtle depth of field.
+Constraints: fictional original person, visibly adult. No lettering, no slogans, no invented company or university logos, no watermark, no border, no collage, no beauty-filter smoothing.
