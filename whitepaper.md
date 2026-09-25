@@ -1,135 +1,223 @@
-Content Grid Protocol White Paper (v1.0)
-summary
-Scope note (current implementation): the network presently focuses on publisher registration and verifier-driven badge verification. Mining/task allocation/indexing features referenced below are legacy or roadmap items and are not active in the current codebase.
-Terminology note: `validator` refers to a Cosmos consensus validator; `verifier` refers to the Congrid publisher-verification role.
-Content Grid is a decentralized content network and search engine protocol that aims to build a fairer, open and content-driven Internet. We use an innovative "Useful Proof of Work" mechanism to incentivize website publishers to contribute high-quality content and incentivize network nodes to provide crawling, computing and indexing services.
+# Content Grid Protocol White Paper
 
-Unlike traditional search engines that rely on advertising revenue and opaque algorithms, Content Grid leverages blockchain technology, Full-Node Vector Indexing, and vector similarity search to create a censorship-resistant content discovery engine that is owned and maintained by the community. The protocol’s native token CONGRID is the core of the entire economic ecosystem and is used for staking, payment, rewards and governance to ensure that the interests of all participants are consistent with the long-term healthy development of the network.
+Implementation-aligned revision · 2026-09-24 · Code baseline: `905bb09`
 
-1. Vision and Problems
-1.1 Dilemma of the existing Internet
-The current Internet content ecosystem is monopolized by a few centralized giants. This leads to several core questions:
+[中文](whitepaper-zh.md) · [Usage guide](README.md) · [Contributor guide](CONTRIBUTING.md)
 
-Algorithmic black box: The ranking and visibility of content are determined by opaque commercial algorithms, making it difficult for creators to obtain fair exposure.
-Censorship and Control: Centralized platforms have the power to unilaterally delete content or ban accounts, threatening free speech.
-Inefficient value distribution: The advertising-driven model allows most of the value to be captured by the platform, and the income of content creators is severely squeezed.
-Information silos: Content is locked within individual platforms, making cross-platform discovery and connection difficult.
-1.2 Our solution: a decentralized content economy
-Content Grid aims to solve these problems by:
+## 1. Purpose and scope
 
-Decentralized Indexing: Establish a globally shared content index database that is not controlled by any single entity.
-Content-based discovery: Through advanced vector embedding (Embedding) technology, search based on content semantic similarity is realized instead of simple keyword matching.
-Fair incentive mechanism: Reward all participants who contribute to the network, including content publishers and network node operators.
-Useful work: Convert the computing power consumed by traditional blockchain mining into valuable work such as crawling, analyzing and indexing web pages.
-2. System architecture
-Content Grid adopts a layered architecture to decouple on-chain consensus from off-chain high-performance computing to achieve scalability and efficiency.
+Content Grid (Congrid) is a content-discovery protocol connecting independently operated websites. Publishers register their domains, prove control through homepage badges, and display recommendations derived from content similarity. Advertisers can separately purchase available link placements through a slot-and-lease marketplace.
 
-(This is a concept diagram placeholder, an actual diagram could depict the component interactions in more detail)
+The blockchain coordinates registration, verifier bonds, verification assignments, results, rewards, and lease escrow. Crawling, embeddings, and similarity search run off-chain. CONGRID is the native token used for verifier bonds, protocol rewards, transaction fees, and supported marketplace payments.
 
-2.1 Blockchain Layer (Coordination Layer)
-We built a sovereign application chain called content-grid-chain based on the Cosmos SDK. This chain is the "brain" and trust foundation of the entire system and is responsible for:
+This paper describes the current repository implementation and its limits. Default parameters are reference values, not a statement of a deployed network's configuration. Code support for IBC, governance, or upgrades does not establish that a particular production upgrade, exchange connection, liquidity pool, or audit has completed.
 
-Identity and pledge management: Node operators register identities and obtain network permissions by staking CONGRID tokens. Website publishers need to register and verify the ownership of the **first-level domain** (Primary Domain). A first-level domain name can only be registered once.
-Block Consensus: Adopts the standard Tendermint (CometBFT) BPoS consensus mechanism. This is the default solution of the Cosmos SDK, ensuring instant finality of transactions and high network security.
-Task allocation: Use a deterministic algorithm based on block hash (Block Hash Based Assignment). The specific implementation is `Hash(BlockHash + TaskID + Counter) % TotalMiners`, which generates a pseudo-random number seed and deterministically selects execution nodes from the list of active miners. This approach takes advantage of the unpredictability of CometBFT without introducing additional VRF mechanisms.
-Task result verification: Adopt majority verification based on on-chain consensus (On-Chain Majority Consensus). Miners submit the result hash to the chain, and CometBFT ensures the order of transactions. Legacy on-chain task logic (removed from current scope) automatically calculates the majority of submitted results (requires 67% Quorum). Only nodes that are consistent with the majority results can receive rewards. Nodes that do evil or make mistakes will be economically punished through the **Slashing** mechanism.
-Economic model execution: Responsible for the reward distribution, transaction fee processing and governance voting of CONGRID tokens.
+The long-term goal is a more open discovery network with inspectable rules and less dependence on a single discovery platform. Current verification establishes homepage/domain-wallet binding; it does not certify editorial quality, factual accuracy, traffic, or search-engine ranking value.
 
-2.2 Full-Node Indexing Layer
-Unlike traditional distributed hash table (DHT) sharded storage, Content Grid's long-term vision is a full-node indexing model: each worker node (miner) maintains a complete content index of the entire network.
+## 2. Architecture and participants
 
-Implementation-wise, "vector databases/ANN indexes" are pluggable (e.g. Chroma, FAISS, HNSWlib, etc.). To ensure efficiency and storage scalability, we tend to use shorter-dimensional vector representations and further derive shorter similarity fingerprints/signatures (e.g. 128-bit/256-bit) when needed for diversity constraints, deduplication and lightweight routing.
+### 2.1 Blockchain coordination
 
-2.3 Off-chain execution and verification (Execution & Verification)
-This is software run by independent worker nodes responsible for performing all compute-intensive tasks:
+The application uses Cosmos SDK v0.53.4 and CometBFT v0.38.17. Block consensus uses the Cosmos staking validator set and CometBFT consensus. Crawling and embedding computation are application services, not a proof-of-work mechanism for producing blocks.
 
-Web page crawling and Embedding: The node crawls the target web page, calculates the vector embedding, and stores it in the local index.
-Similarity Query Service: When a publisher requests a snippet (containing a referral link), the network randomly selects a group of miners based on the current block hash. These miners locally query the 10 URLs most similar to the target content and return the results.
-Verification mechanism: Nodes need to verify the publisher regularly.
+| Component | Current responsibility |
+| --- | --- |
+| `x/registry` | Publisher records, drand beacons, verification assignments, commit–reveal, similarity evidence, reward settlement, slots, and leases |
+| `x/verifiers` | Account-based verifier bonds held in module escrow |
+| `x/tokenomics` | Emission-pool funding, reward transfers, and burns |
+| Cosmos modules | Accounts, balances, consensus staking/slashing, distribution, governance, fee grants, and software upgrades |
+| IBC Core and ICS-20 | Cross-chain fungible-token transfer support |
+| `offchain/verifierd` | Homepage checks, commit–reveal submissions, and required drand beacon delivery |
+| `offchain/indexerd` and Chroma helper | Homepage indexing, embeddings, semantic queries, and similar-site results |
+| `cmd/congrid-site` | Web onboarding, publisher dashboards, marketplace, and downloads |
 
-In the current code implementation, a lightweight off-chain caching service `indexerd` is also provided: it automatically discovers publishers from the on-chain registry, periodically fetches the homepage and calculates embedding, and outputs a short signature at the same time. In this way, verifier/other components can obtain the cached results directly from `indexerd`, avoiding repeated access and repeated reasoning, while keeping large amounts of embedding off-chain.
+### 2.2 Roles
 
-3. Participant roles and incentives
-3.1 Website Publishers (Content Providers)
-How to participate:
-Register its domain name, and the system will automatically identify the corresponding **first-level domain name** (such as `example.com`) and establish unique ownership to prevent the sub-domain name from being abused by others.
-Embed an HTML snippet containing protocol verification information (including the `congrid.net` link and registrant wallet address) on the homepage of your website. At the same time, the snippet will also contain 10 links to similar content recommended by the network.
-Get Incentive:
-Availability rewards: As long as the website remains online and the links in the code snippets are verified by miners to be highly coincident with the network recommendation results (passing the coincidence threshold check), you can receive daily CONGRID token rewards.
-Recommended traffic: Its website links will appear in HTML fragments of other websites with similar content, obtaining high-quality recommended traffic.
-3.2 Node Operators (Network Workers/Miners)
-How to participate:
-Stake a large amount of CONGRID tokens to become an alternative worker node. The amount of pledge is the guarantee of its credibility and security.
-Run the content-grid-d node software and local vector indexing service to maintain the entire network index.
-Get Incentive:
-Task rewards: Miners who are selected by the block hash algorithm and correctly complete the query task (returning the 10 most similar URLs) will receive rewards.
-Validation rewards: Miners who correctly perform validation tasks (checking publisher code snippets) will also be rewarded.
-Penalty mechanism: If the on-chain consensus arbitration determines that the task has not been completed correctly (such as the submission result is inconsistent with the majority), the node will be punished (Slashing).
-Transaction fees: As a Cosmos consensus validator of the chain, you receive the fees generated by packaged transactions.
-3.3 Consumers (Service Consumers)
-How to participate:
-Any person or organization in need of content discovery, data analysis or SEO services.
-Get service:
-Similarity Search: Free or paid access to the web for high-quality content similarity searches.
-Post bounties: Pay CONGRID tokens to post customized tasks, such as:
-Backlink Buying: Offer a bounty to add your own link to a website on a specific topic.
-Crawl on demand: Pay a fee to have network nodes crawl and analyze any given website.
-4. Tokenomics
-CONGRID is the value carrier that drives the operation of the protocol. The following is the **current implementation caliber** and follow-up plans.
+- **Publishers** register a website and maintain its badge and optional recommendation links. Registration requires no publisher bond.
+- **Verifiers** bond from normal account addresses, inspect assigned websites, and submit observations. Their bonds are distinct from Cosmos consensus staking.
+- **Consensus validators** produce and finalize blocks and participate in Cosmos staking, distribution, and slashing. Running a verifier does not automatically make an operator a consensus validator.
+- **Index operators** serve off-chain content and similarity data. Running an index alone does not currently earn a separate on-chain query-task reward.
+- **Consumers and advertisers** use content discovery or rent listed placements. General-purpose crawl bounties and metered paid-search tasks are not implemented as a complete protocol workflow.
 
-4.1 Token Utility (Utility)
-- Staking (implemented): Verifiers participate in verification assignments and rewards by staking `x/verifiers`.
-- Payment (partially implemented): The chain already supports payment and settlement in slot/lease scenarios; "Consumer Bounty Tasks/Advanced API Payments" are still being planned and improved.
-- Rewards (implemented): Publisher and verifier rewards are implemented in round finalization of `x/registry`.
-- Governance (partially implemented): The chain has the basic capabilities of the governance module, but the custom module parameter governance entrance is still being improved.
+Verifier eligibility uses `x/verifiers` bond denomination and minimum-bond parameters, active status, and registry suspension state. The current minimum-bond default is 1 `ucongrid`; the older registry `verifier_bond` reference field is not the assignment eligibility threshold. Unbonding returns escrow through the verifier module; it does not use the Cosmos staking unbonding queue.
 
-4.2 Supply and issuance pool (current default)
-The total creation reference amount is set to 1 billion CONGRID (`ucongrid` is the smallest unit).
+## 3. Publisher registration and ownership
 
-Current default issuance parameters:
-- Operator’s retention: 40%
-- Issuance pool: 60% (of which 10% are publishers and 50% are verifiers)
-- Release duration: 100 years (linear release on an hourly basis)
+A publisher registers a normalized domain and an owner address. The registered homepage must contain a link to `https://congrid.net` or `https://www.congrid.net/`, without query or fragment, wrapping a badge image from either official HTTPS origin. The image URL identifies the publisher domain and owner wallet.
 
-In order to avoid "increasing the amount of rewards one by one each time", the rewards are changed to the pool transfer mode:
-- The balance of the issuance pool is maintained by the tokenomics module;
-- Each round the reward is transferred from the pool to the recipient;
-- The unclaimed portion will be destroyed directly from the pool.
+The CLI registration helper checks the page before broadcasting. On-chain registration records the request; subsequent verifier observations determine acceptance. A new record begins as `PENDING`. A transaction containing exactly one `MsgRegisterPublisher` is fee-exempt under the custom ante policy; other transactions follow the applicable fee policy.
 
-4.3 Distribution and allocation rules for each round (hour)
-Under the default one-hour round (`round_interval_seconds=3600`):
-- Publisher pool: ~114.155251 CONGRID/hour
-- Verifier pool: ~570.776255 CONGRID/hour
+The registry reserves a primary-domain key to prevent competing subdomain registrations. The present implementation removes the port and uses the final two hostname labels. It is not a Public Suffix List implementation: multi-label suffixes such as `co.uk` require care and remain a limitation.
 
-The general formula (in seconds for any round) is:
-- `publisher_round = total_supply * publisher_bps * round_interval_seconds / (10000 * duration_hours * 3600)`
-- `verifier_round = total_supply * verifier_bps * round_interval_seconds / (10000 * duration_hours * 3600)`
+The `owner` is both the control address and publisher reward recipient. Re-registration stores `pending_owner` and `pending_referrer` without immediately replacing the incumbent. Assignments bind to the candidate wallet. Acceptance updates ownership and associated slot ownership; rejection with quorum clears the candidate while preserving the incumbent. A round without quorum does not accept the candidate. Omitting the referrer in an accepted re-registration clears the previous referrer.
 
-Allocation details:
-- Publisher: Publishers whose registered homepage passes the official badge/anchor verification are active. The publisher pool is split equally among active publishers, then each receives `max(publisher_min_reward_bps, matched_links / required_external_links_for_full_reward)`, capped at 100%. With the defaults, zero matching similar-site links still earns 10% of the equal base share, while 15 links earns the full share; the unclaimed part is destroyed.
-- Verifiers: distributed only among verifiers who passed and submitted successfully, with weight proportional to their stake and multiplied by the active referred-publisher factor (`stake × referral_factor`); destroyed when no one can claim it.
+## 4. Verification rounds and drand assignment
 
-4.4 Value flow and deflation (current implementation)
-- Supply side: Publisher/verifier rewards are released in rounds from the established distribution pool.
-- Deflation side: Unclaimed publisher rewards, unavailable verifier rewards and remaining balance will be destroyed.
+### 4.1 Round scheduling
 
-illustrate:
-- In the document, some of the capabilities such as "complete block-level inflation routing, full link for consumer rewards, and full link for fines and forfeitures" are still being implemented in stages; currently, the logic that has been launched shall prevail.
+Assignments target the next round boundary, rather than an immediate same-round task on registration. Eligible publishers include pending and verified records outside cooldown, plus records with a pending re-registration candidate.
 
-5. Roadmap
-Phase 1: Protocol Core Implementation
-[✓] Complete the content-grid-chain basic framework construction.
-[✓] Implement node staking and registration modules (legacy mining scope).
-[✓] Implement website registration and verification module (x/registry).
-[✓] Implement task allocation, consensus and reward modules (legacy, removed from current scope).
-Phase 2: Off-chain functions and testnet online
-[ ] Develop off-chain task executor and full-node vector indexing service.
-[ ] Release the internal test network and invite early node operators to participate.
-Phase 3: Economic model and consumer functions come online
-[ ] Launch the incentivized testnet and introduce publisher and token rewards.
-[ ] Develop API gateway and consumer bounty task functions.
-Phase Four: Mainnet Online and Community Governance
-[ ] Completed the security audit and officially launched the main network.
-[ ] Gradually transfer protocol governance rights to the CONGRID token holder community.
-6. Conclusion
-Content Grid is more than just a blockchain project, it is a social experiment to build a more open and fair next-generation content Internet. By tightly tying the interests of all participants to the healthy development of the network, we believe we can create a decentralized ecosystem that is vibrant, self-evolving, and brings real value to all users. We invite you to join us in building this future.
+Default timing and selection parameters are:
+
+| Parameter | Default |
+| --- | ---: |
+| Round interval | 3,600 seconds |
+| Requested verifiers per publisher | 3 |
+| Commit window from assignment start | 300 seconds |
+| Total submission window from assignment start | 600 seconds |
+| drand offset before round start | 60 seconds |
+
+For hourly or longer rounds, each domain receives a deterministic minute offset from 0 to 59 within the first hour. Short test rounds use bounded second offsets. A late assignment can therefore finalize after the nominal round has ended. When fewer eligible verifiers exist than requested, selection uses the available set; it does not enforce a three-verifier minimum quorum.
+
+### 4.2 External randomness and seed derivation
+
+drand is enabled by default, using configured quicknet metadata and the `bls-unchained-g1-rfc9380` BLS scheme. Each upcoming Content Grid round maps to exactly one drand round:
+
+```text
+latest_allowed_time = content_round_start - drand_round_offset_seconds
+required_drand_round =
+    floor((latest_allowed_time - drand_genesis_time_unix) / drand_period_seconds) + 1
+```
+
+The default drand genesis timestamp is `1692803367`, with a 3-second period. The chain checks the exact required round, its BLS signature against the configured public key, and `randomness = SHA256(signature)`. Unexpected rounds and duplicate submissions are rejected.
+
+With drand enabled, missing the required beacon prevents assignment creation. There is no automatic block-hash fallback; the legacy `drand_strict_mode` field does not relax this rule. Explicitly disabling drand selects the separate anchor-only code path.
+
+The seed combines chain ID, Content Grid round start, the assignment-creation block's preceding block height/hash, drand round, and drand randomness through SHA-256. The exact encoding is defined in [assignment_random.go](x/registry/typespb/assignment_random.go). The block anchor remains an input; the obsolete `Hash(BlockHash + TaskID + Counter) % TotalMiners` description does not represent current selection.
+
+From the eligible verifier set, the chain performs deterministic stake-weighted sampling without replacement for each domain. Selected addresses are sorted. Stored round metadata includes seed, anchor, drand data, and the eligible-address-set hash; reproduction also requires the bond weights from the applicable historical state.
+
+### 4.3 Beacon delivery
+
+Beacon delivery runs inside `verifierd`, which queries `DrandRequirement` and fetches the specified round rather than continually submitting the latest beacon. Operators deterministically choose a bond-weighted primary and stagger fallback delivery. These off-chain scheduling rules reduce duplicate transactions; on-chain verification and single acceptance remain authoritative. Beacon submissions consume transaction fees unless sponsored through a fee grant.
+
+See [drand](docs/drand.md) for configuration and delivery details.
+
+### 4.4 Commit–reveal and result finalization
+
+Only assigned verifiers may submit. A commit binds the domain, round, verifier, assignment owner, pass/fail result, evidence hash, and nonce. Reveal is accepted after the commit window and before the assignment deadline, and must match the commit.
+
+After the deadline, the current rule for `N` assigned verifiers is:
+
+```text
+quorum = ceil(N / 2), for N > 0
+has_quorum = valid_reveals >= quorum
+passed = has_quorum AND pass_reveals > fail_reveals
+```
+
+This is an application-level reveal quorum, not a 67% threshold or CometBFT block-consensus rule. Votes are counted per verifier, not weighted by stake. Ties do not pass. Missing quorum finalizes the assignment as unverified without treating it as a quorum-backed publisher failure.
+
+A passing regular assignment sets or keeps the publisher as `VERIFIED` and clears its failure streak. A quorum-backed failure can move a verified record to `PENDING`; the `REVOKED` transition currently checks the threshold only in the branch for a record that is still `VERIFIED`. The default threshold is three, but it must not be described as a guaranteed automatic revocation after any three consecutive failures: subsequent failures of an already-pending record do not run that transition.
+
+Missed reveals and votes opposing the finalized pass/fail decision incur verifier penalty counts. The default suspension threshold is three penalties, with a suspension duration of three round intervals. Non-penalized participation clears the count. This path currently imposes assignment suspension, not automatic confiscation of the verifier bond. Cosmos validator slashing is separate.
+
+## 5. Content indexing and recommendations
+
+`indexerd` discovers publishers from the registry and/or a configured static list, crawls homepages, normalizes content, and computes embeddings and compact similarity signatures (128 bits by default). When chain filtering is configured, active publishers are verified and outside cooldown; inactive entries are pruned.
+
+The Chroma helper supports embedding storage and semantic similarity search. An in-memory cosine-search fallback exists for development. Large vectors and page text remain off-chain. The current system does not require every consensus validator to hold a complete global vector index or assign a paid miner committee for each search request. DHT and executor code do not constitute that end-to-end workflow.
+
+The similar-site endpoint returns up to 15 domains by default, rather than the former ten-URL design. Publishers can display those content-based recommendations. Paid slot selection is a separate marketplace action, not an input that purchases a higher similarity score.
+
+Verifier observations include expected and observed set hashes and matched-domain counts. Among passing reveals, an expected-set hash must itself reach the assignment quorum. The matched count is then taken from the sorted middle entry of agreeing observations (the upper middle for an even count), capped at 15. Without that agreement, the rewarded matched count is zero.
+
+Similarity links affect the publisher reward multiplier; they do not change badge pass/fail status. Independent indexes can differ because of crawl timing, available sites, and embedding configuration. The chain aggregates submitted evidence; it does not rerun embeddings or establish that a recommendation is editorially high quality.
+
+## 6. Link slots and leases
+
+A verified publisher can create a slot with a rate denomination, rate amount, time unit, and duration bounds. Slots may be listed, paused, or unlisted. A buyer selects the target URL and a valid duration; overlapping active leases on the same slot are rejected.
+
+```text
+escrow_payment = rate_amount × (duration_seconds / unit_seconds)
+```
+
+The buyer's payment is escrowed in the registry module. The slot's denomination controls payment; CONGRID uses `ucongrid`, but the underlying slot model supports a denomination field rather than hard-coding every lease to CONGRID. At expiry, remaining escrow is paid to the recorded lease publisher unless the implemented cooldown/refund conditions apply. A qualifying publisher verification failure with active leases can trigger cooldown and refund the remaining escrow.
+
+The repository includes a lease-anchor checking helper using slot/lease attributes and target URLs. However, the current `verifierd` assignment loop checks the homepage badge and similarity evidence, not individual lease anchors. Missing a paid link alone therefore does not currently generate a separate automatic breach decision. Escrow and publisher-failure refunds are implemented; complete per-placement delivery verification remains follow-up work.
+
+## 7. Token economics
+
+### 7.1 Reference allocation and funding
+
+`1 CONGRID = 1,000,000 ucongrid`. Current registry defaults use a reference supply of 1 billion CONGRID:
+
+| Allocation | Share of reference supply |
+| --- | ---: |
+| Operator reserve | 40% |
+| Publisher emission pool | 10% |
+| Verifier emission pool | 50% |
+
+The emission-duration parameter is 876,000 hours (100 years of 365 days). The operator reserve is not automatically distributed by registry settlement; it requires an explicit allocation.
+
+`EnsureEmissionPool` mints the difference between the configured emission target and its tracked cumulative funded amount into the tokenomics account. Rewards subsequently transfer from that pool; unclaimed portions burn from it. This is not hourly minting to every recipient, nor is it automatic replenishment after every withdrawal.
+
+The reference supply and duration are inputs to the reward schedule, not a global enforced supply cap or a calendar-based end date. The Cosmos mint module is also wired, so total production issuance must be assessed against actual genesis/mint parameters and upgrades. Empty rounds do not settle a pool, and exhausting the pool is not handled by a dedicated schedule-end mechanism.
+
+### 7.2 Per-round pools
+
+For round duration `T` in seconds, reference supply `S` in `ucongrid`, allocation `bps`, and duration `H` in hours:
+
+```text
+round_pool = floor(S × bps × T / (10000 × H × 3600))
+```
+
+At the default hourly interval:
+
+- Publisher pool: 114,155,251 ucongrid (114.155251 CONGRID).
+- Verifier pool: 570,776,255 ucongrid (570.776255 CONGRID).
+
+These are network-wide round pools, not fixed payments per website. Settlement waits for all assignments in the round to finalize.
+
+### 7.3 Publisher rewards
+
+The publisher pool is divided equally among verified assignments for the round. Each publisher receives its base share multiplied by:
+
+```text
+claim_bps = max(publisher_min_reward_bps,
+                min(10000, floor(matched_links × 10000 / required_links)))
+payout = floor(base_share × claim_bps / 10000)
+```
+
+Defaults are `publisher_min_reward_bps = 1000` and `required_links = 15`. A badge-valid publisher with zero matching links receives 10% of its base share; 15 matching links earns 100%. Insufficient similarity evidence does not remove the floor. Unclaimed amounts and integer remainder are burned.
+
+### 7.4 Verifier rewards
+
+The verifier pool is first divided across all assignments, including failed ones. Only verified assignments distribute their share, and only passing submissions within those assignments receive payment. A correct fail vote can avoid a penalty but does not currently earn this reward.
+
+Within a successful assignment:
+
+- 40% is divided equally among successful verifiers.
+- 60% is divided in proportion to `bonded_stake × max(1, active_referred_publishers)`.
+
+Bonds and active referrals are read at settlement; referral weight does not affect assignment selection. Unpayable amounts and remaining round funds are burned. Legacy score-weight and fee/slash-routing parameter structures must not be mistaken for fully connected payout or compensation paths.
+
+## 8. Governance, interoperability, and implementation boundaries
+
+The application includes Cosmos governance and software-upgrade support. Custom module parameters exist, but there is no general `MsgUpdateParams` governance interface for all custom modules. Parameter changes must follow the supported genesis or upgrade path.
+
+IBC Core, Tendermint light clients, and ICS-20 transfers are integrated through ibc-go v10.7.0, with an `ibc-transfer-v1` migration for existing chains. This enables cross-chain transfer infrastructure; external channels, relayers, asset registration, and DEX liquidity remain separate deployment steps. Repository tests and rehearsals do not establish an active Osmosis mainnet market. See [IBC documentation](docs/ibc.md).
+
+Current follow-up areas are:
+
+- Complete independent verification and settlement of each paid placement.
+- Content-quality and abuse resistance beyond badge ownership and similarity evidence.
+- Index consistency and broader distributed-index operation.
+- General consumer bounties and paid API settlement.
+- Custom parameter governance, verifier bond-slashing/compensation, and automated reserve distribution.
+- Supply accounting and emission-end handling across all minting paths.
+- Public-suffix-aware domain ownership keys and consistent failure-to-revocation transitions.
+
+This replaces the former phase checklist, which marked existing indexing and rewards as future work while describing removed mining tasks as complete. Operational launch and audit claims require separate deployment evidence.
+
+## 9. Implementation references
+
+- [Registration and verification transactions](x/registry/msg_server.go)
+- [Round assignment, penalties, and settlement](x/registry/verification_rounds.go)
+- [drand schedule](x/registry/drand_schedule.go) and [signature verification](x/registry/drand_verify.go)
+- [Default parameters and emission formula](x/registry/types.go)
+- [Similar-site evidence aggregation](x/registry/similar_settlement.go)
+- [Emission-pool funding](x/tokenomics/keeper.go)
+- [Lease settlement](x/registry/lease_settlement.go) and [verifier agent](offchain/verifierd/agent.go)
+- [IBC wiring](app/ibc.go) and [upgrade handlers](app/upgrades.go)
+
+For participation and operations, see the [README](README.md). Build, testing, and contribution procedures are in [CONTRIBUTING.md](CONTRIBUTING.md).
