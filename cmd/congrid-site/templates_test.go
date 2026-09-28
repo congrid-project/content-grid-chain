@@ -97,7 +97,7 @@ func TestHomePageFooterIncludesSourceCodeLink(t *testing.T) {
 	require.Contains(t, body, `>Source code on GitHub</a>`)
 }
 
-func TestNavigationPrioritizesPrimaryLinksAndHidesSecondaryLinks(t *testing.T) {
+func TestNavigationKeepsPrimaryLinksAndRemovesMarketplaceEntrances(t *testing.T) {
 	templates, err := buildPageTemplates(siteFS)
 	require.NoError(t, err)
 
@@ -125,11 +125,11 @@ func TestNavigationPrioritizesPrimaryLinksAndHidesSecondaryLinks(t *testing.T) {
 	require.NotContains(t, primary, "Leases")
 	require.NotContains(t, primary, "Publisher Dashboard")
 
-	require.Contains(t, body, `<details class="nav-more">`)
-	require.Contains(t, body, `<nav class="nav-menu-panel" aria-label="More">`)
-	require.Contains(t, body, `>Marketplace</a>`)
-	require.Contains(t, body, `>Leases</a>`)
-	require.Contains(t, body, `>Publisher Dashboard</a>`)
+	require.NotContains(t, body, `<details class="nav-more">`)
+	require.NotContains(t, body, `href="/marketplace`)
+	require.NotContains(t, body, `>Marketplace</a>`)
+	require.NotContains(t, body, `>Leases</a>`)
+	require.NotContains(t, body, `>Publisher Dashboard</a>`)
 }
 
 func TestPublisherPageSupportsVerifierReferrer(t *testing.T) {

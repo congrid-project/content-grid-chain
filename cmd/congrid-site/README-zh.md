@@ -8,7 +8,9 @@ Congrid（内容网格协议）官方网站的小型 Go Web 服务器。
 go run ./cmd/congrid-site --addr :8080 --base-url http://localhost:8080
 ```
 
-### 链支持的slot市场（钱包签名）
+### 历史市场配置（钱包签名）
+
+> Slot marketplace 已下线（deprecated），仅保留文档备查
 
 插槽和租约直接从链上读取，插槽创建、状态更新和租约下单由浏览器钱包签名（Keplr/Leap）。
 
@@ -128,14 +130,11 @@ curl -fsSL https://congrid.net/downloads/install.sh | bash
 ## 路线
 
 - `/` — 家
-- `/marketplace` — 发布者slot市场
-- `/leases` — 租约发布板（slot/lease ID + 可复制嵌入片段）
 - `/publishers` — 发布商入职（第三方钱包连接、域名+钱包填写、自动生成徽章片段和注册命令）
-- `/publisher/dashboard` — 管理发布商位置（创建、暂停、取消列出）
 - `/verifiers` — verifier 加入
 - `/docs` — 指向存储库文档的指针
 - `/airdrop` — 验证主页徽章并为每个主域发送一次性可选启动空投（启用时）
-- `/badge.svg` — 使用 Congrid 标准 SVG logo 的可嵌入验证徽章（保留查询参数用于归因）
+- `/badge.svg` — 使用 Congrid 标准 SVG logo 的可嵌入成员标识（保留查询参数用于归因）
 - `/badge.png` — 兼容旧代码片段的别名，返回相同的 SVG 内容
 - `/static/*` — CSS + 资源
 - `/downloads/{filename}` — 发布归档下载（支持 HEAD 和 Range，不提供目录列表）

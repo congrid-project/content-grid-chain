@@ -249,7 +249,7 @@ func (a *airdropper) handleAirdropPost() http.HandlerFunc {
 
 		if err := a.verifier.Verify(ctx, domain, wallet); err != nil {
 			log.Printf("airdrop: verification failed domain=%s: %v", domain, err)
-			a.renderFlash(w, r, "Verification failed: ensure the HTTPS homepage contains the Congrid badge bound to this domain and wallet.")
+			a.renderFlash(w, r, "Verification failed: ensure the HTTPS homepage contains the Congrid member badge bound to this domain and wallet.")
 			return
 		}
 

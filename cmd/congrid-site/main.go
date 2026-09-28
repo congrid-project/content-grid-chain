@@ -529,7 +529,7 @@ func (s *server) handleHome(baseURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.render(w, "home.html", pageData{
 			Title:        "Congrid — Content Grid Protocol",
-			Description:  "A decentralized similar-site interconnection protocol where publishers get free backlinks and ongoing Congrid token rewards, while verifiers earn more by validating publisher status.",
+			Description:  "A decentralized recommendation system where publishers get free recommendations and ongoing Congrid token rewards, while verifiers earn more by validating publisher status.",
 			BaseURL:      baseURL,
 			Path:         r.URL.Path,
 			NowYear:      time.Now().Year(),
@@ -542,7 +542,7 @@ func (s *server) handlePublishers(baseURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.render(w, "publishers.html", pageData{
 			Title:        "Become a Publisher — Congrid",
-			Description:  "Register your site, add the Congrid verification badge, and earn rewards while sending high-quality referral traffic across the open web.",
+			Description:  "Register your site, add the Congrid member badge, and earn rewards while sending high-quality referral traffic across the open web.",
 			BaseURL:      baseURL,
 			Path:         r.URL.Path,
 			NowYear:      time.Now().Year(),
@@ -568,7 +568,7 @@ func (s *server) handleDocs(baseURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.render(w, "docs.html", pageData{
 			Title:        "Guides — Congrid",
-			Description:  "Publisher and verifier guides for joining Congrid, including badge setup, registration, the native verifier installer, bonding, and monitoring.",
+			Description:  "Publisher and verifier guides for joining Congrid, including member badge setup, registration, the native verifier installer, bonding, and monitoring.",
 			BaseURL:      baseURL,
 			Path:         r.URL.Path,
 			NowYear:      time.Now().Year(),
@@ -580,7 +580,7 @@ func (s *server) handleDocs(baseURL string) http.HandlerFunc {
 func (s *server) handleBadgeSVG(w http.ResponseWriter, _ *http.Request) {
 	logo, err := siteFS.ReadFile("static/assets/congrid-logo.svg")
 	if err != nil {
-		http.Error(w, "badge unavailable", http.StatusInternalServerError)
+		http.Error(w, "member badge unavailable", http.StatusInternalServerError)
 		return
 	}
 

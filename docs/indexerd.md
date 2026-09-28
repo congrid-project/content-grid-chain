@@ -34,7 +34,7 @@ For each publisher homepage, `indexerd` stores:
 - compact similarity signature (default: `signature_bits=128`)
 - `body_sha256` of the fetched homepage bytes (for binding/debug)
 - number of Congrid links found
-- wallet address extracted from the first Congrid badge image URL:
+- wallet address extracted from the first Congrid member badge image URL:
   `https://congrid.net/...?...publisher=<domain>&wallet=<addr>` (best-effort)
 
 ## Requirements

@@ -60,7 +60,7 @@ Content Grid 包含两个相互关联但职责不同的共识层。
 
 默认经济参数以 10 亿枚 `CONGRID` 为参考总量（`1 CONGRID = 1,000,000 ucongrid`）：40% 为运营储备，10% 用于 Publisher 排放，50% 用于 Verifier 排放，周期为 100 年。Publisher 奖励取决于 Badge 是否有效以及相似站点链接的匹配情况；Verifier 奖励由平均分配的基础部分和按质押、推荐关系加权的部分组成；无人领取的当轮排放会被销毁。以上为默认 genesis 参数，实际网络可能不同。运营储备自动分配、完整消费者支付链路和完整罚没补偿链路目前尚未端到端接通。
 
-完整规则和当前实现范围请参阅 [Tokenomics](docs/tokenomics-zh.md)、[链接市场](docs/marketplace-zh.md)与[治理手册](docs/governance-zh.md)。
+完整规则和当前实现范围请参阅 [Tokenomics](docs/tokenomics-zh.md)与[治理手册](docs/governance-zh.md)。
 
 IBC Core 与 ICS-20 转账已接入，并提供双链应用测试和 Hermes 本地联调脚本。
 已运行网络需要通过 `ibc-transfer-v1` 升级启用；Osmosis 正式通道与流动性池需另外建立。
@@ -140,10 +140,6 @@ Chain ID、RPC 地址、genesis 和 seed peer 等网络专属信息，应以网�
 
 本地开发网络、构建、测试与 Protobuf 生成统一放在[贡献者指南](CONTRIBUTING-zh.md)中。
 
-### 使用链接市场
-
-已核验的 Publisher 可以发布 slot，广告主可以租用 slot；协议会在 lease 生效期间托管款项。Publisher 必须提供规定的 `data-congrid-slot-id` 和 `data-congrid-lease` 标记，以供 Verifier 检查履约情况。生命周期与 CLI 示例见[链接市场指南](docs/marketplace-zh.md)。
-
 ### 查询网络
 
 Daemon 提供 Cosmos RPC/gRPC 服务与 registry REST 路由。常用 CLI 查询包括：
@@ -161,7 +157,7 @@ API 定义位于 [`proto/contentgrid`](proto/contentgrid)。
 
 - 协议设计：[白皮书](whitepaper.md)（部分历史章节仍描述规划中或已移除的范围）
 - 核验与索引：[Verifier](docs/verifiers-zh.md)、[verifierd](docs/verifierd-zh.md)、[drand](docs/drand-zh.md)、[indexerd](docs/indexerd-zh.md)
-- 经济与市场：[Tokenomics](docs/tokenomics-zh.md)、[链接市场](docs/marketplace-zh.md)、[治理手册](docs/governance-zh.md)
+- 经济：[Tokenomics](docs/tokenomics-zh.md)、[治理手册](docs/governance-zh.md)
 - 运维：[Docker Operator](docs/docker-operator-zh.md)、[生产运行手册](docs/runbook-zh.md)、[启动清单](docs/launch-checklist-zh.md)
 - 开发：[贡献者指南](CONTRIBUTING-zh.md)
 

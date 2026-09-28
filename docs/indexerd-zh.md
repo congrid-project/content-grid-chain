@@ -35,7 +35,7 @@
 - 紧凑的相似性签名（默认 `signature_bits=128`）
 - 抓取页面字节流的 `body_sha256`（用于绑定 / 调试）
 - 找到的 Congrid 链接数量
-- 从第一个 Congrid 徽章图片 URL 中提取的钱包地址：
+- 从第一个 Congrid 成员标识图片 URL 中提取的钱包地址：
   `https://congrid.net/...?...publisher=<domain>&wallet=<addr>`（best-effort）
 
 ## 依赖

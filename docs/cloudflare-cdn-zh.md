@@ -34,7 +34,7 @@ WebSockets 保持开启，`/rpc/websocket` 的 Nginx Upgrade 转发保持有效�
    Edge TTL 使用源站 Cache-Control，没有该响应头时不缓存；Browser TTL 使用源站 TTL。
    保留默认缓存键和查询参数。
 2. **Congrid live pages and APIs**：路径不以 `/static/` 开头时绕过缓存。
-   包括 HTML、空投、publisher、marketplace、RPC、REST、下载和 badge 请求。
+   包括 HTML、空投、publisher、marketplace、RPC、REST、下载和成员标识请求。
 
 源站 `/etc/nginx/sites-available/congrid.net` 为 `/static/` 单独设置：
 

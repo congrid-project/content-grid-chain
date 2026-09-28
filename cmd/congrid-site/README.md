@@ -8,7 +8,9 @@ A small Go web server for the Congrid (Content Grid Protocol) official website.
 go run ./cmd/congrid-site --addr :8080 --base-url http://localhost:8080
 ```
 
-### Chain-backed slot marketplace (wallet signing)
+### Legacy marketplace configuration (wallet signing)
+
+> Slot marketplace 已下线（deprecated），仅保留文档备查
 
 Slots and leases are read directly from the chain. Slot creation, status updates, and lease booking
 are signed by the user wallet in the browser (Keplr/Leap).
@@ -132,19 +134,16 @@ return 404.
 
 ## Why Go?
 
-This site is intentionally served by Go so we can add first-party analytics, attribution, and on-chain/off-chain integrations (e.g. publisher badge validation helpers) without rewriting the stack.
+This site is intentionally served by Go so we can add first-party analytics, attribution, and on-chain/off-chain integrations (e.g. publisher member badge validation helpers) without rewriting the stack.
 
 ## Routes
 
 - `/` — home
-- `/marketplace` — publisher slot marketplace
-- `/leases` — lease publish board (slot/lease IDs + embed snippets)
-- `/publishers` — publisher onboarding (wallet connect OR manual address, generated badge snippet, CLI command, and optional server-side registration button)
-- `/publisher/dashboard` — manage publisher slots (create, pause, unlist, publish lease snippets)
+- `/publishers` — publisher onboarding (wallet connect OR manual address, generated member badge snippet, CLI command, and optional server-side registration button)
 - `/verifiers` — verifier onboarding
 - `/docs` — pointers to repository docs
-- `/airdrop` — verify homepage badge and send an optional one-time starter airdrop per primary domain (when enabled)
-- `/badge.svg` — embeddable verification badge using the canonical Congrid SVG logo (query params preserved for attribution)
+- `/airdrop` — verify homepage member badge and send an optional one-time starter airdrop per primary domain (when enabled)
+- `/badge.svg` — embeddable member badge using the canonical Congrid SVG logo (query params preserved for attribution)
 - `/badge.png` — legacy alias that serves the same SVG content for existing snippets
 - `/static/*` — CSS + assets
 - `/downloads/{filename}` — release artifact download with HEAD/Range support and no directory listing

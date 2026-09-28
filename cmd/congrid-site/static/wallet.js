@@ -640,7 +640,7 @@ function bindPublisherRegisterForms() {
         });
         const verification = await verificationResponse.json().catch(() => ({}));
         if (!verificationResponse.ok || verification.ok !== true) {
-          throw new Error(verification.error || "Homepage badge verification failed.");
+          throw new Error(verification.error || "Homepage member badge verification failed.");
         }
 
         const msg = {

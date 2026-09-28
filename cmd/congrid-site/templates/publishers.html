@@ -5,7 +5,7 @@
   <div class="container">
     <h1>Publishers</h1>
     <p class="lead">
-      Register your domain on Congrid, place the verification badge on your homepage, and keep your listing healthy for discovery + reward eligibility.
+      Register your domain on Congrid, place the member badge on your homepage, and keep your listing healthy for discovery + reward eligibility.
     </p>
 
     {{if .Flash}}<div class="callout">{{.Flash}}</div>{{end}}
@@ -65,7 +65,7 @@
 
     <h2>Step 2 — Enter domain + owner wallet</h2>
     <p>
-      We will generate: (1) a CLI register command and (2) an exact badge snippet.
+      We will generate: (1) a CLI register command and (2) an exact member badge snippet.
       If a verifier referred you, you can credit that verifier during registration.
     </p>
 
@@ -94,7 +94,7 @@
       </p>
 
       <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
-        <button class="btn" type="submit">Generate command + badge snippet</button>
+        <button class="btn" type="submit">Generate command + member badge snippet</button>
         <button class="btn btn-outline" type="button" data-use-connected-wallet>Use connected wallet</button>
       </div>
     </form>
@@ -108,8 +108,8 @@
     </div>
 
     <p class="muted">
-      Verification is strict: badge link <code>href</code> must be exactly <code>{{.BaseURL}}</code>.
-      Keep the badge on homepage <code>/</code> and do not change the owner wallet without re-registration.
+      Verification is strict: member badge link <code>href</code> must be exactly <code>{{.BaseURL}}</code>.
+      Keep the member badge on homepage <code>/</code> and do not change the owner wallet without re-registration.
     </p>
 
     <h2>Step 3 — Register on-chain</h2>
@@ -131,9 +131,9 @@
 
     <h2>Step 4 — Stay healthy</h2>
     <p>
-      Verifiers continuously check your homepage badge and owner wallet binding.
-      Keep your site online and the badge intact to remain eligible for network programs.
-      To change the receiving wallet or referrer, update the badge wallet first, connect that same wallet, and submit this registration flow again. The previous owner remains active until verifier consensus accepts the candidate.
+      Verifiers continuously check your homepage member badge and owner wallet binding.
+      Keep your site online and the member badge intact to remain eligible for network programs.
+      To change the receiving wallet or referrer, update the member badge wallet first, connect that same wallet, and submit this registration flow again. The previous owner remains active until verifier consensus accepts the candidate.
     </p>
   </div>
 </section>

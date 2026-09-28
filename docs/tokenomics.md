@@ -33,8 +33,8 @@ Registry verification rewards are paid during round finalization in `x/registry`
 ## Publisher Reward Rule
 
 - Rewards settle only after every publisher assignment in the round is finalized.
-- A publisher is active when the registered homepage passes badge verification: the official `congrid.net` anchor wraps a badge image whose publisher domain and wallet match the on-chain registration.
-- `owner` is both the registration-control wallet and the publisher-reward recipient. Re-registration may change owner/referrer, but verifier consensus must first confirm `pending_owner` in the homepage badge; the existing owner remains effective until then.
+- A publisher is active when the registered homepage passes member badge verification: the official `congrid.net` anchor wraps a member badge image whose publisher domain and wallet match the on-chain registration.
+- `owner` is both the registration-control wallet and the publisher-reward recipient. Re-registration may change owner/referrer, but verifier consensus must first confirm `pending_owner` in the homepage member badge; the existing owner remains effective until then.
 - The publisher pool is split evenly across active publishers only. Inactive publishers do not dilute the split.
 - Each active publisher's claim is then adjusted by matching similar-site links:
   - full-reward threshold: `required_external_links_for_full_reward` (default `15`)

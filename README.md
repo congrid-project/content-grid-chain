@@ -60,7 +60,7 @@ See [verifier rules](docs/verifiers.md) and [drand rules](docs/drand.md) for exa
 
 The default economic reference is 1 billion `CONGRID` (`1 CONGRID = 1,000,000 ucongrid`): 40% operator reserve, 10% publisher emissions, and 50% verifier emissions over 100 years. Publisher rewards depend on badge validity and matching similar-site links. Verifier rewards combine an equal base share with a stake-and-referral-weighted share. Unclaimed round emissions are burned. These values are genesis parameters and may differ on a deployed network. Automated operator-reserve distribution, the complete consumer payment rail, and the full slash-compensation rail are not yet wired end to end.
 
-See [tokenomics](docs/tokenomics.md), [marketplace](docs/marketplace.md), and [governance](docs/governance.md) for the complete rules and current scope.
+See [tokenomics](docs/tokenomics.md) and [governance](docs/governance.md) for the complete rules and current scope.
 
 IBC Core and ICS-20 transfers are integrated, with application-level cross-chain tests and a Hermes localnet script.
 Existing networks require the `ibc-transfer-v1` upgrade; an Osmosis connection and liquidity pool must be established separately.
@@ -140,10 +140,6 @@ Use the official binary, genesis, and peer list for a public network. The [produ
 
 For local development networks, builds, tests, and protobuf generation, use the [contributor guide](CONTRIBUTING.md).
 
-### Use the link marketplace
-
-A verified publisher can list a slot, an advertiser can lease it, and the protocol escrows payment while the lease is active. The publisher must expose the required `data-congrid-slot-id` and `data-congrid-lease` markup so verifiers can check delivery. See the [marketplace guide](docs/marketplace.md) for lifecycle states and CLI examples.
-
 ### Query the network
 
 The daemon exposes Cosmos RPC/gRPC services and registry REST routes. Useful CLI queries include:
@@ -161,7 +157,7 @@ The API definitions live under [`proto/contentgrid`](proto/contentgrid).
 
 - Protocol design: [whitepaper](whitepaper.md) (some legacy sections describe planned or removed scope)
 - Verification and indexing: [verifiers](docs/verifiers.md), [verifierd](docs/verifierd.md), [drand](docs/drand.md), [indexerd](docs/indexerd.md)
-- Economics and marketplace: [tokenomics](docs/tokenomics.md), [marketplace](docs/marketplace.md), [governance](docs/governance.md)
+- Economics: [tokenomics](docs/tokenomics.md), [governance](docs/governance.md)
 - Operations: [Docker operator](docs/docker-operator.md), [runbook](docs/runbook.md), [launch checklist](docs/launch-checklist.md)
 - Development: [contributor guide](CONTRIBUTING.md)
 

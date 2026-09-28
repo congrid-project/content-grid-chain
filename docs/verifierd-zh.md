@@ -15,7 +15,7 @@
 - 等待每个 assignment 的 `startAt` 到来。
 - 核验 publisher 首页；若满足以下条件，则判定 **pass**：
   - 页面可访问（HTTP 2xx/3xx）。
-  - 首页包含 **Congrid 验证徽章**：
+  - 首页包含 **Congrid 成员标识**：
     - `<a href="https://congrid.net">`（或 `https://www.congrid.net/`），且不带 query / fragment。
     - `<a>` 内包裹 `<img>`。
     - `<img src>` 来自 `https://congrid.net/...`，并带有 `publisher=<domain>` 和 `wallet=<verification_owner>`。

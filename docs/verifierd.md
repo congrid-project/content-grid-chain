@@ -13,7 +13,7 @@
 - **Waits until startAt** for each assignment (assignment schedule is fully determined on-chain).
 - **Verifies homepage** and marks **pass** if:
   - page is reachable (HTTP 2xx/3xx), and
-  - homepage contains a **Congrid verification badge**:
+  - homepage contains a **Congrid member badge**:
     - `<a href="https://congrid.net">` (or `https://www.congrid.net/`) with no query/fragment
     - the `<a>` wraps an `<img>`
     - `<img src>` is served from `https://congrid.net/...` and includes `publisher=<domain>` and `wallet=<verification_owner>`

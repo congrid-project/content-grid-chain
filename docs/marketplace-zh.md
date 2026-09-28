@@ -1,5 +1,7 @@
 # 市场（slot+租赁）
 
+> Slot marketplace 已下线（deprecated），仅保留文档备查
+
 本文档描述了链接槽市场生命周期和 CLI 用法。
 
 ## 插槽生命周期

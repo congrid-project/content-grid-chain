@@ -11,17 +11,6 @@
       <a href="/verifiers" {{if eq .Path "/verifiers"}}aria-current="page"{{end}}>Verifiers</a>
       <a href="/docs" {{if eq .Path "/docs"}}aria-current="page"{{end}}>Guides</a>
     </nav>
-    <details class="nav-more">
-      <summary class="nav-menu-button" aria-label="Open more navigation">
-        <span class="nav-menu-icon" aria-hidden="true"></span>
-        <span class="visually-hidden">More</span>
-      </summary>
-      <nav class="nav-menu-panel" aria-label="More">
-        <a href="/marketplace" {{if eq .Path "/marketplace"}}aria-current="page"{{end}}>Marketplace</a>
-        <a href="/leases" {{if eq .Path "/leases"}}aria-current="page"{{end}}>Leases</a>
-        <a href="/publisher/dashboard" {{if eq .Path "/publisher/dashboard"}}aria-current="page"{{end}}>Publisher Dashboard</a>
-      </nav>
-    </details>
   </div>
 </header>
 {{end}}

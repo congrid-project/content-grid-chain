@@ -1,10 +1,12 @@
 # Marketplace (slots + leases)
 
+> Slot marketplace 已下线（deprecated），仅保留文档备查
+
 This document describes the link-slot marketplace lifecycle and CLI usage.
 
 ## Slot lifecycle
 
-- **Listed**: visible to advertisers for booking.
+- **Listed**: visible to API users for booking.
 - **Paused**: hidden from booking but retained.
 - **Unlisted**: hidden permanently; existing leases are unaffected.
 
