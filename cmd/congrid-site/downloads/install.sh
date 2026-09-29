@@ -5,7 +5,7 @@ umask 027
 export LC_ALL=C
 export LANG=C
 
-INSTALLER_VERSION="1.5.0"
+INSTALLER_VERSION="1.5.1"
 
 case "$(uname -s)" in
   Linux)
@@ -67,6 +67,7 @@ RELEASE_BASE_URL="${CONGRID_RELEASE_BASE_URL:-https://github.com/congrid-project
 EXPECTED_NODE_VERSION="ibc-transfer-v1"
 EXPECTED_SOURCE_COMMIT="5907b65faa971afd9e0c29e74284baa03675e37c"
 GENESIS_SHA256="779abab0b56bf4b0edf6951cf63f1cc950d2ba1faee9317b41205400ee7481d2"
+DEFAULT_STATE_SYNC_RPC_SERVERS="https://congrid.net/rpc-val2,https://congrid.net/rpc"
 STATE_SYNC_RPC_SERVERS=""
 STATE_SYNC_REQUIRED=false
 
@@ -159,7 +160,7 @@ Artifact overrides:
   CONGRID_DOWNLOAD_BASE_URL            Genesis and seeds directory; not the bundle source
 
 New-node state sync:
-  CONGRID_STATE_SYNC_RPC_SERVERS       Two comma-separated RPC URLs of different nodes
+  CONGRID_STATE_SYNC_RPC_SERVERS       Override the two built-in public state-sync RPC URLs
   CONGRID_PERSISTENT_PEERS             Include a snapshot provider; otherwise use RPC-advertised peers
 
 New nodes use post-90000 state sync with ibc-transfer-v1, without historical
@@ -845,8 +846,9 @@ GENESIS_URL="${CONGRID_GENESIS_URL:-$DOWNLOAD_BASE_URL/genesis.json}"
 log "using chain ID: $CHAIN_ID"
 if [ "$COMPONENTS_ONLY" != "true" ]; then
   [ "$CHAIN_ID" = "congrid-main" ] || die "ibc-transfer-v1 full-node installation supports congrid-main only"
-  default_state_sync_rpc="$(env_or_saved CONGRID_STATE_SYNC_RPC_SERVERS state_sync_rpc_servers "")"
-  prompt_value STATE_SYNC_RPC_SERVERS "Two state-sync RPC URLs, comma-separated (different nodes)" "$default_state_sync_rpc" true
+  STATE_SYNC_RPC_SERVERS="$(env_or_saved CONGRID_STATE_SYNC_RPC_SERVERS state_sync_rpc_servers "$DEFAULT_STATE_SYNC_RPC_SERVERS")"
+  STATE_SYNC_RPC_SERVERS="${STATE_SYNC_RPC_SERVERS:-$DEFAULT_STATE_SYNC_RPC_SERVERS}"
+  log "using state-sync RPC servers: $STATE_SYNC_RPC_SERVERS"
 fi
 if [ "$COMPONENTS_ONLY" = "true" ]; then
   MONIKER="$default_moniker"

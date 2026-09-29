@@ -13,7 +13,7 @@ operator 栈：
 - Linux：使用 systemd，在专用 `congrid` 系统用户下运行；
 - macOS：使用当前登录用户的 launchd LaunchAgent，在用户登录期间持续运行。
 
-## 发布安装器与安装包（1.5.0 / ibc-transfer-v1）
+## 发布安装器与安装包（1.5.1 / ibc-transfer-v1）
 
 官网保留 `install.sh`、`genesis.json`、`seeds.txt` 及 seeds 校验文件。二进制安装包
 默认从 GitHub Release `native-ibc-transfer-v1-r1` 下载，不使用 `latest`。
@@ -61,12 +61,13 @@ congrid-native/
 ## 新节点状态同步
 
 全新节点从高度 90000 之后的状态快照启动。需要两个不同节点的 RPC 和至少一个
-可连接的快照提供者。`CONGRID_STATE_SYNC_RPC_SERVERS` 接收两个逗号分隔的 URL；
-交互安装时也会询问。当前没有经过验证的第二个公共 RPC 默认值，必须由部署者提供。
+可连接的快照提供者。安装器内置 `https://congrid.net/rpc-val2`（val2）和
+`https://congrid.net/rpc`（val3），不再询问 RPC 地址。维护者仍可用
+`CONGRID_STATE_SYNC_RPC_SERVERS` 提供两个逗号分隔的 URL；优先级为环境变量、
+已有安装保存值、内置默认值。两台后端不同，但共用官网 HTTPS 入口。
+部署与维护说明见 [公共状态同步 RPC](state-sync-rpc-zh.md)。
 
 ```bash
-# 用已验证且可从安装主机访问的两个 RPC 替换这两个值。
-export CONGRID_STATE_SYNC_RPC_SERVERS='https://rpc-a.example/rpc,https://rpc-b.example/rpc'
 curl -fsSL https://congrid.net/downloads/install.sh | bash
 ```
 
@@ -353,7 +354,6 @@ genesis。1.5.0 没有自动重置例外。未由此状态同步安装器管理�
 curl -fsSL https://congrid.net/downloads/install.sh |
   CONGRID_NON_INTERACTIVE=true \
   CONGRID_MONIKER=node-01 \
-  CONGRID_STATE_SYNC_RPC_SERVERS='https://rpc-a.example/rpc,https://rpc-b.example/rpc' \
   CONGRID_VERIFIER_KEY_NAME=verifier-key \
   CONGRID_VERIFIER_KEY_ACTION=recover \
   CONGRID_VERIFIER_MNEMONIC='word ...' \

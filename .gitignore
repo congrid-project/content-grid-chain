@@ -48,6 +48,7 @@ Thumbs.db
 
 # Local development artifacts
 /backups/
+/deploy/
 /localnet/
 /logs/
 /test-results/

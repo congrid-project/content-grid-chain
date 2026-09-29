@@ -1,6 +1,7 @@
 """Execute installer sections in disposable directories, without service changes."""
 import hashlib
 import io
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -105,6 +106,31 @@ class HomeProtectionTests(unittest.TestCase):
 
     def test_managed_home_can_resume(self):
         self.assertEqual(self.check_home("false", True, owner=True).returncode, 0)
+
+
+class StateSyncDefaultsTests(unittest.TestCase):
+    def test_rpc_selection_without_prompt(self):
+        default = "https://congrid.net/rpc-val2,https://congrid.net/rpc"
+        saved = "https://saved-one,https://saved-two"
+        override = "https://override-one,https://override-two"
+        functions = "load_saved_value() {" + INSTALLER.split("load_saved_value() {", 1)[1].split("prompt_value() {", 1)[0]
+        constant = next(line for line in INSTALLER.splitlines() if line.startswith("DEFAULT_STATE_SYNC_RPC_SERVERS="))
+        selection = INSTALLER.split('log "using chain ID: $CHAIN_ID"', 1)[1].split('if [ "$COMPONENTS_ONLY" = "true" ]; then', 1)[0]
+        for stored, explicit, expected in [(None, None, default), ({}, None, default),
+                                          ({"state_sync_rpc_servers": ""}, None, default),
+                                          ({"state_sync_rpc_servers": saved}, None, saved),
+                                          ({"state_sync_rpc_servers": saved}, override, override)]:
+            with self.subTest(stored=stored, explicit=explicit), tempfile.TemporaryDirectory() as td:
+                if stored is not None:
+                    Path(td, "install-state.json").write_text(json.dumps(stored))
+                env = dict(os.environ, CONFIG_DIR=td, CHAIN_ID="congrid-main", COMPONENTS_ONLY="false")
+                env.pop("CONGRID_STATE_SYNC_RPC_SERVERS", None)
+                if explicit is not None:
+                    env["CONGRID_STATE_SYNC_RPC_SERVERS"] = explicit
+                setup = 'set -euo pipefail\nrun_root() { "$@"; }\nlog() { :; }\ndie() { exit 1; }\nprompt_value() { exit 99; }\n'
+                result = subprocess.run(["bash", "-c", setup + functions + constant + "\n" + selection + '\nprintf "%s" "$STATE_SYNC_RPC_SERVERS"'], env=env, capture_output=True, text=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(result.stdout, expected)
 
 
 if __name__ == "__main__":
