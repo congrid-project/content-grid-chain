@@ -83,7 +83,7 @@ When a lease is active, publishers must include markup like:
 
 ```html
 <div data-congrid-slot-id="slot-000123" data-congrid-lease="lease-000456">
-  <a href="https://advertiser.example/landing">Link</a>
+  <a href="https://advertiser.example/landing" rel="nofollow">Link</a>
 </div>
 ```
 

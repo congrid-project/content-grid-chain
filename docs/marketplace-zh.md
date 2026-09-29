@@ -72,7 +72,7 @@
 当租约有效时，发布商必须包含以下锚点：
 
 ```html
-<a href="https://advertiser.example/landing" data-congrid-slot="slot-000123" data-congrid-lease="lease-000456">Link</a>
+<a href="https://advertiser.example/landing" rel="nofollow" data-congrid-slot="slot-000123" data-congrid-lease="lease-000456">Link</a>
 ```
 
 验证程序检查主机 + 路径匹配和 `data-congrid-*` 属性。

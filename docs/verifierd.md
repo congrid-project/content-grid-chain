@@ -14,7 +14,7 @@
 - **Verifies homepage** and marks **pass** if:
   - page is reachable (HTTP 2xx/3xx), and
   - homepage contains a **Congrid member badge**:
-    - `<a href="https://congrid.net">` (or `https://www.congrid.net/`) with no query/fragment
+    - `<a href="https://congrid.net" rel="nofollow">` (or `https://www.congrid.net/`) with no query/fragment. `rel="nofollow"` is an HTML output convention, not a verification requirement; it is not checked on-chain or by verifierd.
     - the `<a>` wraps an `<img>`
     - `<img src>` is served from `https://congrid.net/...` and includes `publisher=<domain>` and `wallet=<verification_owner>`
     - `verification_owner` is the current owner in a normal round and the candidate owner in a re-registration round. It must exactly match the wallet snapshot in the assignment.

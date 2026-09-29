@@ -16,7 +16,7 @@
 - 核验 publisher 首页；若满足以下条件，则判定 **pass**：
   - 页面可访问（HTTP 2xx/3xx）。
   - 首页包含 **Congrid 成员标识**：
-    - `<a href="https://congrid.net">`（或 `https://www.congrid.net/`），且不带 query / fragment。
+    - `<a href="https://congrid.net" rel="nofollow">`（或 `https://www.congrid.net/`），且不带 query / fragment。`rel="nofollow"` 仅为 HTML 输出约定，不是验证条件，链上和 verifierd 均不检查该属性。
     - `<a>` 内包裹 `<img>`。
     - `<img src>` 来自 `https://congrid.net/...`，并带有 `publisher=<domain>` 和 `wallet=<verification_owner>`。
     - 普通轮次的 `verification_owner` 是当前 owner；重注册轮次则是待验证的新 owner。只有页面中的钱包与 assignment 快照完全一致才会通过。

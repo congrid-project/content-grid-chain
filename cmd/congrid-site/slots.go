@@ -712,7 +712,7 @@ func leaseEmbedSnippet(lease SlotLease) string {
 	if slotID == "" || leaseID == "" || targetURL == "" {
 		return ""
 	}
-	return fmt.Sprintf(`<div data-congrid-slot-id="%s" data-congrid-lease="%s"><a href="%s">Sponsored Link</a></div>`, escapeHTMLAttr(slotID), escapeHTMLAttr(leaseID), escapeHTMLAttr(targetURL))
+	return fmt.Sprintf(`<div data-congrid-slot-id="%s" data-congrid-lease="%s"><a href="%s" rel="nofollow">Sponsored Link</a></div>`, escapeHTMLAttr(slotID), escapeHTMLAttr(leaseID), escapeHTMLAttr(targetURL))
 }
 
 func escapeHTMLAttr(value string) string {

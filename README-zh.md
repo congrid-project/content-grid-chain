@@ -78,7 +78,7 @@ Chain ID、RPC 地址、genesis 和 seed peer 等网络专属信息，应以网�
 
 ```html
 <div id="congrid-similar">
-  <a href="https://congrid.net">
+  <a href="https://congrid.net" rel="nofollow">
     <img
       src="https://congrid.net/badge.svg?publisher=example.com&wallet=<congrid-address>"
       alt="Verified by Congrid"
@@ -87,11 +87,13 @@ Chain ID、RPC 地址、genesis 和 seed peer 等网络专属信息，应以网�
     />
     <span>Congrid — Content Grid Protocol</span>
   </a>
-  <!-- 在这里加入网络返回的相似 Publisher 链接。 -->
+  <!-- 在这里加入网络返回的相似 Publisher 链接，每个链接均添加 rel="nofollow"。 -->
 </div>
 ```
 
 `a` 必须指向不带 query 或 fragment 的 `https://congrid.net` 或 `https://www.congrid.net/`。图片必须位于上述任一域名下，并在 path 或 query 中编码 `publisher=<domain>` 和 `wallet=<owner>`；其中 wallet 必须与交易签名者一致。
+
+官网和推荐网站的链接均使用 `rel="nofollow"`。这只是 HTML 输出约定，链上逻辑和 verifier 均不验证该属性。
 
 注册域名：
 

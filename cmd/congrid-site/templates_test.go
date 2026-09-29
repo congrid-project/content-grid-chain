@@ -51,7 +51,7 @@ func TestHomePageIncludesPublisherVerificationBadge(t *testing.T) {
 
 	body := rendered.String()
 	require.Contains(t, body, `<div id="congrid-similar">`)
-	require.Contains(t, body, `<a href="https://congrid.net" class="protocol-badge-link">`)
+	require.Contains(t, body, `<a href="https://congrid.net" rel="nofollow" class="protocol-badge-link">`)
 	require.Contains(t, body, `src="https://congrid.net/badge.svg?publisher=congrid.net&wallet=congrid18cepycc5rv3dpe24n0mmdkdqwaruptvkuuurxf"`)
 	require.Contains(t, body, `width="32"`)
 	require.Contains(t, body, `height="32"`)
@@ -173,11 +173,11 @@ func TestPublisherPageGeneratesSVGLogoFirstInSimilarSites(t *testing.T) {
 
 	body := rendered.String()
 	require.Contains(t, body, "const badgeSrc = `${baseURL}/badge.svg?publisher=${encodeURIComponent(domain)}&wallet=${encodeURIComponent(wallet)}`;")
-	require.Contains(t, body, "const badgeSnippet = `<div id=\"congrid-similar\">\\n  <a href=\"${baseURL}\" style=\"display: inline-flex; align-items: center; gap: 8px;\">")
+	require.Contains(t, body, "const badgeSnippet = `<div id=\"congrid-similar\">\\n  <a href=\"${baseURL}\" rel=\"nofollow\" style=\"display: inline-flex; align-items: center; gap: 8px;\">")
 	require.Contains(t, body, `width="32"`)
 	require.Contains(t, body, `height="32"`)
 	require.Contains(t, body, `Congrid — Content Grid Protocol`)
-	require.Contains(t, body, "Add links for all 15 domains returned by indexerd here.")
+	require.Contains(t, body, "Add links with rel=\"nofollow\" for all 15 domains returned by indexerd here.")
 	require.NotContains(t, body, "/badge.png?publisher=${encodeURIComponent(domain)}")
 }
 

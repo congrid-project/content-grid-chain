@@ -78,7 +78,7 @@ Place a Congrid link on the registered domain's homepage. The link must wrap an 
 
 ```html
 <div id="congrid-similar">
-  <a href="https://congrid.net">
+  <a href="https://congrid.net" rel="nofollow">
     <img
       src="https://congrid.net/badge.svg?publisher=example.com&wallet=<congrid-address>"
       alt="Verified by Congrid"
@@ -87,11 +87,13 @@ Place a Congrid link on the registered domain's homepage. The link must wrap an 
     />
     <span>Congrid — Content Grid Protocol</span>
   </a>
-  <!-- Add the similar-publisher links returned by the network here. -->
+  <!-- Add the similar-publisher links returned by the network here, each with rel="nofollow". -->
 </div>
 ```
 
 The anchor must target `https://congrid.net` or `https://www.congrid.net/` without a query or fragment. The image must be hosted below one of those origins and encode `publisher=<domain>` and `wallet=<owner>` in its path or query. The wallet must match the signer.
+
+Use `rel="nofollow"` on links to the official website and recommended sites. This is an HTML output convention; neither on-chain logic nor verifiers validate this attribute.
 
 Register the domain:
 
