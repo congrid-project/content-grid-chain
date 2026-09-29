@@ -33,8 +33,8 @@
 ## publisher 奖励规则
 
 - 只有当该轮所有 publisher assignment 都完成后，才会统一结算奖励。
-- 注册首页通过成员标识验证即视为活跃：页面中的 `congrid.net` 官网链接包裹成员标识图片，且图片里的 publisher 域名和钱包地址必须与链上注册信息一致。
-- `owner` 同时是注册控制钱包和 publisher 奖励收款钱包。重注册可修改 owner/referrer，但新 owner 必须先作为 `pending_owner` 被 verifier 在首页成员标识中验证通过；验证前旧 owner 继续生效。
+- 注册网站首页的成员标识通过验证后，该 publisher 即视为活跃。成员标识图片须放在指向 `congrid.net` 官网的链接内，图片 URL 中的域名和钱包地址须与链上注册信息一致。
+- `owner` 是控制注册信息并接收 publisher 奖励的钱包。重新注册可以修改 owner 或 referrer。更换 owner 时，须先由 verifier 共识确认首页成员标识中的钱包地址与 `pending_owner` 一致，新 owner 才会生效；在此之前，仍由原 owner 控制。
 - publisher 池只在活跃 publisher 之间平均拆分；不活跃 publisher 不会稀释份额。
 - 每个活跃 publisher 的实际领取额再按相似网站链接数量调整：
   - 满额门槛：`required_external_links_for_full_reward`（默认 `15`）

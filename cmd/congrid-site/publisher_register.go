@@ -99,7 +99,7 @@ func (s *server) handlePublisherVerify() http.HandlerFunc {
 		verifier := newSecureHomepageVerifier(true, false)
 		if err := verifier.Verify(ctx, domain, wallet); err != nil {
 			writeResponse(w, http.StatusUnprocessableEntity, verifyResponse{
-				Error: "homepage member badge does not contain the connected wallet and registered domain",
+				Error: "Could not verify your homepage. Check that the Congrid member badge includes the domain you entered and the wallet you connected.",
 			})
 			return
 		}
@@ -171,7 +171,7 @@ func (s *server) sendPublisherRegister(ctx context.Context, domain, fromKey stri
 func (s *server) renderPublishersFlash(w http.ResponseWriter, r *http.Request, baseURL, msg string) {
 	s.render(w, "publishers.html", pageData{
 		Title:        "Become a Publisher — Congrid",
-		Description:  "Register your site, add the Congrid member badge, and earn rewards while sending high-quality referral traffic across the open web.",
+		Description:  "Register as a Congrid publisher so your website can appear in recommendation modules on other member sites. Add your member badge and keep your site verified to earn rewards.",
 		BaseURL:      baseURL,
 		Path:         r.URL.Path,
 		NowYear:      time.Now().Year(),

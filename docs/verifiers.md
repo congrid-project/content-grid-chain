@@ -67,5 +67,5 @@ If no positive weighted verifier exists for an assignment, the weighted bucket i
 
 ## Publisher-side gating that affects burn
 
-The publisher pool is evenly split among assignments that pass member badge verification. Each active publisher then receives `max(publisher_min_reward_bps, matched_links / required_external_links_for_full_reward)`, capped at 100% of its base share. The defaults are a 10% floor and 15 links for full reward; similar links affect payout, not member badge-pass status.
+The publisher pool is evenly split among assignments that pass member badge verification. Each active publisher then receives `max(publisher_min_reward_bps, matched_links / required_external_links_for_full_reward)`, capped at 100% of its base share. The defaults are a 10% floor and 15 links for full reward; matching recommendations affect the reward amount, but do not determine whether member badge verification passes.
 Unclaimed publisher amount is burned from the pool.

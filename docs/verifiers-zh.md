@@ -69,5 +69,5 @@ Unbond：
 
 ## 影响销毁的 publisher 侧门槛
 
-publisher 池会在通过成员标识验证的 assignment 之间平均拆分。每个活跃 publisher 再按 `max(publisher_min_reward_bps, matched_links / required_external_links_for_full_reward)` 领取，最高不超过其基准份额的 100%。默认保底比例为 10%，15 条链接可领取完整份额；相似链接只影响奖励比例，不影响成员标识通过状态。
+publisher 池会在通过成员标识验证的 assignment 之间平均拆分。每个活跃 publisher 再按 `max(publisher_min_reward_bps, matched_links / required_external_links_for_full_reward)` 领取，最高不超过其基准份额的 100%。默认保底比例为 10%，15 条链接可领取完整份额；推荐链接的匹配情况只影响奖励比例，不影响成员标识的验证结果。
 未被领取的 publisher 奖励会从池中烧毁。

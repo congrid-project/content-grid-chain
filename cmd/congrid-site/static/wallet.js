@@ -640,7 +640,7 @@ function bindPublisherRegisterForms() {
         });
         const verification = await verificationResponse.json().catch(() => ({}));
         if (!verificationResponse.ok || verification.ok !== true) {
-          throw new Error(verification.error || "Homepage member badge verification failed.");
+          throw new Error(verification.error || "Could not verify the Congrid member badge on your homepage.");
         }
 
         const msg = {

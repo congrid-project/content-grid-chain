@@ -134,16 +134,16 @@ return 404.
 
 ## Why Go?
 
-This site is intentionally served by Go so we can add first-party analytics, attribution, and on-chain/off-chain integrations (e.g. publisher member badge validation helpers) without rewriting the stack.
+This site is intentionally served by Go so we can add first-party analytics, attribution, and on-chain/off-chain integrations (e.g. helpers for verifying a publisher's member badge) without rewriting the stack.
 
 ## Routes
 
 - `/` — home
-- `/publishers` — publisher onboarding (wallet connect OR manual address, generated member badge snippet, CLI command, and optional server-side registration button)
+- `/publishers` — publisher registration with wallet connection or manual address entry, member badge embed code, a CLI command, and an optional server-side registration button
 - `/verifiers` — verifier onboarding
 - `/docs` — pointers to repository docs
-- `/airdrop` — verify homepage member badge and send an optional one-time starter airdrop per primary domain (when enabled)
-- `/badge.svg` — embeddable member badge using the canonical Congrid SVG logo (query params preserved for attribution)
+- `/airdrop` — verify the member badge on a website's homepage and send a starter airdrop; each primary domain can claim once when the feature is enabled
+- `/badge.svg` — Congrid member badge image, using the official SVG logo and retaining query parameters for attribution
 - `/badge.png` — legacy alias that serves the same SVG content for existing snippets
 - `/static/*` — CSS + assets
 - `/downloads/{filename}` — release artifact download with HEAD/Range support and no directory listing

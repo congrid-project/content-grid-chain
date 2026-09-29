@@ -529,7 +529,7 @@ func (s *server) handleHome(baseURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.render(w, "home.html", pageData{
 			Title:        "Congrid — Content Grid Protocol",
-			Description:  "A decentralized recommendation system where publishers get free recommendations and ongoing Congrid token rewards, while verifiers earn more by validating publisher status.",
+			Description:  "Congrid is a decentralized recommendation system. Register as a publisher so your website can appear in recommendations on other member sites, and earn rewards by keeping it verified.",
 			BaseURL:      baseURL,
 			Path:         r.URL.Path,
 			NowYear:      time.Now().Year(),
@@ -542,7 +542,7 @@ func (s *server) handlePublishers(baseURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.render(w, "publishers.html", pageData{
 			Title:        "Become a Publisher — Congrid",
-			Description:  "Register your site, add the Congrid member badge, and earn rewards while sending high-quality referral traffic across the open web.",
+			Description:  "Register as a Congrid publisher so your website can appear in recommendation modules on other member sites. Add your member badge and keep your site verified to earn rewards.",
 			BaseURL:      baseURL,
 			Path:         r.URL.Path,
 			NowYear:      time.Now().Year(),
@@ -568,7 +568,7 @@ func (s *server) handleDocs(baseURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.render(w, "docs.html", pageData{
 			Title:        "Guides — Congrid",
-			Description:  "Publisher and verifier guides for joining Congrid, including member badge setup, registration, the native verifier installer, bonding, and monitoring.",
+			Description:  "Learn how to register your website and add a Congrid member badge, or install and run a verifier to help check participating sites.",
 			BaseURL:      baseURL,
 			Path:         r.URL.Path,
 			NowYear:      time.Now().Year(),

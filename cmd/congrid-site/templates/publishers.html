@@ -5,7 +5,7 @@
   <div class="container">
     <h1>Publishers</h1>
     <p class="lead">
-      Register your domain on Congrid, place the member badge on your homepage, and keep your listing healthy for discovery + reward eligibility.
+      Register your website as a Congrid publisher so it can appear in recommendation modules on other member sites. Add the Congrid member badge to your homepage and keep your site verified to remain eligible for rewards.
     </p>
 
     {{if .Flash}}<div class="callout">{{.Flash}}</div>{{end}}
@@ -65,7 +65,7 @@
 
     <h2>Step 2 — Enter domain + owner wallet</h2>
     <p>
-      We will generate: (1) a CLI register command and (2) an exact member badge snippet.
+      Enter your domain and wallet address to generate a registration command and the HTML code for your member badge.
       If a verifier referred you, you can credit that verifier during registration.
     </p>
 
@@ -94,7 +94,7 @@
       </p>
 
       <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
-        <button class="btn" type="submit">Generate command + member badge snippet</button>
+        <button class="btn" type="submit">Generate registration command and embed code</button>
         <button class="btn btn-outline" type="button" data-use-connected-wallet>Use connected wallet</button>
       </div>
     </form>
@@ -108,8 +108,8 @@
     </div>
 
     <p class="muted">
-      Verification is strict: member badge link <code>href</code> must be exactly <code>{{.BaseURL}}</code>.
-      Keep the member badge on homepage <code>/</code> and do not change the owner wallet without re-registration.
+      For verification, the link around your member badge must use an <code>href</code> of exactly <code>{{.BaseURL}}</code>.
+      Keep the member badge on your homepage (<code>/</code>). If you change the owner wallet, register again with the new wallet.
     </p>
 
     <h2>Step 3 — Register on-chain</h2>
@@ -131,9 +131,9 @@
 
     <h2>Step 4 — Stay healthy</h2>
     <p>
-      Verifiers continuously check your homepage member badge and owner wallet binding.
-      Keep your site online and the member badge intact to remain eligible for network programs.
-      To change the receiving wallet or referrer, update the member badge wallet first, connect that same wallet, and submit this registration flow again. The previous owner remains active until verifier consensus accepts the candidate.
+      Verifiers regularly check that the member badge on your homepage matches your registered domain and wallet.
+      Keep your homepage accessible and your member badge in place to remain eligible for rewards.
+      To change your receiving wallet or referrer, make sure the wallet address in your member badge matches the wallet you connect, then register again. A new owner takes effect only after verifier consensus confirms the change.
     </p>
   </div>
 </section>

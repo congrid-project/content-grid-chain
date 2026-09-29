@@ -6,7 +6,7 @@ This document describes the link-slot marketplace lifecycle and CLI usage.
 
 ## Slot lifecycle
 
-- **Listed**: visible to API users for booking.
+- **Listed**: available to lease.
 - **Paused**: hidden from booking but retained.
 - **Unlisted**: hidden permanently; existing leases are unaffected.
 

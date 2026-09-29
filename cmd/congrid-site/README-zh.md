@@ -130,11 +130,11 @@ curl -fsSL https://congrid.net/downloads/install.sh | bash
 ## 路线
 
 - `/` — 家
-- `/publishers` — 发布商入职（第三方钱包连接、域名+钱包填写、自动生成徽章片段和注册命令）
+- `/publishers` — 网站注册（连接钱包或填写钱包地址，生成成员标识的嵌入代码和注册命令）
 - `/verifiers` — verifier 加入
 - `/docs` — 指向存储库文档的指针
-- `/airdrop` — 验证主页徽章并为每个主域发送一次性可选启动空投（启用时）
-- `/badge.svg` — 使用 Congrid 标准 SVG logo 的可嵌入成员标识（保留查询参数用于归因）
+- `/airdrop` — 验证网站首页的成员标识并发放启动空投；启用此功能后，每个主域名可领取一次
+- `/badge.svg` — Congrid 成员标识图片，使用官方 SVG 标志，并保留用于归因的查询参数
 - `/badge.png` — 兼容旧代码片段的别名，返回相同的 SVG 内容
 - `/static/*` — CSS + 资源
 - `/downloads/{filename}` — 发布归档下载（支持 HEAD 和 Range，不提供目录列表）
