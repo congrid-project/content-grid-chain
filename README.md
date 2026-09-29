@@ -28,6 +28,10 @@ A normal publisher verification moves through this flow:
 
 Content Grid uses two related but distinct consensus layers.
 
+![Congrid architecture: content discovery, website verification, and block consensus](cmd/congrid-site/static/assets/congrid-architecture.png)
+
+Recommendations are computed off-chain. Verifiers check member websites and submit evidence; consensus validators finalize the ledger.
+
 ### Chain consensus
 
 The blockchain is built with Cosmos SDK v0.53 and CometBFT v0.38. Cosmos consensus validators provide Byzantine-fault-tolerant block ordering and finality; staking, slashing, governance, bank, and distribution use the standard Cosmos modules wired into the application.

@@ -28,6 +28,10 @@ Content Grid 连接四类参与者：
 
 Content Grid 包含两个相互关联但职责不同的共识层。
 
+![Congrid 模块关系：内容推荐、网站验证与区块共识](cmd/congrid-site/static/assets/congrid-architecture.png)
+
+推荐结果在链下计算。Verifier 检查成员网站并提交证据，链上规则据此更新状态和结算奖励；共识验证人（validator）负责区块排序与最终确认。
+
 ### 链共识
 
 区块链基于 Cosmos SDK v0.53 与 CometBFT v0.38。Cosmos 共识验证人提供拜占庭容错的区块排序和最终性；应用接入了标准的 staking、slashing、governance、bank 与 distribution 模块。
