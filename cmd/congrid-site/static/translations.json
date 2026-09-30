@@ -1,0 +1,1748 @@
+{
+  "Airdrop": {
+    "zh": "空投",
+    "fr": "Airdrop"
+  },
+  "The airdrop page is currently online, but claiming is disabled on this deployment.": {
+    "zh": "空投页面已上线，但此部署尚未开放领取。",
+    "fr": "La page d’airdrop est en ligne, mais les demandes sont désactivées sur ce déploiement."
+  },
+  "Status:": {
+    "zh": "状态：",
+    "fr": "État :"
+  },
+  "Airdrop claims are not enabled right now.": {
+    "zh": "目前尚未开放空投领取。",
+    "fr": "Les demandes d’airdrop ne sont pas activées pour le moment."
+  },
+  "Need a wallet address first?": {
+    "zh": "还没有钱包地址？",
+    "fr": "Vous avez besoin d’une adresse de portefeuille ?"
+  },
+  "Use a third-party wallet to create or import your wallet, then connect below to get your public Congrid address (": {
+    "zh": "使用第三方钱包创建或导入钱包，然后在下方连接，获取您的 Congrid 公共地址（",
+    "fr": "Créez ou importez votre portefeuille avec un outil tiers, puis connectez-le ci-dessous pour obtenir votre adresse publique Congrid ("
+  },
+  ") for Congrid pages.": {
+    "zh": "），用于 Congrid 页面。",
+    "fr": ") à utiliser sur les pages Congrid."
+  },
+  "— browser extension and mobile wallet.": {
+    "zh": "— 浏览器扩展和移动钱包。",
+    "fr": "— extension de navigateur et portefeuille mobile."
+  },
+  "Wallet:": {
+    "zh": "钱包：",
+    "fr": "Portefeuille :"
+  },
+  "Not connected": {
+    "zh": "未连接",
+    "fr": "Non connecté",
+    "client": true
+  },
+  "Connect wallet": {
+    "zh": "连接钱包",
+    "fr": "Connecter le portefeuille"
+  },
+  "Keep your recovery phrase or private key offline and never paste it into Congrid. Congrid pages only need your public address.": {
+    "zh": "请离线保存助记词或私钥，切勿将其粘贴到 Congrid。Congrid 页面只需要您的公共地址。",
+    "fr": "Conservez votre phrase de récupération ou votre clé privée hors ligne et ne la collez jamais dans Congrid. Les pages Congrid ont uniquement besoin de votre adresse publique."
+  },
+  "Why you might see this": {
+    "zh": "可能的原因",
+    "fr": "Pourquoi cette page s’affiche"
+  },
+  "The server was started without the": {
+    "zh": "服务器启动时未启用",
+    "fr": "Le serveur a été démarré sans l’option"
+  },
+  "flag.": {
+    "zh": "参数。",
+    "fr": "."
+  },
+  "No faucet key is configured for this environment.": {
+    "zh": "此环境未配置水龙头密钥。",
+    "fr": "Aucune clé de faucet n’est configurée pour cet environnement."
+  },
+  "Claims are paused temporarily for maintenance.": {
+    "zh": "领取功能因维护而暂时暂停。",
+    "fr": "Les demandes sont temporairement suspendues pour maintenance."
+  },
+  "What you can do now": {
+    "zh": "您现在可以做什么",
+    "fr": "Ce que vous pouvez faire maintenant"
+  },
+  "Publisher onboarding": {
+    "zh": "发布者入门",
+    "fr": "Guide des éditeurs"
+  },
+  "Verifier onboarding": {
+    "zh": "验证者入门",
+    "fr": "Guide des vérificateurs"
+  },
+  "Publisher + verifier guides": {
+    "zh": "发布者与验证者指南",
+    "fr": "Guides des éditeurs et des vérificateurs"
+  },
+  "Decentralized recommendation system": {
+    "zh": "去中心化推荐系统",
+    "fr": "Système de recommandation décentralisé"
+  },
+  "Get discovered on other Congrid member websites": {
+    "zh": "让其他 Congrid 成员网站的读者发现您",
+    "fr": "Faites-vous découvrir sur les autres sites membres de Congrid"
+  },
+  "Register as a Congrid publisher so your website can appear in recommendation modules on other member websites. Keep your site verified to earn Congrid token rewards. Install the native verifier stack with one interactive command to confirm publisher status and earn a larger share of Congrid token rewards.": {
+    "zh": "注册成为 Congrid 发布者，让您的网站出现在其他成员网站的推荐模块中。保持网站通过验证，即可获得 Congrid 代币奖励。使用一条交互式命令安装原生验证者服务，确认发布者状态并获得更大份额的 Congrid 代币奖励。",
+    "fr": "Inscrivez-vous comme éditeur Congrid pour apparaître dans les modules de recommandation des autres sites membres. Gardez votre site vérifié pour recevoir des récompenses en jetons Congrid. Installez les services natifs de vérification avec une seule commande interactive pour confirmer l’état des éditeurs et gagner une plus grande part des récompenses."
+  },
+  "Publishers": {
+    "zh": "发布者",
+    "fr": "Éditeurs"
+  },
+  "Verifiers": {
+    "zh": "验证者",
+    "fr": "Vérificateurs"
+  },
+  "Guides": {
+    "zh": "指南",
+    "fr": "Guides"
+  },
+  "Register your domain, place the Congrid member badge on your homepage, and stay verified. Your website can reach readers through recommendations on other member sites, while you earn rewards for keeping it verified.": {
+    "zh": "注册域名，在首页放置 Congrid 成员徽章，并保持通过验证。您的网站可通过其他成员网站的推荐触达读者，同时获得持续验证奖励。",
+    "fr": "Enregistrez votre domaine, placez le badge de membre Congrid sur votre page d’accueil et maintenez sa vérification. Votre site peut atteindre des lecteurs grâce aux recommandations des autres sites membres et vous rapporter des récompenses."
+  },
+  "Publisher onboarding →": {
+    "zh": "发布者入门 →",
+    "fr": "Devenir éditeur →"
+  },
+  "Use the official no-Docker Linux/macOS installer to run a full node, verifier, publisher index, and Chroma service. Accurate verification earns a larger share of rewards.": {
+    "zh": "使用官方 Linux/macOS 安装器，无需 Docker，即可运行全节点、验证者、发布者索引和 Chroma 服务。准确验证可获得更大份额的奖励。",
+    "fr": "Utilisez l’installateur natif officiel Linux/macOS, sans Docker, pour exécuter un nœud complet, un vérificateur, l’index des éditeurs et Chroma. Une vérification précise rapporte une plus grande part des récompenses."
+  },
+  "Install the verifier stack →": {
+    "zh": "安装验证者服务 →",
+    "fr": "Installer les services de vérification →"
+  },
+  "How Congrid works": {
+    "zh": "Congrid 如何运作",
+    "fr": "Comment fonctionne Congrid"
+  },
+  "Congrid architecture: indexerd and Chroma match member websites with related sites. drand seeds verifier assignments; verifierd checks websites and submits evidence through commit–reveal. Registry rules determine status and rewards, while Cosmos SDK and CometBFT provide block consensus.": {
+    "zh": "Congrid 架构：indexerd 和 Chroma 将成员网站与相关网站匹配。drand 为验证任务提供随机种子；verifierd 检查网站并通过提交与揭示机制提交证据。注册表规则决定状态和奖励，Cosmos SDK 和 CometBFT 提供区块共识。",
+    "fr": "Architecture Congrid : indexerd et Chroma associent les sites membres à des sites connexes. drand initialise les affectations de vérification ; verifierd inspecte les sites et soumet les preuves par engagement puis révélation. Le registre détermine les états et récompenses ; Cosmos SDK et CometBFT assurent le consensus des blocs."
+  },
+  "Recommendations are computed off-chain. Verifiers check member websites and submit evidence; consensus validators finalize the ledger.": {
+    "zh": "推荐在链下计算。验证者检查成员网站并提交证据，共识验证节点最终确认账本。",
+    "fr": "Les recommandations sont calculées hors chaîne. Les vérificateurs contrôlent les sites membres et soumettent des preuves ; les validateurs du consensus finalisent le registre."
+  },
+  "Why Congrid matters": {
+    "zh": "Congrid 的价值",
+    "fr": "Pourquoi Congrid est utile"
+  },
+  "Reach readers interested in your content": {
+    "zh": "触达对您内容感兴趣的读者",
+    "fr": "Touchez des lecteurs intéressés par votre contenu"
+  },
+  "Congrid matches websites by content similarity, helping readers discover your site in the recommendation modules of related member websites.": {
+    "zh": "Congrid 根据内容相似度匹配网站，让读者在相关成员网站的推荐模块中发现您的网站。",
+    "fr": "Congrid associe les sites selon la similarité de leur contenu, permettant aux lecteurs de découvrir votre site dans les recommandations de sites membres connexes."
+  },
+  "Ongoing rewards for verified publishers": {
+    "zh": "持续奖励已验证的发布者",
+    "fr": "Des récompenses continues pour les éditeurs vérifiés"
+  },
+  "Keep your homepage online and make sure your Congrid member badge uses the domain and wallet you registered. Verified publishers remain eligible for token rewards.": {
+    "zh": "保持首页在线，确保 Congrid 成员徽章中的域名和钱包与注册信息一致。通过验证的发布者可持续获得代币奖励资格。",
+    "fr": "Gardez votre page d’accueil en ligne et vérifiez que votre badge Congrid utilise le domaine et le portefeuille enregistrés. Les éditeurs vérifiés restent admissibles aux récompenses en jetons."
+  },
+  "More rewards for verifiers": {
+    "zh": "验证者获得更多奖励",
+    "fr": "Davantage de récompenses pour les vérificateurs"
+  },
+  "Verifiers confirm publisher status and earn a larger share of Congrid token rewards by submitting accurate, timely checks.": {
+    "zh": "验证者确认发布者状态，通过准确、及时地提交检查结果，获得更大份额的 Congrid 代币奖励。",
+    "fr": "Les vérificateurs confirment l’état des éditeurs et gagnent une plus grande part des récompenses en jetons Congrid grâce à des contrôles précis et ponctuels."
+  },
+  "One protocol for discovery + trust": {
+    "zh": "一个协议，连接发现与信任",
+    "fr": "Un protocole pour la découverte et la confiance"
+  },
+  "Members help readers discover related websites, while independent verifiers check participating sites. On-chain rewards support both roles.": {
+    "zh": "成员帮助读者发现相关网站，独立验证者检查参与网站。链上奖励支持这两种角色。",
+    "fr": "Les membres aident les lecteurs à découvrir des sites connexes et des vérificateurs indépendants contrôlent les sites participants. Les récompenses sur chaîne soutiennent ces deux rôles."
+  },
+  "How trust is maintained": {
+    "zh": "如何维护信任",
+    "fr": "Comment la confiance est maintenue"
+  },
+  "Publisher registry": {
+    "zh": "发布者注册表",
+    "fr": "Registre des éditeurs"
+  },
+  "Register your domain and wallet, then display the Congrid member badge on your homepage so verifiers can confirm that they match your registration.": {
+    "zh": "注册域名和钱包，然后在首页展示 Congrid 成员徽章，以便验证者确认徽章与注册信息一致。",
+    "fr": "Enregistrez votre domaine et votre portefeuille, puis affichez le badge Congrid sur votre page d’accueil afin que les vérificateurs puissent confirmer leur concordance avec votre inscription."
+  },
+  "Verifier assignments": {
+    "zh": "验证任务分配",
+    "fr": "Affectation des vérifications"
+  },
+  "Verifiers execute assignment windows and submit results. Registry health comes from repeated independent checks.": {
+    "zh": "验证者在任务窗口内执行检查并提交结果。多次独立检查维护注册表的可靠性。",
+    "fr": "Les vérificateurs exécutent leurs tâches dans les fenêtres prévues et soumettent les résultats. Des contrôles indépendants répétés assurent la fiabilité du registre."
+  },
+  "On-chain incentives": {
+    "zh": "链上激励",
+    "fr": "Incitations sur chaîne"
+  },
+  "Publishers keep earning while their sites stay verified, and verifiers earn more by keeping publisher status checks accurate.": {
+    "zh": "只要网站保持通过验证，发布者便可持续获得奖励；验证者通过准确检查发布者状态获得更多奖励。",
+    "fr": "Les éditeurs continuent de gagner des récompenses tant que leur site reste vérifié ; les vérificateurs en gagnent davantage en assurant la précision des contrôles."
+  },
+  "Open participation": {
+    "zh": "开放参与",
+    "fr": "Participation ouverte"
+  },
+  "Any site can onboard as publisher. Any participant can join as a verifier by following chain rules.": {
+    "zh": "任何网站都可以注册为发布者。任何参与者都可以遵循链上规则加入验证者网络。",
+    "fr": "Tout site peut devenir éditeur. Tout participant peut devenir vérificateur en respectant les règles de la chaîne."
+  },
+  "Verified by Congrid": {
+    "zh": "经 Congrid 验证",
+    "fr": "Vérifié par Congrid"
+  },
+  "Congrid — Content Grid Protocol": {
+    "zh": "Congrid — 内容网格协议",
+    "fr": "Congrid — Protocole de grille de contenu"
+  },
+  "Marketplace (deprecated)": {
+    "zh": "市场（已弃用）",
+    "fr": "Marché (obsolète)"
+  },
+  "Discover publisher slots, compare terms, and create lease transactions with your wallet. Slot state and lease availability are loaded from chain data.": {
+    "zh": "发现发布者插槽、比较条款，并使用钱包创建租约交易。插槽状态和租用可用性从链上数据加载。",
+    "fr": "Découvrez les emplacements des éditeurs, comparez les conditions et créez des locations avec votre portefeuille. Les états et disponibilités sont chargés depuis la chaîne."
+  },
+  "Current chain config": {
+    "zh": "当前链配置",
+    "fr": "Configuration actuelle de la chaîne"
+  },
+  "Chain ID:": {
+    "zh": "链 ID：",
+    "fr": "Identifiant de chaîne :"
+  },
+  "RPC:": {
+    "zh": "RPC：",
+    "fr": "RPC :"
+  },
+  "Fee denom:": {
+    "zh": "手续费币种：",
+    "fr": "Dénomination des frais :"
+  },
+  "Gas price:": {
+    "zh": "Gas 价格：",
+    "fr": "Prix du gas :"
+  },
+  "Before leasing": {
+    "zh": "租用前的准备",
+    "fr": "Avant de louer"
+  },
+  "Connect a wallet that has enough balance for lease + tx fee.": {
+    "zh": "连接钱包，确保余额足以支付租金和交易手续费。",
+    "fr": "Connectez un portefeuille disposant d’un solde suffisant pour la location et les frais de transaction."
+  },
+  "Prepare a valid landing URL (": {
+    "zh": "准备有效的落地页 URL（",
+    "fr": "Préparez une URL de destination valide ("
+  },
+  ") as lease target.": {
+    "zh": "）作为租约目标。",
+    "fr": ") comme cible de la location."
+  },
+  "Pick term carefully: minimum/maximum duration is enforced by chain rules.": {
+    "zh": "请谨慎选择租期：链上规则限制最短和最长租期。",
+    "fr": "Choisissez soigneusement la durée : les limites minimale et maximale sont imposées par la chaîne."
+  },
+  "Wallet required:": {
+    "zh": "需要钱包：",
+    "fr": "Portefeuille requis :"
+  },
+  "connect Keplr to sign lease tx.": {
+    "zh": "连接 Keplr 以签署租约交易。",
+    "fr": "connectez Keplr pour signer la transaction de location."
+  },
+  "View lease publish board →": {
+    "zh": "查看租约发布面板 →",
+    "fr": "Voir le tableau des locations →"
+  },
+  "Filter slots": {
+    "zh": "筛选插槽",
+    "fr": "Filtrer les emplacements"
+  },
+  "Search": {
+    "zh": "搜索",
+    "fr": "Recherche"
+  },
+  "domain, category, placement": {
+    "zh": "域名、类别、位置",
+    "fr": "domaine, catégorie, position"
+  },
+  "Sort by": {
+    "zh": "排序方式",
+    "fr": "Trier par"
+  },
+  "Latest updates": {
+    "zh": "最近更新",
+    "fr": "Dernières mises à jour"
+  },
+  "Price: low to high": {
+    "zh": "价格：从低到高",
+    "fr": "Prix croissant"
+  },
+  "Price: high to low": {
+    "zh": "价格：从高到低",
+    "fr": "Prix décroissant"
+  },
+  "Traffic": {
+    "zh": "流量",
+    "fr": "Trafic"
+  },
+  "Publisher name": {
+    "zh": "发布者名称",
+    "fr": "Nom de l’éditeur"
+  },
+  "Apply": {
+    "zh": "应用",
+    "fr": "Appliquer"
+  },
+  "Reset": {
+    "zh": "重置",
+    "fr": "Réinitialiser"
+  },
+  "Showing": {
+    "zh": "显示",
+    "fr": "Affichage de"
+  },
+  "of": {
+    "zh": "共",
+    "fr": "sur"
+  },
+  "slots.": {
+    "zh": "个插槽。",
+    "fr": "emplacements."
+  },
+  "Placement": {
+    "zh": "位置",
+    "fr": "Position"
+  },
+  "Rate": {
+    "zh": "费率",
+    "fr": "Tarif"
+  },
+  "Size": {
+    "zh": "尺寸",
+    "fr": "Dimensions"
+  },
+  "Category": {
+    "zh": "类别",
+    "fr": "Catégorie"
+  },
+  "Updated": {
+    "zh": "更新时间",
+    "fr": "Mis à jour"
+  },
+  "Active lease:": {
+    "zh": "生效中的租约：",
+    "fr": "Location active :"
+  },
+  "until": {
+    "zh": "截至",
+    "fr": "jusqu’au"
+  },
+  "slot_id=": {
+    "zh": "slot_id=",
+    "fr": "slot_id="
+  },
+  "· lease_id=": {
+    "zh": "· lease_id=",
+    "fr": "· lease_id="
+  },
+  "Minimum term:": {
+    "zh": "最短租期：",
+    "fr": "Durée minimale :"
+  },
+  "View publisher": {
+    "zh": "查看发布者",
+    "fr": "Voir l’éditeur"
+  },
+  "Lease this slot": {
+    "zh": "租用此插槽",
+    "fr": "Louer cet emplacement"
+  },
+  "Target URL": {
+    "zh": "目标 URL",
+    "fr": "URL de destination"
+  },
+  "Start date": {
+    "zh": "开始日期",
+    "fr": "Date de début"
+  },
+  "Duration": {
+    "zh": "租期",
+    "fr": "Durée"
+  },
+  "Select duration": {
+    "zh": "选择租期",
+    "fr": "Sélectionner une durée"
+  },
+  "Sign lease transaction": {
+    "zh": "签署租约交易",
+    "fr": "Signer la transaction de location"
+  },
+  "Not available": {
+    "zh": "不可用",
+    "fr": "Indisponible"
+  },
+  "Pagination": {
+    "zh": "分页",
+    "fr": "Pagination"
+  },
+  "Previous": {
+    "zh": "上一页",
+    "fr": "Précédent"
+  },
+  "Next": {
+    "zh": "下一页",
+    "fr": "Suivant"
+  },
+  "Page": {
+    "zh": "页码",
+    "fr": "Page"
+  },
+  "No slots found": {
+    "zh": "未找到插槽",
+    "fr": "Aucun emplacement trouvé"
+  },
+  "Try a different search or clear filters.": {
+    "zh": "请尝试其他搜索条件或清除筛选。",
+    "fr": "Essayez une autre recherche ou effacez les filtres."
+  },
+  "Claim Optional Starter Airdrop": {
+    "zh": "领取可选启动空投",
+    "fr": "Demander l’airdrop de démarrage facultatif"
+  },
+  "You can claim a small amount of Congrid tokens to help cover your first transaction fees. Each": {
+    "zh": "您可以领取少量 Congrid 代币，用于支付初次交易的手续费。每个",
+    "fr": "Vous pouvez demander une petite quantité de jetons Congrid pour couvrir vos premiers frais de transaction. Chaque"
+  },
+  "primary domain": {
+    "zh": "主域名",
+    "fr": "domaine principal"
+  },
+  "can claim once.": {
+    "zh": "只能领取一次。",
+    "fr": "ne peut en bénéficier qu’une fois."
+  },
+  "Note:": {
+    "zh": "说明：",
+    "fr": "Remarque :"
+  },
+  "publisher registration can be submitted with zero fee when the transaction only contains the registration message. Airdrop is optional and does not block registration. After verification, the transfer is queued and confirmed in the background.": {
+    "zh": "如果交易只包含注册消息，发布者注册可以零手续费提交。空投为可选功能，不影响注册。验证通过后，转账会进入队列并在后台确认。",
+    "fr": "L’inscription d’un éditeur peut être soumise sans frais si la transaction ne contient que le message d’inscription. L’airdrop est facultatif et ne bloque pas l’inscription. Après vérification, le transfert est mis en file d’attente et confirmé en arrière-plan."
+  },
+  "Get your address with a third-party wallet": {
+    "zh": "通过第三方钱包获取地址",
+    "fr": "Obtenir votre adresse avec un portefeuille tiers"
+  },
+  "Recommended wallets": {
+    "zh": "推荐钱包",
+    "fr": "Portefeuilles recommandés"
+  },
+  "Address + key safety": {
+    "zh": "地址与密钥安全",
+    "fr": "Sécurité de l’adresse et des clés"
+  },
+  "Install Keplr from the official site, then create a wallet or import the one you already use.": {
+    "zh": "从官方网站安装 Keplr，然后创建钱包或导入现有钱包。",
+    "fr": "Installez Keplr depuis le site officiel, puis créez un portefeuille ou importez celui que vous utilisez déjà."
+  },
+  "Connect your wallet below to fill in your public Congrid address (": {
+    "zh": "在下方连接钱包以填写您的 Congrid 公共地址（",
+    "fr": "Connectez votre portefeuille ci-dessous pour renseigner votre adresse publique Congrid ("
+  },
+  "), or paste it into the airdrop form.": {
+    "zh": "），也可将地址粘贴到空投表单中。",
+    "fr": "), ou collez-la dans le formulaire d’airdrop."
+  },
+  "Keep your recovery phrase or private key inside the wallet and backed up offline.": {
+    "zh": "请将助记词或私钥保存在钱包中，并进行离线备份。",
+    "fr": "Gardez votre phrase de récupération ou votre clé privée dans le portefeuille et sauvegardez-la hors ligne."
+  },
+  "Never paste your recovery phrase or private key into Congrid. This page only needs your public address.": {
+    "zh": "切勿将助记词或私钥粘贴到 Congrid。此页面只需要您的公共地址。",
+    "fr": "Ne collez jamais votre phrase de récupération ou votre clé privée dans Congrid. Cette page a uniquement besoin de votre adresse publique."
+  },
+  "Connect wallet (optional)": {
+    "zh": "连接钱包（可选）",
+    "fr": "Connecter le portefeuille (facultatif)"
+  },
+  "Connect Keplr to get your public Congrid address and automatically fill in the airdrop form.": {
+    "zh": "连接 Keplr 以获取 Congrid 公共地址，并自动填写空投表单。",
+    "fr": "Connectez Keplr pour obtenir votre adresse publique Congrid et remplir automatiquement le formulaire d’airdrop."
+  },
+  "Requirements": {
+    "zh": "要求",
+    "fr": "Conditions"
+  },
+  "Your homepage (": {
+    "zh": "您的首页（",
+    "fr": "Votre page d’accueil ("
+  },
+  ") must include the official Congrid link": {
+    "zh": "）必须包含 Congrid 官方链接",
+    "fr": ") doit inclure le lien officiel Congrid"
+  },
+  "The link must wrap an": {
+    "zh": "链接必须包裹一个",
+    "fr": "Le lien doit entourer un élément"
+  },
+  "whose": {
+    "zh": "，其",
+    "fr": " dont l’attribut"
+  },
+  "includes": {
+    "zh": "包含",
+    "fr": "doit contenir"
+  },
+  "and": {
+    "zh": "和",
+    "fr": "et"
+  },
+  "The": {
+    "zh": "此",
+    "fr": "Le paramètre"
+  },
+  "parameter must match the address you enter below.": {
+    "zh": "参数必须与您在下方填写的地址一致。",
+    "fr": "doit correspondre à l’adresse saisie ci-dessous."
+  },
+  "Claim": {
+    "zh": "领取",
+    "fr": "Demander"
+  },
+  "Website domain": {
+    "zh": "网站域名",
+    "fr": "Domaine du site"
+  },
+  "Wallet address": {
+    "zh": "钱包地址",
+    "fr": "Adresse du portefeuille"
+  },
+  "Verify & Queue Airdrop": {
+    "zh": "验证并加入空投队列",
+    "fr": "Vérifier et mettre l’airdrop en attente"
+  },
+  "We do not create wallets on this website. Use Keplr to manage your wallet securely, then connect above or paste only your public address here.": {
+    "zh": "此网站不提供钱包创建功能。请使用 Keplr 安全管理钱包，然后在上方连接，或仅在此处粘贴公共地址。",
+    "fr": "Nous ne créons pas de portefeuilles sur ce site. Gérez votre portefeuille avec Keplr, puis connectez-le ci-dessus ou collez uniquement votre adresse publique ici."
+  },
+  "Example member badge embed code": {
+    "zh": "成员徽章嵌入代码示例",
+    "fr": "Exemple de code d’intégration du badge de membre"
+  },
+  "Publisher Dashboard": {
+    "zh": "发布者控制台",
+    "fr": "Tableau de bord de l’éditeur"
+  },
+  "Manage your link slots, pricing, and availability. Create listings and pause or unlist them when needed.": {
+    "zh": "管理链接插槽、价格和可用状态。创建插槽，并在需要时暂停或下架。",
+    "fr": "Gérez vos emplacements de liens, leurs tarifs et leur disponibilité. Créez des annonces, puis suspendez-les ou retirez-les si nécessaire."
+  },
+  "connect a wallet to sign slot creation and status updates.": {
+    "zh": "连接钱包以签署插槽创建和状态更新交易。",
+    "fr": "connectez un portefeuille pour signer la création et les changements d’état des emplacements."
+  },
+  "Your publisher identity": {
+    "zh": "您的发布者身份",
+    "fr": "Votre identité d’éditeur"
+  },
+  "Primary domain": {
+    "zh": "主域名",
+    "fr": "Domaine principal"
+  },
+  "Load slots": {
+    "zh": "加载插槽",
+    "fr": "Charger les emplacements"
+  },
+  "Choose a domain to preview listings.": {
+    "zh": "选择域名以预览插槽。",
+    "fr": "Choisissez un domaine pour prévisualiser les annonces."
+  },
+  "Create a new slot": {
+    "zh": "创建新插槽",
+    "fr": "Créer un emplacement"
+  },
+  "Slot label": {
+    "zh": "插槽名称",
+    "fr": "Nom de l’emplacement"
+  },
+  "Homepage hero": {
+    "zh": "首页主展示位",
+    "fr": "Bannière principale"
+  },
+  "Summary": {
+    "zh": "摘要",
+    "fr": "Résumé"
+  },
+  "Short description": {
+    "zh": "简短描述",
+    "fr": "Description courte"
+  },
+  "News": {
+    "zh": "新闻",
+    "fr": "Actualités"
+  },
+  "Article header": {
+    "zh": "文章页头",
+    "fr": "En-tête d’article"
+  },
+  "728x90": {
+    "zh": "728x90",
+    "fr": "728x90"
+  },
+  "Rate (": {
+    "zh": "费率（",
+    "fr": "Tarif ("
+  },
+  "/ week)": {
+    "zh": "/ 周）",
+    "fr": "/ semaine)"
+  },
+  "Traffic (monthly visits)": {
+    "zh": "流量（每月访问量）",
+    "fr": "Trafic (visites mensuelles)"
+  },
+  "Create slot": {
+    "zh": "创建插槽",
+    "fr": "Créer l’emplacement"
+  },
+  "New slots are created in paused state.": {
+    "zh": "新插槽创建后处于暂停状态。",
+    "fr": "Les nouveaux emplacements sont créés à l’état suspendu."
+  },
+  "Your slots": {
+    "zh": "您的插槽",
+    "fr": "Vos emplacements"
+  },
+  "Lease": {
+    "zh": "租约",
+    "fr": "Location"
+  },
+  "ID": {
+    "zh": "ID",
+    "fr": "ID"
+  },
+  "Pause": {
+    "zh": "暂停",
+    "fr": "Suspendre"
+  },
+  "Unlist": {
+    "zh": "下架",
+    "fr": "Retirer"
+  },
+  "Activate": {
+    "zh": "启用",
+    "fr": "Activer"
+  },
+  "List slot": {
+    "zh": "上架插槽",
+    "fr": "Publier l’emplacement"
+  },
+  "No slots yet": {
+    "zh": "暂无插槽",
+    "fr": "Aucun emplacement pour le moment"
+  },
+  "Create your first slot to appear in the marketplace.": {
+    "zh": "创建您的第一个插槽，使其出现在市场中。",
+    "fr": "Créez votre premier emplacement pour apparaître sur le marché."
+  },
+  "Leases": {
+    "zh": "租约",
+    "fr": "Locations"
+  },
+  "Lease publish rule:": {
+    "zh": "租约发布规则：",
+    "fr": "Règle de publication des locations :"
+  },
+  "use backend-generated": {
+    "zh": "使用后端生成的",
+    "fr": "utilisez les identifiants générés par le serveur"
+  },
+  ". Put": {
+    "zh": "。将",
+    "fr": ". Placez"
+  },
+  "on the HTML wrapper element (attribute:": {
+    "zh": "放在 HTML 容器元素上（属性：",
+    "fr": "sur l’élément HTML englobant (attribut :"
+  },
+  "Slot": {
+    "zh": "插槽",
+    "fr": "Emplacement"
+  },
+  "Slot ID": {
+    "zh": "插槽 ID",
+    "fr": "ID d’emplacement"
+  },
+  "Lease ID": {
+    "zh": "租约 ID",
+    "fr": "ID de location"
+  },
+  "Lessee": {
+    "zh": "承租者",
+    "fr": "Locataire"
+  },
+  "Term": {
+    "zh": "租期",
+    "fr": "Période"
+  },
+  "Status": {
+    "zh": "状态",
+    "fr": "État"
+  },
+  "Embed": {
+    "zh": "嵌入代码",
+    "fr": "Intégration"
+  },
+  "No leases yet": {
+    "zh": "暂无租约",
+    "fr": "Aucune location pour le moment"
+  },
+  "Your leases will appear here when a booking is made.": {
+    "zh": "完成租用后，租约将显示在此处。",
+    "fr": "Vos locations apparaîtront ici lorsqu’une réservation sera effectuée."
+  },
+  "Run a Congrid Verifier": {
+    "zh": "运行 Congrid 验证者",
+    "fr": "Exécuter un vérificateur Congrid"
+  },
+  "Install a full Congrid node and verifier stack, or attach the verifier components to an existing node, with one interactive command. The official installer supports Linux and macOS, uses native binaries, and does not require Docker.": {
+    "zh": "使用一条交互式命令安装完整的 Congrid 节点和验证者服务，或将验证者组件连接到已有节点。官方安装器支持 Linux 和 macOS，使用原生二进制文件，无需 Docker。",
+    "fr": "Installez un nœud Congrid complet et les services de vérification, ou rattachez ces composants à un nœud existant, avec une seule commande interactive. L’installateur officiel prend en charge Linux et macOS, utilise des binaires natifs et ne nécessite pas Docker."
+  },
+  "What the installer deploys": {
+    "zh": "安装器部署的组件",
+    "fr": "Composants déployés par l’installateur"
+  },
+  "full node": {
+    "zh": "全节点",
+    "fr": "nœud complet"
+  },
+  "assignment worker": {
+    "zh": "任务执行服务",
+    "fr": "service d’exécution des tâches"
+  },
+  "publisher index service": {
+    "zh": "发布者索引服务",
+    "fr": "service d’indexation des éditeurs"
+  },
+  "Chroma vector service": {
+    "zh": "Chroma 向量服务",
+    "fr": "Service vectoriel Chroma"
+  },
+  "systemd services on Linux or launchd services on macOS": {
+    "zh": "Linux 使用 systemd 服务，macOS 使用 launchd 服务",
+    "fr": "Services systemd sous Linux ou launchd sous macOS"
+  },
+  "Network configuration": {
+    "zh": "网络配置",
+    "fr": "Configuration réseau"
+  },
+  "Public RPC:": {
+    "zh": "公共 RPC：",
+    "fr": "RPC public :"
+  },
+  "Local RPC after install:": {
+    "zh": "安装后的本地 RPC：",
+    "fr": "RPC local après installation :"
+  },
+  "Suggested gas price:": {
+    "zh": "建议 Gas 价格：",
+    "fr": "Prix du gas conseillé :"
+  },
+  "Step 1 — Install the native verifier stack": {
+    "zh": "第 1 步 — 安装原生验证者服务",
+    "fr": "Étape 1 — Installer les services natifs de vérification"
+  },
+  "Run this as a normal login user with sudo access on Linux. On macOS, run it as your normal user without sudo. The installer downloads checksum-verified binaries, asks for the required settings through your terminal, and fetches the seed list in full-stack mode.": {
+    "zh": "在 Linux 上，请使用具有 sudo 权限的普通登录用户运行。在 macOS 上，请使用普通用户运行，无需 sudo。安装器会下载并校验二进制文件，通过终端询问必要配置，并在完整安装模式下获取种子节点列表。",
+    "fr": "Sous Linux, exécutez cette commande avec un utilisateur normal disposant de sudo. Sous macOS, utilisez votre utilisateur normal sans sudo. L’installateur télécharge des binaires dont l’intégrité est vérifiée, demande les paramètres dans le terminal et récupère la liste des nœuds d’amorçage en mode complet."
+  },
+  "If": {
+    "zh": "如果",
+    "fr": "Si"
+  },
+  "is already running on this machine, install only Chroma, indexerd, and verifierd with the existing-node mode:": {
+    "zh": "已在此机器上运行，请使用已有节点模式，仅安装 Chroma、indexerd 和 verifierd：",
+    "fr": "fonctionne déjà sur cette machine, installez uniquement Chroma, indexerd et verifierd en mode nœud existant :"
+  },
+  "This mode verifies the existing RPC and gRPC endpoints, then uses isolated component state. It does not replace, configure, stop, start, or restart the existing chain node.": {
+    "zh": "此模式验证已有 RPC 和 gRPC 端点，然后使用独立的组件状态。它不会替换、配置、停止、启动或重启已有链节点。",
+    "fr": "Ce mode vérifie les points d’accès RPC et gRPC existants, puis utilise un état isolé pour les composants. Il ne remplace, ne configure, n’arrête, ne démarre et ne redémarre pas le nœud existant."
+  },
+  "You can also": {
+    "zh": "您也可以在运行前",
+    "fr": "Vous pouvez aussi"
+  },
+  "download and inspect the installer": {
+    "zh": "下载并检查安装器",
+    "fr": "télécharger et inspecter l’installateur"
+  },
+  "before running it. Re-running the same command safely updates the software and service definitions while preserving chain data, keys, verifier state, and Chroma data.": {
+    "zh": "。再次运行相同命令可安全更新软件和服务配置，同时保留链数据、密钥、验证者状态和 Chroma 数据。",
+    "fr": "avant de l’exécuter. Relancer la même commande met à jour le logiciel et les services tout en préservant les données de la chaîne, les clés, l’état du vérificateur et les données Chroma."
+  },
+  "Protect the verifier key:": {
+    "zh": "保护验证者密钥：",
+    "fr": "Protégez la clé du vérificateur :"
+  },
+  "choose whether to create a new key or recover an existing mnemonic during installation. When a new key is created, the installer prints the path to its only mnemonic backup. Move that file to secure offline storage before funding the address. The installer then pauses on the new address so you can fund its bond and transaction fees before continuing; funding does not submit the bond automatically.": {
+    "zh": "安装时可选择创建新密钥或通过现有助记词恢复。创建新密钥后，安装器会打印唯一助记词备份的路径。请在向地址转账前将此文件移至安全的离线存储。安装器随后会在新地址处暂停，您可先充值质押金和手续费，再继续；充值不会自动提交质押交易。",
+    "fr": "Lors de l’installation, choisissez de créer une clé ou de restaurer une phrase mnémonique existante. Pour une nouvelle clé, l’installateur affiche le chemin de son unique sauvegarde. Placez ce fichier dans un stockage hors ligne sécurisé avant d’approvisionner l’adresse. L’installateur attend ensuite que vous approvisionniez le dépôt et les frais ; cet approvisionnement ne soumet pas automatiquement le dépôt."
+  },
+  "Step 2 — Fund and bond the verifier": {
+    "zh": "第 2 步 — 充值并质押",
+    "fr": "Étape 2 — Approvisionner et déposer la garantie"
+  },
+  "The installer prints the verifier address when it finishes. Send enough": {
+    "zh": "安装完成后会打印验证者地址。请向该地址发送足够的",
+    "fr": "L’installateur affiche l’adresse du vérificateur à la fin. Envoyez suffisamment de"
+  },
+  "to that address for the bond and ongoing transaction fees, then submit the bond from the same host. The examples use the default key name": {
+    "zh": "，用于质押和后续交易手续费，然后在同一主机提交质押。示例使用默认密钥名",
+    "fr": "à cette adresse pour le dépôt et les frais courants, puis soumettez le dépôt depuis le même hôte. Les exemples utilisent le nom de clé par défaut"
+  },
+  "; replace it if you chose another name.": {
+    "zh": "；如果选择了其他名称，请替换。",
+    "fr": "; remplacez-le si vous avez choisi un autre nom."
+  },
+  "With": {
+    "zh": "使用",
+    "fr": "Avec"
+  },
+  ", use": {
+    "zh": "时，使用",
+    "fr": ", utilisez"
+  },
+  "as the Linux binary and": {
+    "zh": "作为 Linux 二进制文件，并使用",
+    "fr": "comme binaire Linux et"
+  },
+  "for both": {
+    "zh": "作为",
+    "fr": "pour"
+  },
+  "and the keyring path prefix.": {
+    "zh": "及密钥环路径的前缀。",
+    "fr": "et le préfixe du chemin du trousseau de clés."
+  },
+  "as the macOS binary and": {
+    "zh": "作为 macOS 二进制文件，并使用",
+    "fr": "comme binaire macOS et"
+  },
+  "as the home and keyring path prefix.": {
+    "zh": "作为主目录和密钥环路径的前缀。",
+    "fr": "comme préfixe du répertoire de données et du trousseau de clés."
+  },
+  "Step 3 — Monitor the verifier stack": {
+    "zh": "第 3 步 — 监控验证者服务",
+    "fr": "Étape 3 — Surveiller les services de vérification"
+  },
+  "On Linux, inspect all four systemd services and follow verifier logs. Existing-node mode manages only": {
+    "zh": "在 Linux 上，检查四个 systemd 服务并跟踪验证者日志。已有节点模式仅管理",
+    "fr": "Sous Linux, inspectez les quatre services systemd et suivez les journaux du vérificateur. Le mode nœud existant gère uniquement"
+  },
+  ", and": {
+    "zh": "，以及",
+    "fr": ", et"
+  },
+  "On macOS, inspect the launchd job and its log:": {
+    "zh": "在 macOS 上，检查 launchd 任务及日志：",
+    "fr": "Sous macOS, inspectez la tâche launchd et son journal :"
+  },
+  "Health endpoints and assignment queries are available locally on either platform:": {
+    "zh": "两种平台均可在本地访问健康检查端点和任务查询：",
+    "fr": "Les points de contrôle de santé et les requêtes d’affectation sont accessibles localement sur les deux plateformes :"
+  },
+  "When this installer manages the full node, allow inbound TCP/26656 for P2P connectivity.": {
+    "zh": "当安装器管理全节点时，请允许 TCP/26656 入站连接，用于 P2P 通信。",
+    "fr": "Lorsque l’installateur gère le nœud complet, autorisez les connexions entrantes TCP/26656 pour le réseau P2P."
+  },
+  "Alert on service exit, RPC disconnect, failed checks, and assignment backlog.": {
+    "zh": "监控服务退出、RPC 断连、检查失败和任务积压，并设置告警。",
+    "fr": "Déclenchez des alertes en cas d’arrêt de service, de déconnexion RPC, de contrôles échoués ou de tâches en attente."
+  },
+  "Keep enough balance available for verifier transaction fees.": {
+    "zh": "保持足够余额以支付验证者交易手续费。",
+    "fr": "Conservez un solde suffisant pour les frais de transaction du vérificateur."
+  },
+  "Re-run the installer periodically to deploy published software updates.": {
+    "zh": "定期重新运行安装器以部署已发布的软件更新。",
+    "fr": "Relancez régulièrement l’installateur pour déployer les mises à jour publiées."
+  },
+  "Verifier tip:": {
+    "zh": "验证者提示：",
+    "fr": "Conseil pour les vérificateurs :"
+  },
+  "Keep the node online continuously. Missed or inaccurate checks reduce reward potential, while verifier state is preserved across installer updates and service restarts.": {
+    "zh": "请保持节点持续在线。遗漏或不准确的检查会降低奖励；安装器更新和服务重启会保留验证者状态。",
+    "fr": "Gardez le nœud en ligne en permanence. Les contrôles manqués ou inexacts réduisent les récompenses possibles ; l’état du vérificateur est préservé lors des mises à jour et redémarrages."
+  },
+  "Publisher + Verifier Guides": {
+    "zh": "发布者与验证者指南",
+    "fr": "Guides des éditeurs et des vérificateurs"
+  },
+  "Everything here is focused on joining Congrid as a publisher or a verifier.": {
+    "zh": "这里提供加入 Congrid 发布者或验证者网络所需的指南。",
+    "fr": "Ces guides vous accompagnent pour rejoindre Congrid comme éditeur ou vérificateur."
+  },
+  "Become a Publisher": {
+    "zh": "成为发布者",
+    "fr": "Devenir éditeur"
+  },
+  "Register as a Congrid publisher so your website can appear in recommendation modules on other member sites. Keep your site verified to remain eligible for Congrid token rewards.": {
+    "zh": "注册成为 Congrid 发布者，让您的网站出现在其他成员网站的推荐模块中。保持网站通过验证，即可持续获得 Congrid 代币奖励资格。",
+    "fr": "Inscrivez-vous comme éditeur Congrid pour apparaître dans les recommandations d’autres sites membres. Gardez votre site vérifié pour rester admissible aux récompenses en jetons Congrid."
+  },
+  "Prepare your domain and Congrid wallet.": {
+    "zh": "准备域名和 Congrid 钱包。",
+    "fr": "Préparez votre domaine et votre portefeuille Congrid."
+  },
+  "Add the Congrid member badge to your homepage.": {
+    "zh": "在首页添加 Congrid 成员徽章。",
+    "fr": "Ajoutez le badge de membre Congrid à votre page d’accueil."
+  },
+  "Register the domain and keep the homepage verified.": {
+    "zh": "注册域名，并保持首页通过验证。",
+    "fr": "Enregistrez le domaine et maintenez la vérification de votre page d’accueil."
+  },
+  "Open publisher guide →": {
+    "zh": "打开发布者指南 →",
+    "fr": "Ouvrir le guide des éditeurs →"
+  },
+  "Become a Verifier": {
+    "zh": "成为验证者",
+    "fr": "Devenir vérificateur"
+  },
+  "Verifiers bond on-chain, validate publisher status, and earn a larger share of Congrid token rewards for accurate work.": {
+    "zh": "验证者在链上质押、核验发布者状态，并通过准确工作获得更大份额的 Congrid 代币奖励。",
+    "fr": "Les vérificateurs déposent une garantie sur chaîne, contrôlent l’état des éditeurs et gagnent une plus grande part des récompenses en jetons Congrid pour un travail précis."
+  },
+  "Run the official Linux/macOS native installer.": {
+    "zh": "运行官方 Linux/macOS 原生安装器。",
+    "fr": "Exécutez l’installateur natif officiel Linux/macOS."
+  },
+  "Fund the verifier address printed by the installer.": {
+    "zh": "向安装器打印的验证者地址充值。",
+    "fr": "Approvisionnez l’adresse du vérificateur affichée par l’installateur."
+  },
+  "Bond on-chain and monitor the managed verifier services.": {
+    "zh": "在链上质押，并监控托管的验证者服务。",
+    "fr": "Déposez la garantie sur chaîne et surveillez les services du vérificateur."
+  },
+  "Open installer and verifier guide →": {
+    "zh": "打开安装与验证者指南 →",
+    "fr": "Ouvrir le guide d’installation et de vérification →"
+  },
+  "Shared network values:": {
+    "zh": "通用网络参数：",
+    "fr": "Paramètres réseau communs :"
+  },
+  "Use chain ID": {
+    "zh": "使用链 ID",
+    "fr": "Utilisez l’identifiant de chaîne"
+  },
+  "and RPC": {
+    "zh": "及 RPC",
+    "fr": "et le RPC"
+  },
+  "whenever wallet or CLI commands ask for Congrid network settings.": {
+    "zh": "作为钱包或 CLI 命令要求的 Congrid 网络配置。",
+    "fr": "lorsque le portefeuille ou les commandes CLI demandent les paramètres réseau Congrid."
+  },
+  "Role references": {
+    "zh": "角色参考资料",
+    "fr": "Ressources par rôle"
+  },
+  "Publisher references": {
+    "zh": "发布者参考资料",
+    "fr": "Ressources pour les éditeurs"
+  },
+  "Interactive publisher onboarding": {
+    "zh": "发布者交互式入门",
+    "fr": "Inscription interactive des éditeurs"
+  },
+  "Use the publisher page to generate your member badge embed code and register your domain.": {
+    "zh": "使用发布者页面生成成员徽章嵌入代码，并注册域名。",
+    "fr": "Utilisez la page des éditeurs pour générer le code d’intégration du badge et enregistrer votre domaine."
+  },
+  "Verifier references": {
+    "zh": "验证者参考资料",
+    "fr": "Ressources pour les vérificateurs"
+  },
+  "Download the native installer": {
+    "zh": "下载原生安装器",
+    "fr": "Télécharger l’installateur natif"
+  },
+  "Current network seed list": {
+    "zh": "当前网络种子节点列表",
+    "fr": "Liste actuelle des nœuds d’amorçage"
+  },
+  "Installation, bonding, and monitoring guide": {
+    "zh": "安装、质押与监控指南",
+    "fr": "Guide d’installation, de dépôt et de surveillance"
+  },
+  "Lease Publish Board": {
+    "zh": "租约发布面板",
+    "fr": "Tableau de publication des locations"
+  },
+  "Browse published leases, check their status, and copy the embed code for each lease.": {
+    "zh": "浏览已发布租约、检查状态，并复制各租约的嵌入代码。",
+    "fr": "Consultez les locations publiées, vérifiez leur état et copiez leur code d’intégration."
+  },
+  "Usage checklist": {
+    "zh": "使用清单",
+    "fr": "Liste des étapes"
+  },
+  "Find your active lease row by": {
+    "zh": "通过以下标识找到您的生效租约：",
+    "fr": "Retrouvez votre location active avec"
+  },
+  "Copy the generated embed snippet exactly.": {
+    "zh": "原样复制生成的嵌入代码。",
+    "fr": "Copiez exactement le code d’intégration généré."
+  },
+  "Publish snippet to the agreed placement on your page.": {
+    "zh": "在页面约定的位置发布代码。",
+    "fr": "Publiez le code à l’emplacement convenu sur votre page."
+  },
+  "Keep attributes unchanged during lease term.": {
+    "zh": "租期内请保持属性不变。",
+    "fr": "Gardez les attributs inchangés pendant la location."
+  },
+  "Integrity requirements": {
+    "zh": "完整性要求",
+    "fr": "Exigences d’intégrité"
+  },
+  "Wrapper must include": {
+    "zh": "容器必须包含",
+    "fr": "L’élément englobant doit inclure"
+  },
+  "Target URL must match lease contract.": {
+    "zh": "目标 URL 必须与租约一致。",
+    "fr": "L’URL de destination doit correspondre au contrat de location."
+  },
+  "Do not mutate IDs or remove tracking attributes.": {
+    "zh": "请勿修改 ID 或移除跟踪属性。",
+    "fr": "Ne modifiez pas les identifiants et ne supprimez pas les attributs de suivi."
+  },
+  "Tip:": {
+    "zh": "提示：",
+    "fr": "Conseil :"
+  },
+  "use this board as canonical source for currently active embed metadata.": {
+    "zh": "以此面板作为当前生效租约嵌入信息的权威来源。",
+    "fr": "utilisez ce tableau comme référence pour les métadonnées d’intégration actuellement actives."
+  },
+  "Publisher": {
+    "zh": "发布者",
+    "fr": "Éditeur"
+  },
+  "No leases published yet": {
+    "zh": "暂无已发布租约",
+    "fr": "Aucune location publiée pour le moment"
+  },
+  "Once a slot is leased, it appears here with slot/lease IDs and copy-ready snippet.": {
+    "zh": "插槽被租用后，会在此处显示插槽和租约 ID，以及可直接复制的代码。",
+    "fr": "Une fois loué, l’emplacement apparaît ici avec ses identifiants d’emplacement et de location et son code prêt à copier."
+  },
+  "Register your website as a Congrid publisher so it can appear in recommendation modules on other member sites. Add the Congrid member badge to your homepage and keep your site verified to remain eligible for rewards.": {
+    "zh": "注册成为 Congrid 发布者，让您的网站出现在其他成员网站的推荐模块中。在首页添加 Congrid 成员徽章并保持网站通过验证，即可持续获得奖励资格。",
+    "fr": "Inscrivez votre site comme éditeur Congrid pour apparaître dans les recommandations des autres sites membres. Ajoutez le badge Congrid à votre page d’accueil et gardez votre site vérifié pour rester admissible aux récompenses."
+  },
+  "Network values you'll use": {
+    "zh": "需要使用的网络参数",
+    "fr": "Paramètres réseau à utiliser"
+  },
+  "Bech32 prefix:": {
+    "zh": "Bech32 前缀：",
+    "fr": "Préfixe Bech32 :"
+  },
+  "(address starts with": {
+    "zh": "(地址前缀为",
+    "fr": "(adresse commençant par"
+  },
+  "Before you start": {
+    "zh": "开始前的准备",
+    "fr": "Avant de commencer"
+  },
+  "You can edit your homepage template and deploy changes.": {
+    "zh": "您可以编辑首页模板并部署更改。",
+    "fr": "Vous pouvez modifier le modèle de votre page d’accueil et déployer les changements."
+  },
+  "You have a Congrid wallet address (": {
+    "zh": "您拥有 Congrid 钱包地址 (",
+    "fr": "Vous disposez d’une adresse de portefeuille Congrid ("
+  },
+  "Your homepage is publicly reachable and stable.": {
+    "zh": "您的首页可以公开访问且稳定运行。",
+    "fr": "Votre page d’accueil est accessible publiquement et stable."
+  },
+  "Address + key basics": {
+    "zh": "地址与密钥基础知识",
+    "fr": "Notions de base sur les adresses et les clés"
+  },
+  "Install Keplr from the official site, then create a new wallet or import an existing one.": {
+    "zh": "从官方网站安装 Keplr，然后创建新钱包或导入已有钱包。",
+    "fr": "Installez Keplr depuis le site officiel, puis créez un portefeuille ou importez un portefeuille existant."
+  },
+  "Copy your public Congrid address (": {
+    "zh": "从钱包复制您的 Congrid 公共地址（",
+    "fr": "Copiez votre adresse publique Congrid ("
+  },
+  ") from the wallet when this page asks for owner wallet.": {
+    "zh": "），用于此页面要求的所有者钱包地址。",
+    "fr": ") depuis le portefeuille lorsque cette page demande l’adresse du propriétaire."
+  },
+  "Your recovery phrase or private key stays in the wallet. Save it offline and never paste it into Congrid.": {
+    "zh": "助记词或私钥应始终保存在钱包中。请离线备份，切勿粘贴到 Congrid。",
+    "fr": "Votre phrase de récupération ou votre clé privée reste dans le portefeuille. Sauvegardez-la hors ligne et ne la collez jamais dans Congrid."
+  },
+  "If you use the browser extension, the connect button below can read your public address and ask the wallet to sign for you.": {
+    "zh": "使用浏览器扩展时，下方连接按钮可读取您的公共地址，并请求钱包签署交易。",
+    "fr": "Avec l’extension de navigateur, le bouton ci-dessous peut lire votre adresse publique et demander au portefeuille de signer les transactions."
+  },
+  "Step 1 — Connect wallet (optional but recommended)": {
+    "zh": "第 1 步 — 连接钱包（可选，推荐）",
+    "fr": "Étape 1 — Connecter le portefeuille (facultatif, recommandé)"
+  },
+  "Connect Keplr to auto-fill your owner address and register on-chain directly in browser.": {
+    "zh": "连接 Keplr 以自动填写所有者地址，并直接在浏览器中完成链上注册。",
+    "fr": "Connectez Keplr pour renseigner automatiquement l’adresse du propriétaire et vous inscrire sur chaîne directement dans le navigateur."
+  },
+  "Step 2 — Enter domain + owner wallet": {
+    "zh": "第 2 步 — 输入域名和所有者钱包",
+    "fr": "Étape 2 — Saisir le domaine et le portefeuille du propriétaire"
+  },
+  "Enter your domain and wallet address to generate a registration command and the HTML code for your member badge. If a verifier referred you, you can credit that verifier during registration.": {
+    "zh": "输入域名和钱包地址，生成注册命令和成员徽章 HTML 代码。如果由验证者推荐，您可以在注册时填写该验证者地址。",
+    "fr": "Saisissez votre domaine et votre adresse de portefeuille pour générer la commande d’inscription et le code HTML du badge. Si un vérificateur vous a recommandé, vous pouvez lui attribuer cette recommandation lors de l’inscription."
+  },
+  "Owner wallet address": {
+    "zh": "所有者钱包地址",
+    "fr": "Adresse du portefeuille du propriétaire"
+  },
+  "Referrer verifier address (optional)": {
+    "zh": "推荐验证者地址（可选）",
+    "fr": "Adresse du vérificateur référent (facultatif)"
+  },
+  "Enter the Congrid address of the verifier that referred you. Re-registering the same domain can replace or clear this referrer after page verification.": {
+    "zh": "输入推荐您的验证者的 Congrid 地址。页面验证通过后，重新注册同一域名可替换或清除推荐者。",
+    "fr": "Saisissez l’adresse Congrid du vérificateur qui vous a recommandé. Une nouvelle inscription du même domaine peut remplacer ou effacer ce référent après vérification de la page."
+  },
+  "Generate registration command and embed code": {
+    "zh": "生成注册命令和嵌入代码",
+    "fr": "Générer la commande d’inscription et le code d’intégration"
+  },
+  "Use connected wallet": {
+    "zh": "使用已连接钱包",
+    "fr": "Utiliser le portefeuille connecté"
+  },
+  "For verification, the link around your member badge must use an": {
+    "zh": "验证时，成员徽章周围的链接必须使用",
+    "fr": "Pour la vérification, le lien entourant votre badge doit utiliser un attribut"
+  },
+  "of exactly": {
+    "zh": "，其值必须精确为",
+    "fr": "égal exactement à"
+  },
+  ". Keep the member badge on your homepage (": {
+    "zh": "。请将成员徽章保留在首页（",
+    "fr": ". Gardez le badge sur votre page d’accueil ("
+  },
+  "). If you change the owner wallet, register again with the new wallet.": {
+    "zh": "）。如果更换所有者钱包，请使用新钱包重新注册。",
+    "fr": "). Si vous changez le portefeuille du propriétaire, inscrivez-vous à nouveau avec ce portefeuille."
+  },
+  "Step 3 — Register on-chain": {
+    "zh": "第 3 步 — 链上注册",
+    "fr": "Étape 3 — S’inscrire sur chaîne"
+  },
+  "Browser wallet mode (recommended): click button below and approve transaction in Keplr.": {
+    "zh": "浏览器钱包模式（推荐）：点击下方按钮，并在 Keplr 中批准交易。",
+    "fr": "Mode portefeuille de navigateur (recommandé) : cliquez ci-dessous et approuvez la transaction dans Keplr."
+  },
+  "Register / re-register with connected wallet": {
+    "zh": "使用已连接钱包注册或重新注册",
+    "fr": "S’inscrire ou se réinscrire avec le portefeuille connecté"
+  },
+  "CLI mode: use generated command and replace": {
+    "zh": "CLI 模式：使用生成的命令，将",
+    "fr": "Mode CLI : utilisez la commande générée et remplacez"
+  },
+  "with your local key alias.": {
+    "zh": "替换为本地密钥别名。",
+    "fr": "par l’alias de votre clé locale."
+  },
+  "Step 4 — Stay healthy": {
+    "zh": "第 4 步 — 保持验证状态",
+    "fr": "Étape 4 — Maintenir la vérification"
+  },
+  "Verifiers regularly check that the member badge on your homepage matches your registered domain and wallet. Keep your homepage accessible and your member badge in place to remain eligible for rewards. To change your receiving wallet or referrer, make sure the wallet address in your member badge matches the wallet you connect, then register again. A new owner takes effect only after verifier consensus confirms the change.": {
+    "zh": "验证者会定期检查首页成员徽章是否与注册域名和钱包一致。保持首页可访问、徽章可见，即可持续获得奖励资格。若要更换收款钱包或推荐者，请确保徽章中的钱包地址与连接的钱包一致，再重新注册。只有验证者共识确认后，新所有者才会生效。",
+    "fr": "Les vérificateurs contrôlent régulièrement la concordance du badge avec le domaine et le portefeuille enregistrés. Gardez votre page accessible et le badge en place pour rester admissible aux récompenses. Pour changer de portefeuille ou de référent, assurez-vous que l’adresse du badge correspond au portefeuille connecté, puis inscrivez-vous à nouveau. Le nouveau propriétaire prend effet après confirmation par le consensus des vérificateurs."
+  },
+  "Built in Go. Designed for an open, community-owned web.": {
+    "zh": "使用 Go 构建，为开放、社区共有的网络而设计。",
+    "fr": "Développé en Go pour un Web ouvert et détenu par sa communauté."
+  },
+  "Source code on GitHub": {
+    "zh": "GitHub 源代码",
+    "fr": "Code source sur GitHub"
+  },
+  "Primary": {
+    "zh": "主导航",
+    "fr": "Navigation principale"
+  },
+  "Language": {
+    "zh": "语言",
+    "fr": "Langue"
+  },
+  "Airdrop — Congrid": {
+    "zh": "空投 — Congrid",
+    "fr": "Airdrop — Congrid"
+  },
+  "Become a Publisher — Congrid": {
+    "zh": "成为发布者 — Congrid",
+    "fr": "Devenir éditeur — Congrid"
+  },
+  "Become a Verifier — Congrid": {
+    "zh": "成为验证者 — Congrid",
+    "fr": "Devenir vérificateur — Congrid"
+  },
+  "Guides — Congrid": {
+    "zh": "指南 — Congrid",
+    "fr": "Guides — Congrid"
+  },
+  "Marketplace — Congrid": {
+    "zh": "市场 — Congrid",
+    "fr": "Marché — Congrid"
+  },
+  "Publisher Dashboard — Congrid": {
+    "zh": "发布者控制台 — Congrid",
+    "fr": "Tableau de bord de l’éditeur — Congrid"
+  },
+  "Leases — Congrid": {
+    "zh": "租约 — Congrid",
+    "fr": "Locations — Congrid"
+  },
+  "Congrid is a decentralized recommendation system. Register as a publisher so your website can appear in recommendations on other member sites, and earn rewards by keeping it verified.": {
+    "zh": "Congrid 是一个去中心化推荐系统。注册成为发布者，让您的网站出现在其他成员网站的推荐中，并通过保持验证状态获得奖励。",
+    "fr": "Congrid est un système de recommandation décentralisé. Inscrivez-vous comme éditeur pour apparaître dans les recommandations des autres sites membres et recevoir des récompenses en maintenant la vérification de votre site."
+  },
+  "Register as a Congrid publisher so your website can appear in recommendation modules on other member sites. Add your member badge and keep your site verified to earn rewards.": {
+    "zh": "注册成为 Congrid 发布者，让您的网站出现在其他成员网站的推荐模块中。添加成员徽章并保持验证状态，即可获得奖励。",
+    "fr": "Inscrivez-vous comme éditeur Congrid pour apparaître dans les recommandations des autres sites membres. Ajoutez votre badge et gardez votre site vérifié pour recevoir des récompenses."
+  },
+  "Install the native Congrid node and verifier stack on Linux or macOS with one interactive command, then bond and monitor the managed services.": {
+    "zh": "使用一条交互式命令在 Linux 或 macOS 上安装原生 Congrid 节点和验证者服务，然后质押并监控服务。",
+    "fr": "Installez le nœud et les services natifs de vérification Congrid sous Linux ou macOS avec une commande interactive, puis déposez votre garantie et surveillez les services."
+  },
+  "Learn how to register your website and add a Congrid member badge, or install and run a verifier to help check participating sites.": {
+    "zh": "了解如何注册网站并添加 Congrid 成员徽章，或安装和运行验证者来检查参与网站。",
+    "fr": "Découvrez comment enregistrer votre site et ajouter le badge Congrid, ou installer un vérificateur pour contrôler les sites participants."
+  },
+  "Airdrop claim page (currently disabled on this deployment).": {
+    "zh": "空投领取页面（此部署当前未启用）。",
+    "fr": "Page de demande d’airdrop (actuellement désactivée sur ce déploiement)."
+  },
+  "Claim a one-time optional starter airdrop for on-chain actions.": {
+    "zh": "领取一次性可选启动空投，用于链上操作。",
+    "fr": "Demandez un airdrop de démarrage facultatif unique pour vos opérations sur chaîne."
+  },
+  "Browse publisher link slots and request leases across the Congrid network.": {
+    "zh": "浏览 Congrid 网络中的发布者链接插槽，并提交租用请求。",
+    "fr": "Parcourez les emplacements de liens des éditeurs et demandez des locations sur le réseau Congrid."
+  },
+  "Manage your publisher link slots and active leases.": {
+    "zh": "管理发布者链接插槽和生效租约。",
+    "fr": "Gérez vos emplacements de liens et vos locations actives."
+  },
+  "Published lease placements and copy-ready embed snippets.": {
+    "zh": "已发布租约及可直接复制的嵌入代码。",
+    "fr": "Emplacements loués publiés et codes d’intégration prêts à copier."
+  },
+  "Wallet transaction support failed to load. Check your network, disable blocking extensions for this site, and retry.": {
+    "zh": "钱包交易功能加载失败。请检查网络，停用此网站上的拦截扩展，然后重试。",
+    "fr": "Le module de transaction du portefeuille n’a pas pu être chargé. Vérifiez votre réseau, désactivez les extensions de blocage pour ce site et réessayez.",
+    "client": true
+  },
+  "Failed to load Long dependency.": {
+    "zh": "无法加载 Long 依赖。",
+    "fr": "Impossible de charger la dépendance Long.",
+    "client": true
+  },
+  "Wallet signing is not enabled on this deployment.": {
+    "zh": "此部署未启用钱包签名。",
+    "fr": "La signature par portefeuille n’est pas activée sur ce déploiement.",
+    "client": true
+  },
+  "Wallet extension not detected (Keplr).": {
+    "zh": "未检测到 Keplr 钱包扩展。",
+    "fr": "Extension de portefeuille Keplr non détectée.",
+    "client": true
+  },
+  "Missing chain configuration.": {
+    "zh": "缺少链配置。",
+    "fr": "Configuration de chaîne manquante.",
+    "client": true
+  },
+  "No wallet accounts available in {0}.": {
+    "zh": "{0} 中没有可用的钱包账户。",
+    "fr": "Aucun compte de portefeuille disponible dans {0}.",
+    "client": true
+  },
+  "Wallet connect failed. Please add Congrid chain to Keplr and retry.": {
+    "zh": "钱包连接失败。请将 Congrid 链添加到 Keplr 后重试。",
+    "fr": "La connexion a échoué. Ajoutez la chaîne Congrid à Keplr et réessayez.",
+    "client": true
+  },
+  "Missing RPC endpoint.": {
+    "zh": "缺少 RPC 端点。",
+    "fr": "Point d’accès RPC manquant.",
+    "client": true
+  },
+  "Invalid start date.": {
+    "zh": "开始日期无效。",
+    "fr": "Date de début invalide.",
+    "client": true
+  },
+  "Start date must be today or later.": {
+    "zh": "开始日期不能早于今天。",
+    "fr": "La date de début doit être aujourd’hui ou ultérieure.",
+    "client": true
+  },
+  "Tx failed with code {0}": {
+    "zh": "交易失败，错误码：{0}",
+    "fr": "Échec de la transaction, code {0}",
+    "client": true
+  },
+  "Connected: {0}": {
+    "zh": "已连接：{0}",
+    "fr": "Connecté : {0}",
+    "client": true
+  },
+  "Publisher domain required.": {
+    "zh": "请填写发布者域名。",
+    "fr": "Le domaine de l’éditeur est requis.",
+    "client": true
+  },
+  "Slot label required.": {
+    "zh": "请填写插槽名称。",
+    "fr": "Le nom de l’emplacement est requis.",
+    "client": true
+  },
+  "Rate required.": {
+    "zh": "请填写费率。",
+    "fr": "Le tarif est requis.",
+    "client": true
+  },
+  "Rate must be a non-negative integer.": {
+    "zh": "费率必须是非负整数。",
+    "fr": "Le tarif doit être un entier positif ou nul.",
+    "client": true
+  },
+  "Slot created. Tx: {0}": {
+    "zh": "插槽已创建。交易：{0}",
+    "fr": "Emplacement créé. Transaction : {0}",
+    "client": true
+  },
+  "Slot id required.": {
+    "zh": "请填写插槽 ID。",
+    "fr": "L’identifiant de l’emplacement est requis.",
+    "client": true
+  },
+  "Unknown slot action.": {
+    "zh": "未知插槽操作。",
+    "fr": "Action d’emplacement inconnue.",
+    "client": true
+  },
+  "Slot updated. Tx: {0}": {
+    "zh": "插槽已更新。交易：{0}",
+    "fr": "Emplacement mis à jour. Transaction : {0}",
+    "client": true
+  },
+  "Slot and target URL are required.": {
+    "zh": "请填写插槽和目标 URL。",
+    "fr": "L’emplacement et l’URL de destination sont requis.",
+    "client": true
+  },
+  "Select a lease duration.": {
+    "zh": "请选择租期。",
+    "fr": "Sélectionnez une durée de location.",
+    "client": true
+  },
+  "Lease requested. Tx: {0}": {
+    "zh": "租约请求已提交。交易：{0}",
+    "fr": "Location demandée. Transaction : {0}",
+    "client": true
+  },
+  "Please generate registration details first (missing domain).": {
+    "zh": "请先生成注册信息（缺少域名）。",
+    "fr": "Générez d’abord les informations d’inscription (domaine manquant).",
+    "client": true
+  },
+  "Please generate registration details first (missing wallet).": {
+    "zh": "请先生成注册信息（缺少钱包）。",
+    "fr": "Générez d’abord les informations d’inscription (portefeuille manquant).",
+    "client": true
+  },
+  "Connected wallet mismatch. connected={0} form={1}": {
+    "zh": "钱包地址不一致。已连接：{0}，表单：{1}",
+    "fr": "Le portefeuille ne correspond pas. Connecté : {0}, formulaire : {1}",
+    "client": true
+  },
+  "Referrer verifier address format looks invalid. Use congrid1... address.": {
+    "zh": "推荐验证者地址格式无效。请使用 congrid1... 地址。",
+    "fr": "Le format de l’adresse du vérificateur référent semble invalide. Utilisez une adresse congrid1…",
+    "client": true
+  },
+  "Could not verify the Congrid member badge on your homepage.": {
+    "zh": "无法验证首页的 Congrid 成员徽章。",
+    "fr": "Impossible de vérifier le badge de membre Congrid sur votre page d’accueil.",
+    "client": true
+  },
+  "Registration submitted; verifier confirmation pending. Tx: {0}": {
+    "zh": "注册已提交，等待验证者确认。交易：{0}",
+    "fr": "Inscription soumise ; confirmation des vérificateurs en attente. Transaction : {0}",
+    "client": true
+  },
+  "Please connect your wallet first.": {
+    "zh": "请先连接钱包。",
+    "fr": "Connectez d’abord votre portefeuille.",
+    "client": true
+  },
+  "Please enter a valid website domain.": {
+    "zh": "请输入有效的网站域名。",
+    "fr": "Saisissez un domaine de site valide.",
+    "client": true
+  },
+  "Please enter a wallet address.": {
+    "zh": "请输入钱包地址。",
+    "fr": "Saisissez une adresse de portefeuille.",
+    "client": true
+  },
+  "Wallet address format looks invalid. Use congrid1... address.": {
+    "zh": "钱包地址格式无效。请使用 congrid1... 地址。",
+    "fr": "Le format de l’adresse semble invalide. Utilisez une adresse congrid1…",
+    "client": true
+  },
+  "invalid verification request": {
+    "zh": "验证请求无效",
+    "fr": "Demande de vérification invalide",
+    "client": true
+  },
+  "invalid domain format": {
+    "zh": "域名格式无效",
+    "fr": "Format de domaine invalide",
+    "client": true
+  },
+  "invalid wallet address": {
+    "zh": "钱包地址无效",
+    "fr": "Adresse de portefeuille invalide",
+    "client": true
+  },
+  "Could not verify your homepage. Check that the Congrid member badge includes the domain you entered and the wallet you connected.": {
+    "zh": "无法验证首页。请检查 Congrid 成员徽章是否包含您填写的域名和已连接的钱包地址。",
+    "fr": "Impossible de vérifier votre page d’accueil. Vérifiez que le badge Congrid contient le domaine saisi et l’adresse du portefeuille connecté.",
+    "client": true
+  },
+  "Invalid form.": {
+    "zh": "表单无效。",
+    "fr": "Formulaire invalide."
+  },
+  "Invalid domain format.": {
+    "zh": "域名格式无效。",
+    "fr": "Format de domaine invalide."
+  },
+  "Invalid wallet address. Use a congrid1... address.": {
+    "zh": "钱包地址无效。请使用 congrid1... 地址。",
+    "fr": "Adresse de portefeuille invalide. Utilisez une adresse congrid1…"
+  },
+  "Airdrop verification is busy. Please try again shortly.": {
+    "zh": "空投验证繁忙，请稍后重试。",
+    "fr": "La vérification de l’airdrop est occupée. Réessayez dans un instant."
+  },
+  "Failed to extract primary domain.": {
+    "zh": "无法提取主域名。",
+    "fr": "Impossible d’extraire le domaine principal."
+  },
+  "Server error.": {
+    "zh": "服务器错误。",
+    "fr": "Erreur du serveur."
+  },
+  "Verification failed. Make sure your homepage is accessible over HTTPS and displays a Congrid member badge with this domain and wallet address.": {
+    "zh": "验证失败。请确保首页可以通过 HTTPS 访问，并显示包含此域名和钱包地址的 Congrid 成员徽章。",
+    "fr": "Échec de la vérification. Assurez-vous que votre page d’accueil est accessible en HTTPS et affiche un badge Congrid avec ce domaine et cette adresse de portefeuille."
+  },
+  "Website verified. The {0}{1} airdrop is queued for {2}.": {
+    "zh": "网站验证通过。{0}{1} 空投已进入队列，将发送至 {2}。",
+    "fr": "Site vérifié. L’airdrop de {0}{1} est en attente pour {2}."
+  },
+  "This website has already been verified and its airdrop is queued.": {
+    "zh": "此网站已通过验证，其空投正在队列中等待。",
+    "fr": "Ce site a déjà été vérifié et son airdrop est en attente."
+  },
+  "This website's airdrop transaction is being submitted.": {
+    "zh": "此网站的空投交易正在提交。",
+    "fr": "La transaction d’airdrop de ce site est en cours de soumission."
+  },
+  "This website's airdrop was broadcast and is awaiting confirmation. Tx: {0}": {
+    "zh": "此网站的空投交易已广播，等待确认。交易：{0}",
+    "fr": "L’airdrop de ce site a été diffusé et attend confirmation. Transaction : {0}"
+  },
+  "This website has already claimed its one-time airdrop. Tx: {0}": {
+    "zh": "此网站已领取一次性空投。交易：{0}",
+    "fr": "Ce site a déjà reçu son airdrop unique. Transaction : {0}"
+  },
+  "This website's airdrop could not be submitted and requires operator review.": {
+    "zh": "此网站的空投无法提交，需要运营人员检查。",
+    "fr": "L’airdrop de ce site n’a pas pu être soumis et nécessite un examen par l’opérateur."
+  },
+  "This website's airdrop has an uncertain transaction result and requires operator reconciliation; it will not be resent automatically.": {
+    "zh": "此网站的空投交易结果不确定，需要运营人员核对；系统不会自动重新发送。",
+    "fr": "Le résultat de l’airdrop de ce site est incertain et nécessite une vérification par l’opérateur ; il ne sera pas renvoyé automatiquement."
+  },
+  "This website already has an airdrop claim.": {
+    "zh": "此网站已有空投领取记录。",
+    "fr": "Ce site dispose déjà d’une demande d’airdrop."
+  },
+  "Server-side registration requires a signing key name in server keyring.": {
+    "zh": "服务器端注册需要提供服务器密钥环中的签名密钥名。",
+    "fr": "L’inscription côté serveur nécessite le nom d’une clé de signature du trousseau du serveur."
+  },
+  "Server is missing chain-id/node config.": {
+    "zh": "服务器缺少链 ID 或节点配置。",
+    "fr": "La configuration d’identifiant de chaîne ou de nœud est manquante sur le serveur."
+  },
+  "Cannot resolve key {0} in server keyring.": {
+    "zh": "无法在服务器密钥环中找到密钥 {0}。",
+    "fr": "Impossible de trouver la clé {0} dans le trousseau du serveur."
+  },
+  "Key {0} address mismatch. key={1} form={2}": {
+    "zh": "密钥 {0} 的地址不一致。密钥：{1}，表单：{2}",
+    "fr": "L’adresse de la clé {0} ne correspond pas. Clé : {1}, formulaire : {2}"
+  },
+  "Registration tx failed: {0}": {
+    "zh": "注册交易失败：{0}",
+    "fr": "Échec de la transaction d’inscription : {0}"
+  },
+  "Publisher registration submitted; page verification is pending. tx={0}": {
+    "zh": "发布者注册已提交，等待页面验证。交易：{0}",
+    "fr": "Inscription de l’éditeur soumise ; vérification de la page en attente. Transaction : {0}"
+  },
+  "Negotiable": {
+    "zh": "可协商",
+    "fr": "Négociable"
+  },
+  "No data": {
+    "zh": "暂无数据",
+    "fr": "Aucune donnée"
+  },
+  "{0} ucongrid / week": {
+    "zh": "{0} ucongrid / 周",
+    "fr": "{0} ucongrid / semaine"
+  },
+  "{0}M / mo": {
+    "zh": "{0} 百万 / 月",
+    "fr": "{0} M / mois"
+  },
+  "{0}k / mo": {
+    "zh": "{0} 千 / 月",
+    "fr": "{0} k / mois"
+  },
+  "{0} / mo": {
+    "zh": "{0} / 月",
+    "fr": "{0} / mois"
+  },
+  "Listed": {
+    "zh": "已上架",
+    "fr": "Publié"
+  },
+  "Paused": {
+    "zh": "已暂停",
+    "fr": "Suspendu"
+  },
+  "Unlisted": {
+    "zh": "已下架",
+    "fr": "Retiré"
+  },
+  "Unknown": {
+    "zh": "未知",
+    "fr": "Inconnu"
+  },
+  "Leased until {0}": {
+    "zh": "已租用至 {0}",
+    "fr": "Loué jusqu’au {0}"
+  },
+  "Available": {
+    "zh": "可租用",
+    "fr": "Disponible"
+  },
+  "Pending": {
+    "zh": "待生效",
+    "fr": "En attente"
+  },
+  "Ended": {
+    "zh": "已结束",
+    "fr": "Terminé"
+  },
+  "Active": {
+    "zh": "生效中",
+    "fr": "Actif"
+  },
+  "1 week": {
+    "zh": "1 周",
+    "fr": "1 semaine"
+  },
+  "{0} weeks": {
+    "zh": "{0} 周",
+    "fr": "{0} semaines"
+  },
+  "1 day": {
+    "zh": "1 天",
+    "fr": "1 jour"
+  },
+  "{0} days": {
+    "zh": "{0} 天",
+    "fr": "{0} jours"
+  },
+  "1 unit": {
+    "zh": "1 单位",
+    "fr": "1 unité"
+  },
+  "{0} units": {
+    "zh": "{0} 单位",
+    "fr": "{0} unités"
+  },
+  "failed to load marketplace": {
+    "zh": "无法加载市场",
+    "fr": "Impossible de charger le marché"
+  },
+  "failed to load publisher slots": {
+    "zh": "无法加载发布者插槽",
+    "fr": "Impossible de charger les emplacements de l’éditeur"
+  },
+  "failed to load leases": {
+    "zh": "无法加载租约",
+    "fr": "Impossible de charger les locations"
+  },
+  "wallet signing required": {
+    "zh": "需要钱包签名",
+    "fr": "Signature par portefeuille requise"
+  },
+  "Content and discovery": {
+    "zh": "内容与发现",
+    "fr": "Contenu et découverte"
+  },
+  "Off-chain": {
+    "zh": "链下",
+    "fr": "Hors chaîne"
+  },
+  "On-chain": {
+    "zh": "链上",
+    "fr": "Sur chaîne"
+  },
+  "Member websites": {
+    "zh": "成员网站",
+    "fr": "Sites membres"
+  },
+  "Publish content and display the member badge.": {
+    "zh": "发布内容并展示成员徽章。",
+    "fr": "Publier du contenu et afficher le badge de membre."
+  },
+  "Content index": {
+    "zh": "内容索引",
+    "fr": "Index du contenu"
+  },
+  "Crawl → Embed → Match": {
+    "zh": "抓取 → 向量化 → 匹配",
+    "fr": "Explorer → Vectoriser → Associer"
+  },
+  "Recommendation modules": {
+    "zh": "推荐模块",
+    "fr": "Modules de recommandation"
+  },
+  "Show related sites to readers on member websites.": {
+    "zh": "在成员网站上向读者展示相关网站。",
+    "fr": "Présenter les sites connexes aux lecteurs sur les sites membres."
+  },
+  "Website verification": {
+    "zh": "网站验证",
+    "fr": "Vérification des sites"
+  },
+  "Public randomness seeds verifier assignments.": {
+    "zh": "使用公共随机数分配验证任务。",
+    "fr": "L’aléa public initialise les affectations de vérification."
+  },
+  "Assignments": {
+    "zh": "任务分配",
+    "fr": "Affectations"
+  },
+  "Select bonded verifiers.": {
+    "zh": "选择已质押的验证者。",
+    "fr": "Sélectionner les vérificateurs ayant déposé une garantie."
+  },
+  "Website checks": {
+    "zh": "网站检查",
+    "fr": "Contrôle des sites"
+  },
+  "Read member websites, check the badge and recommendation evidence.": {
+    "zh": "读取成员网站，检查徽章和推荐证据。",
+    "fr": "Lire les sites membres, contrôler le badge et les preuves de recommandation."
+  },
+  "Evidence consensus": {
+    "zh": "证据共识",
+    "fr": "Consensus sur les preuves"
+  },
+  "Commit → Reveal → Quorum and majority": {
+    "zh": "提交 → 揭示 → 法定人数与多数票",
+    "fr": "Engagement → Révélation → Quorum et majorité"
+  },
+  "State and rewards": {
+    "zh": "状态与奖励",
+    "fr": "État et récompenses"
+  },
+  "Update status and settle rewards.": {
+    "zh": "更新状态并结算奖励。",
+    "fr": "Mettre à jour l’état et régler les récompenses."
+  },
+  "Assigned verifiers submit evidence; the chain applies verification rules.": {
+    "zh": "被分配任务的验证者提交证据，链上执行验证规则。",
+    "fr": "Les vérificateurs affectés soumettent des preuves ; la chaîne applique les règles de vérification."
+  },
+  "Block consensus": {
+    "zh": "区块共识",
+    "fr": "Consensus des blocs"
+  },
+  "Consensus validators order transactions and finalize blocks.": {
+    "zh": "共识验证节点对交易排序，并最终确认区块。",
+    "fr": "Les validateurs du consensus ordonnent les transactions et finalisent les blocs."
+  },
+  "Website verification and block consensus are separate layers.": {
+    "zh": "网站验证与区块共识属于不同层级。",
+    "fr": "La vérification des sites et le consensus des blocs constituent des couches distinctes."
+  }
+}

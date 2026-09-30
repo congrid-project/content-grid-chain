@@ -7,7 +7,7 @@ import (
 
 func (s *server) handleAirdropUnavailable(baseURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		s.render(w, "airdrop-disabled.html", pageData{
+		s.render(w, r, "airdrop-disabled.html", pageData{
 			Title:        "Airdrop — Congrid",
 			Description:  "Airdrop claim page (currently disabled on this deployment).",
 			BaseURL:      baseURL,
@@ -20,6 +20,6 @@ func (s *server) handleAirdropUnavailable(baseURL string) http.HandlerFunc {
 
 func (s *server) handleAirdropUnavailablePost(baseURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/airdrop", http.StatusSeeOther)
+		http.Redirect(w, r, "/airdrop?lang="+requestLanguage(r), http.StatusSeeOther)
 	}
 }

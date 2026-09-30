@@ -290,7 +290,7 @@ func validateCongridAccountAddress(address string) error {
 }
 
 func (a *airdropper) renderFlash(w http.ResponseWriter, r *http.Request, msg string) {
-	a.srv.render(w, "airdrop.html", pageData{
+	a.srv.render(w, r, "airdrop.html", pageData{
 		Title:        "Airdrop — Congrid",
 		Description:  "Claim a one-time optional starter airdrop for on-chain actions.",
 		BaseURL:      a.cfg.BaseURL,

@@ -1,0 +1,64 @@
+{{define "architecture"}}
+<div class="architecture" role="group" aria-label='{{t "How Congrid works"}}'>
+  <div class="architecture-layer">
+    <h3>01 · {{t "Content and discovery"}} <span class="architecture-location">{{t "Off-chain"}}</span></h3>
+    <div class="architecture-flow">
+      <div class="architecture-step">
+        <h4>{{t "Member websites"}}</h4>
+        <p>{{t "Publish content and display the member badge."}}</p>
+      </div>
+      <span class="architecture-arrow" aria-hidden="true">→</span>
+      <div class="architecture-step">
+        <h4>{{t "Content index"}}</h4>
+        <code>indexerd + Chroma</code>
+        <p>{{t "Crawl → Embed → Match"}}</p>
+      </div>
+      <span class="architecture-arrow" aria-hidden="true">→</span>
+      <div class="architecture-step">
+        <h4>{{t "Recommendation modules"}}</h4>
+        <p>{{t "Show related sites to readers on member websites."}}</p>
+      </div>
+    </div>
+  </div>
+  <div class="architecture-layer architecture-verification">
+    <h3>02 · {{t "Website verification"}}</h3>
+    <p class="architecture-randomness"><code>drand</code> · {{t "Public randomness seeds verifier assignments."}}</p>
+    <div class="architecture-flow">
+      <div class="architecture-step">
+        <span class="architecture-location">{{t "On-chain"}}</span>
+        <h4>{{t "Assignments"}}</h4>
+        <code>x/registry + x/verifiers</code>
+        <p>{{t "Select bonded verifiers."}}</p>
+      </div>
+      <span class="architecture-arrow" aria-hidden="true">→</span>
+      <div class="architecture-step">
+        <span class="architecture-location">{{t "Off-chain"}}</span>
+        <h4>{{t "Website checks"}}</h4>
+        <code>verifierd</code>
+        <p>{{t "Read member websites, check the badge and recommendation evidence."}}</p>
+      </div>
+      <span class="architecture-arrow" aria-hidden="true">→</span>
+      <div class="architecture-step">
+        <span class="architecture-location">{{t "On-chain"}}</span>
+        <h4>{{t "Evidence consensus"}}</h4>
+        <code>x/registry</code>
+        <p>{{t "Commit → Reveal → Quorum and majority"}}</p>
+      </div>
+      <span class="architecture-arrow" aria-hidden="true">→</span>
+      <div class="architecture-step">
+        <span class="architecture-location">{{t "On-chain"}}</span>
+        <h4>{{t "State and rewards"}}</h4>
+        <code>x/registry + x/tokenomics</code>
+        <p>{{t "Update status and settle rewards."}}</p>
+      </div>
+    </div>
+    <p class="muted">{{t "Assigned verifiers submit evidence; the chain applies verification rules."}}</p>
+  </div>
+  <div class="architecture-layer">
+    <h3>03 · {{t "Block consensus"}}</h3>
+    <h4>Cosmos SDK + CometBFT</h4>
+    <p>{{t "Consensus validators order transactions and finalize blocks."}}</p>
+  </div>
+  <p class="muted architecture-note">{{t "Website verification and block consensus are separate layers."}}</p>
+</div>
+{{end}}

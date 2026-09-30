@@ -2,6 +2,19 @@
 
 Congrid（内容网格协议）官方网站的小型 Go Web 服务器。
 
+## 语言切换
+
+所有页面均支持英文、中文和法语，使用导航中的 `EN / 中文 / FR` 按钮切换。页面由服务器按所选语言渲染，并通过 `congrid_language` Cookie 记住语言，后续页面和表单提交会沿用该选择。也可使用 `?lang=en`、`?lang=zh` 或 `?lang=fr` 指定语言；切换时保留其他查询参数。默认语言为英文。
+
+页面正文、标题和描述、状态标签及浏览器提示的译文统一维护在 `static/translations.json` 中。钱包连接使用 Keplr。
+
+## 验证
+
+```bash
+go test ./cmd/congrid-site
+node --test cmd/congrid-site/testdata/wallet.test.mjs
+```
+
 ## 本地运行
 
 ```bash
@@ -12,7 +25,7 @@ go run ./cmd/congrid-site --addr :8080 --base-url http://localhost:8080
 
 > Slot marketplace 已下线（deprecated），仅保留文档备查
 
-插槽和租约直接从链上读取，插槽创建、状态更新和租约下单由浏览器钱包签名（Keplr/Leap）。
+插槽和租约直接从链上读取，插槽创建、状态更新和租约下单由浏览器钱包签名（Keplr）。
 
 ```bash
 go run ./cmd/congrid-site \

@@ -41,7 +41,7 @@ func (s *server) handleMarketplace(baseURL string) http.HandlerFunc {
 
 		slots, err := s.slotStore.ListMarketplaceSlots(r.Context())
 		if err != nil {
-			http.Error(w, "failed to load marketplace", http.StatusInternalServerError)
+			http.Error(w, translate(requestLanguage(r), "failed to load marketplace"), http.StatusInternalServerError)
 			return
 		}
 
@@ -66,13 +66,13 @@ func (s *server) handleMarketplace(baseURL string) http.HandlerFunc {
 			Slots: pageSlots,
 			Pager: pager,
 		}
-		s.render(w, "marketplace.html", data)
+		s.render(w, r, "marketplace.html", data)
 	}
 }
 
 func (s *server) handleMarketplaceLease(baseURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, "wallet signing required", http.StatusMethodNotAllowed)
+		http.Error(w, translate(requestLanguage(r), "wallet signing required"), http.StatusMethodNotAllowed)
 	}
 }
 

@@ -2,6 +2,19 @@
 
 A small Go web server for the Congrid (Content Grid Protocol) official website.
 
+## Languages
+
+All pages support English, Chinese, and French. Use the `EN / 中文 / FR` buttons in the navigation. The server renders the selected language and remembers it in the `congrid_language` cookie, including subsequent form submissions. Use `?lang=en`, `?lang=zh`, or `?lang=fr` to link directly to a language; switching preserves other query parameters. English is the default.
+
+Translations for page content, metadata, status labels, and browser notices are maintained in `static/translations.json`. Wallet connections use Keplr.
+
+## Validation
+
+```bash
+go test ./cmd/congrid-site
+node --test cmd/congrid-site/testdata/wallet.test.mjs
+```
+
 ## Run locally
 
 ```bash
@@ -13,7 +26,7 @@ go run ./cmd/congrid-site --addr :8080 --base-url http://localhost:8080
 > Slot marketplace 已下线（deprecated），仅保留文档备查
 
 Slots and leases are read directly from the chain. Slot creation, status updates, and lease booking
-are signed by the user wallet in the browser (Keplr/Leap).
+are signed by the user wallet in the browser (Keplr).
 
 ```bash
 go run ./cmd/congrid-site \
@@ -152,7 +165,7 @@ This site is intentionally served by Go so we can add first-party analytics, att
 
 `/publishers` supports direct wallet signing for registration (no local CLI required when wallet is connected).
 
-- User fills `domain` + `wallet` (wallet from Keplr/Leap or manual paste).
+- User fills `domain` + `wallet` (wallet from Keplr or manual paste).
 - User clicks `Register with connected wallet` and approves tx in wallet.
 - Frontend broadcasts `MsgRegisterPublisher` directly to chain.
 

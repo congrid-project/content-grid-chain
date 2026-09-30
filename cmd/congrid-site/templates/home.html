@@ -3,35 +3,32 @@
 {{define "main"}}
 <section class="hero">
   <div class="container">
-    <div class="pill">Decentralized recommendation system</div>
-    <h1>Get discovered on other Congrid member websites</h1>
+    <div class="pill">{{t "Decentralized recommendation system"}}</div>
+    <h1>{{t "Get discovered on other Congrid member websites"}}</h1>
     <p class="lead">
-      Register as a Congrid publisher so your website can appear in recommendation modules on other member websites. Keep your site verified to earn Congrid token rewards.
-      Install the native verifier stack with one interactive command to confirm publisher status and earn a larger share of Congrid token rewards.
+      {{t "Register as a Congrid publisher so your website can appear in recommendation modules on other member websites. Keep your site verified to earn Congrid token rewards. Install the native verifier stack with one interactive command to confirm publisher status and earn a larger share of Congrid token rewards."}}
     </p>
 
     <div class="hero-actions">
-      <a class="btn" href="/publishers">Publishers</a>
-      <a class="btn btn-outline" href="/verifiers">Verifiers</a>
-      <a class="btn btn-ghost" href="/docs">Guides</a>
+      <a class="btn" href="/publishers">{{t "Publishers"}}</a>
+      <a class="btn btn-outline" href="/verifiers">{{t "Verifiers"}}</a>
+      <a class="btn btn-ghost" href="/docs">{{t "Guides"}}</a>
     </div>
 
     <div class="grid cards">
       <div class="card">
-        <h3>Publishers</h3>
+        <h3>{{t "Publishers"}}</h3>
         <p>
-          Register your domain, place the Congrid member badge on your homepage, and stay verified.
-          Your website can reach readers through recommendations on other member sites, while you earn rewards for keeping it verified.
+          {{t "Register your domain, place the Congrid member badge on your homepage, and stay verified. Your website can reach readers through recommendations on other member sites, while you earn rewards for keeping it verified."}}
         </p>
-        <a href="/publishers">Publisher onboarding →</a>
+        <a href="/publishers">{{t "Publisher onboarding →"}}</a>
       </div>
       <div class="card">
-        <h3>Verifiers</h3>
+        <h3>{{t "Verifiers"}}</h3>
         <p>
-          Use the official no-Docker Linux/macOS installer to run a full node, verifier,
-          publisher index, and Chroma service. Accurate verification earns a larger share of rewards.
+          {{t "Use the official no-Docker Linux/macOS installer to run a full node, verifier, publisher index, and Chroma service. Accurate verification earns a larger share of rewards."}}
         </p>
-        <a href="/verifiers">Install the verifier stack →</a>
+        <a href="/verifiers">{{t "Install the verifier stack →"}}</a>
       </div>
     </div>
   </div>
@@ -39,48 +36,52 @@
 
 <section class="section">
   <div class="container">
-    <h2>How Congrid works</h2>
+    <h2>{{t "How Congrid works"}}</h2>
     <figure style="margin:0;">
+      {{if eq language "en"}}
       <img
         src="/static/assets/congrid-architecture.png"
-        alt="Congrid architecture: indexerd and Chroma match member websites with related sites. drand seeds verifier assignments; verifierd checks websites and submits evidence through commit–reveal. Registry rules determine status and rewards, while Cosmos SDK and CometBFT provide block consensus."
+        alt='{{t "Congrid architecture: indexerd and Chroma match member websites with related sites. drand seeds verifier assignments; verifierd checks websites and submits evidence through commit–reveal. Registry rules determine status and rewards, while Cosmos SDK and CometBFT provide block consensus."}}'
         width="1586"
         height="992"
         loading="lazy"
         decoding="async"
         style="display:block;width:100%;height:auto;"
       />
-      <figcaption class="muted">Recommendations are computed off-chain. Verifiers check member websites and submit evidence; consensus validators finalize the ledger.</figcaption>
+      {{else}}
+      {{template "architecture" .}}
+      {{end}}
+      <figcaption class="muted">{{t "Recommendations are computed off-chain. Verifiers check member websites and submit evidence; consensus validators finalize the ledger."}}</figcaption>
     </figure>
   </div>
 </section>
 
 <section class="section">
   <div class="container">
-    <h2>Why Congrid matters</h2>
+    <h2>{{t "Why Congrid matters"}}</h2>
     <div class="grid two">
       <div class="card">
-        <h3>Reach readers interested in your content</h3>
+        <h3>{{t "Reach readers interested in your content"}}</h3>
         <p>
-          Congrid matches websites by content similarity, helping readers discover your site in the recommendation modules of related member websites.
+          {{t "Congrid matches websites by content similarity, helping readers discover your site in the recommendation modules of related member websites."}}
         </p>
       </div>
       <div class="card">
-        <h3>Ongoing rewards for verified publishers</h3>
+        <h3>{{t "Ongoing rewards for verified publishers"}}</h3>
         <p>
-          Keep your homepage online and make sure your Congrid member badge uses the domain and wallet you registered. Verified publishers remain eligible for token rewards.
+          {{t "Keep your homepage online and make sure your Congrid member badge uses the domain and wallet you registered. Verified publishers remain eligible for token rewards."}}
         </p>
       </div>
       <div class="card">
-        <h3>More rewards for verifiers</h3>
+        <h3>{{t "More rewards for verifiers"}}</h3>
         <p>
-          Verifiers confirm publisher status and earn a larger share of Congrid token rewards by submitting accurate, timely checks.
+          {{t "Verifiers confirm publisher status and earn a larger share of Congrid token rewards by submitting accurate, timely checks."}}
         </p>
       </div>
       <div class="card">
-        <h3>One protocol for discovery + trust</h3>
+        <h3>{{t "One protocol for discovery + trust"}}</h3>
         <p>
-          Members help readers discover related websites, while independent verifiers check participating sites. On-chain rewards support both roles.
+          {{t "Members help readers discover related websites, while independent verifiers check participating sites. On-chain rewards support both roles."}}
         </p>
       </div>
     </div>
@@ -89,30 +90,30 @@
 
 <section class="section alt">
   <div class="container">
-    <h2>How trust is maintained</h2>
+    <h2>{{t "How trust is maintained"}}</h2>
     <div class="grid two">
       <div>
-        <h3>Publisher registry</h3>
+        <h3>{{t "Publisher registry"}}</h3>
         <p>
-          Register your domain and wallet, then display the Congrid member badge on your homepage so verifiers can confirm that they match your registration.
+          {{t "Register your domain and wallet, then display the Congrid member badge on your homepage so verifiers can confirm that they match your registration."}}
         </p>
       </div>
       <div>
-        <h3>Verifier assignments</h3>
+        <h3>{{t "Verifier assignments"}}</h3>
         <p>
-          Verifiers execute assignment windows and submit results. Registry health comes from repeated independent checks.
+          {{t "Verifiers execute assignment windows and submit results. Registry health comes from repeated independent checks."}}
         </p>
       </div>
       <div>
-        <h3>On-chain incentives</h3>
+        <h3>{{t "On-chain incentives"}}</h3>
         <p>
-          Publishers keep earning while their sites stay verified, and verifiers earn more by keeping publisher status checks accurate.
+          {{t "Publishers keep earning while their sites stay verified, and verifiers earn more by keeping publisher status checks accurate."}}
         </p>
       </div>
       <div>
-        <h3>Open participation</h3>
+        <h3>{{t "Open participation"}}</h3>
         <p>
-          Any site can onboard as publisher. Any participant can join as a verifier by following chain rules.
+          {{t "Any site can onboard as publisher. Any participant can join as a verifier by following chain rules."}}
         </p>
       </div>
     </div>
@@ -122,12 +123,12 @@
   <div id="congrid-similar">
     <a href="https://congrid.net" rel="nofollow" class="protocol-badge-link">
       <img
-        alt="Verified by Congrid"
+        alt='{{t "Verified by Congrid"}}'
         src="https://congrid.net/badge.svg?publisher=congrid.net&wallet=congrid18cepycc5rv3dpe24n0mmdkdqwaruptvkuuurxf"
         width="32"
         height="32"
       />
-      <span>Congrid — Content Grid Protocol</span>
+      <span>{{t "Congrid — Content Grid Protocol"}}</span>
     </a>
   </div>
 </div>

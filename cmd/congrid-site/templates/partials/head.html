@@ -1,8 +1,10 @@
 {{define "head"}}
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>{{.Title}}</title>
-<meta name="description" content="{{.Description}}" />
+<title>{{t .Title}}</title>
+<meta name="description" content="{{t .Description}}" />
 <link rel="icon" href="/static/assets/congrid-logo.svg" type="image/svg+xml" />
 <link rel="stylesheet" href="/static/site.css" />
+<script>window.CongridMessages = {{toJSON clientMessages}};</script>
+<script src="/static/i18n.js"></script>
 {{end}}

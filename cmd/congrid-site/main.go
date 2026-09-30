@@ -333,6 +333,10 @@ func buildPageTemplates(efs embed.FS) (map[string]*template.Template, error) {
 		},
 	}
 
+	for name, fn := range languageTemplateFuncs("en", nil) {
+		funcs[name] = fn
+	}
+
 	entries, err := fs.ReadDir(efs, "templates")
 	if err != nil {
 		return nil, fmt.Errorf("read templates dir: %w", err)
@@ -363,7 +367,7 @@ func buildPageTemplates(efs embed.FS) (map[string]*template.Template, error) {
 	return out, nil
 }
 
-func (s *server) render(w http.ResponseWriter, name string, data any) {
+func (s *server) render(w http.ResponseWriter, r *http.Request, name string, data any) {
 	t, ok := s.templates[name]
 	if !ok {
 		log.Printf("render %s: template not found", name)
@@ -371,8 +375,22 @@ func (s *server) render(w http.ResponseWriter, name string, data any) {
 		return
 	}
 
+	lang := requestLanguage(r)
+	localized, err := t.Clone()
+	if err != nil {
+		log.Printf("clone %s: %v", name, err)
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	localized.Funcs(languageTemplateFuncs(lang, r))
+	http.SetCookie(w, &http.Cookie{
+		Name: languageCookie, Value: lang, Path: "/", MaxAge: 365 * 24 * 60 * 60,
+		HttpOnly: true, Secure: r.TLS != nil, SameSite: http.SameSiteLaxMode,
+	})
+	w.Header().Set("Content-Language", lang)
+	w.Header().Add("Vary", "Cookie")
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := t.ExecuteTemplate(w, name, data); err != nil {
+	if err := localized.ExecuteTemplate(w, name, data); err != nil {
 		log.Printf("render %s: %v", name, err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
@@ -527,7 +545,7 @@ func setURLPort(u *url.URL, port string) {
 
 func (s *server) handleHome(baseURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		s.render(w, "home.html", pageData{
+		s.render(w, r, "home.html", pageData{
 			Title:        "Congrid — Content Grid Protocol",
 			Description:  "Congrid is a decentralized recommendation system. Register as a publisher so your website can appear in recommendations on other member sites, and earn rewards by keeping it verified.",
 			BaseURL:      baseURL,
@@ -540,7 +558,7 @@ func (s *server) handleHome(baseURL string) http.HandlerFunc {
 
 func (s *server) handlePublishers(baseURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		s.render(w, "publishers.html", pageData{
+		s.render(w, r, "publishers.html", pageData{
 			Title:        "Become a Publisher — Congrid",
 			Description:  "Register as a Congrid publisher so your website can appear in recommendation modules on other member sites. Add your member badge and keep your site verified to earn rewards.",
 			BaseURL:      baseURL,
@@ -553,7 +571,7 @@ func (s *server) handlePublishers(baseURL string) http.HandlerFunc {
 
 func (s *server) handleVerifiers(baseURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		s.render(w, "verifiers.html", pageData{
+		s.render(w, r, "verifiers.html", pageData{
 			Title:        "Become a Verifier — Congrid",
 			Description:  "Install the native Congrid node and verifier stack on Linux or macOS with one interactive command, then bond and monitor the managed services.",
 			BaseURL:      baseURL,
@@ -566,7 +584,7 @@ func (s *server) handleVerifiers(baseURL string) http.HandlerFunc {
 
 func (s *server) handleDocs(baseURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		s.render(w, "docs.html", pageData{
+		s.render(w, r, "docs.html", pageData{
 			Title:        "Guides — Congrid",
 			Description:  "Learn how to register your website and add a Congrid member badge, or install and run a verifier to help check participating sites.",
 			BaseURL:      baseURL,

@@ -1,3 +1,4 @@
+const t = window.CongridI18n.t;
 const config = window.CongridConfig || {};
 const enabled = Boolean(config.enabled);
 
@@ -211,7 +212,7 @@ function dependencyLoadMessage(err) {
     lowered.includes("error loading dynamically imported module") ||
     lowered.includes("importing a module script failed")
   ) {
-    return "Wallet transaction support failed to load. Check your network, disable blocking extensions for this site, and retry.";
+    return t("Wallet transaction support failed to load. Check your network, disable blocking extensions for this site, and retry.");
   }
   return message;
 }
@@ -226,7 +227,7 @@ async function loadWalletDeps() {
     const _m0 = walletDeps._m0;
     const Long = walletDeps.Long;
     if (!Long) {
-      throw new Error("Failed to load Long dependency.");
+      throw new Error(t("Failed to load Long dependency."));
     }
 
     if (_m0.util.Long !== Long) {
@@ -256,6 +257,7 @@ async function loadWalletDeps() {
 }
 
 function showFlash(message, isError = false, context = document) {
+  message = t(message);
   let flash = context.querySelector("[data-wallet-flash]");
   if (!flash) {
     flash = document.querySelector("[data-wallet-flash]");
@@ -273,7 +275,7 @@ function showFlash(message, isError = false, context = document) {
 
 function updateWalletAddress(address) {
   document.querySelectorAll("[data-wallet-address]").forEach((el) => {
-    el.textContent = address || "Not connected";
+    el.textContent = address || t("Not connected");
   });
 }
 
@@ -285,7 +287,6 @@ function isLikelyGridAddress(address) {
 function getWalletProviders() {
   const providers = [];
   if (window.keplr) providers.push({ name: "Keplr", provider: window.keplr });
-  if (window.leap) providers.push({ name: "Leap", provider: window.leap });
   return providers;
 }
 
@@ -357,17 +358,17 @@ async function suggestChainIfSupported(provider) {
 
 async function ensureWalletConnected() {
   if (!enabled) {
-    throw new Error("Wallet signing is not enabled on this deployment.");
+    throw new Error(t("Wallet signing is not enabled on this deployment."));
   }
   if (state.signer && state.address) {
     return state;
   }
   const providers = getWalletProviders();
   if (providers.length === 0) {
-    throw new Error("Wallet extension not detected (Keplr/Leap).");
+    throw new Error(t("Wallet extension not detected (Keplr)."));
   }
   if (!config.chain_id || !config.rpc) {
-    throw new Error("Missing chain configuration.");
+    throw new Error(t("Missing chain configuration."));
   }
 
   let lastErr = null;
@@ -381,7 +382,7 @@ async function ensureWalletConnected() {
         : await provider.getOfflineSignerAuto(config.chain_id);
       const accounts = await signer.getAccounts();
       if (!accounts || accounts.length === 0) {
-        throw new Error(`No wallet accounts available in ${item.name}.`);
+        throw new Error(t("No wallet accounts available in {0}.", item.name));
       }
       state.signer = signer;
       state.address = accounts[0].address;
@@ -392,7 +393,7 @@ async function ensureWalletConnected() {
     }
   }
 
-  throw new Error(lastErr?.message || "Wallet connect failed. Please add Congrid chain to Keplr/Leap and retry.");
+  throw new Error(lastErr?.message || t("Wallet connect failed. Please add Congrid chain to Keplr and retry."));
 }
 
 async function getClient() {
@@ -403,7 +404,7 @@ async function getClient() {
 
   const rpc = toHttpRPC(config.rpc || "");
   if (!rpc) {
-    throw new Error("Missing RPC endpoint.");
+    throw new Error(t("Missing RPC endpoint."));
   }
 
   const { SigningStargateClient, GasPrice, registry } = await loadWalletDeps();
@@ -421,18 +422,18 @@ function parseStartDate(value) {
   }
   const parts = value.split("-");
   if (parts.length !== 3) {
-    throw new Error("Invalid start date.");
+    throw new Error(t("Invalid start date."));
   }
   const year = Number(parts[0]);
   const month = Number(parts[1]) - 1;
   const day = Number(parts[2]);
   const startMs = Date.UTC(year, month, day, 0, 0, 0, 0);
   if (Number.isNaN(startMs)) {
-    throw new Error("Invalid start date.");
+    throw new Error(t("Invalid start date."));
   }
   const nowMs = Date.now();
   if (startMs < nowMs - 24 * 60 * 60 * 1000) {
-    throw new Error("Start date must be today or later.");
+    throw new Error(t("Start date must be today or later."));
   }
   let effectiveMs = startMs;
   if (startMs < nowMs) {
@@ -448,7 +449,7 @@ async function submitTx(msgs, gasLimit) {
   const fee = calculateFee(gasLimit, gasPrice);
   const result = await client.signAndBroadcast(state.address, msgs, fee, "");
   if (result.code && result.code !== 0) {
-    throw new Error(result.rawLog || `Tx failed with code ${result.code}`);
+    throw new Error(result.rawLog || t("Tx failed with code {0}", result.code));
   }
   return result.transactionHash;
 }
@@ -462,7 +463,7 @@ function bindConnectButtons() {
           input.value = state.address;
           input.dispatchEvent(new Event("input", { bubbles: true }));
         });
-        showFlash(`Connected: ${state.address}`);
+        showFlash(t("Connected: {0}", state.address));
       } catch (err) {
         showFlash(err.message || String(err), true);
       }
@@ -486,17 +487,17 @@ function bindCreateSlotForms() {
         const size = String(data.get("size") || "").trim();
         const rateRaw = String(data.get("rate") || "").trim();
         if (!domain) {
-          throw new Error("Publisher domain required.");
+          throw new Error(t("Publisher domain required."));
         }
         if (!label) {
-          throw new Error("Slot label required.");
+          throw new Error(t("Slot label required."));
         }
         if (!rateRaw) {
-          throw new Error("Rate required.");
+          throw new Error(t("Rate required."));
         }
         const rateAmount = Number(rateRaw);
         if (!Number.isFinite(rateAmount) || rateAmount < 0 || !Number.isInteger(rateAmount)) {
-          throw new Error("Rate must be a non-negative integer.");
+          throw new Error(t("Rate must be a non-negative integer."));
         }
         const msg = {
           typeUrl: "/contentgrid.registry.v1.MsgCreateSlot",
@@ -517,7 +518,7 @@ function bindCreateSlotForms() {
           },
         };
         const txHash = await submitTx([msg], config.gas_create_slot || 220000);
-        showFlash(`Slot created. Tx: ${txHash}`);
+        showFlash(t("Slot created. Tx: {0}", txHash));
         setTimeout(() => window.location.reload(), 1500);
       } catch (err) {
         showFlash(err.message || String(err), true);
@@ -536,7 +537,7 @@ function bindSlotStatusForms() {
         const slotId = String(data.get("slot_id") || "").trim();
         const action = event.submitter ? event.submitter.value : String(data.get("action") || "").trim();
         if (!slotId) {
-          throw new Error("Slot id required.");
+          throw new Error(t("Slot id required."));
         }
         let status = 0;
         switch (action) {
@@ -550,7 +551,7 @@ function bindSlotStatusForms() {
             status = slotStatus.UNLISTED;
             break;
           default:
-            throw new Error("Unknown slot action.");
+            throw new Error(t("Unknown slot action."));
         }
         const msg = {
           typeUrl: "/contentgrid.registry.v1.MsgUpdateSlotStatus",
@@ -561,7 +562,7 @@ function bindSlotStatusForms() {
           },
         };
         const txHash = await submitTx([msg], config.gas_update_slot || 140000);
-        showFlash(`Slot updated. Tx: ${txHash}`);
+        showFlash(t("Slot updated. Tx: {0}", txHash));
         setTimeout(() => window.location.reload(), 1500);
       } catch (err) {
         showFlash(err.message || String(err), true);
@@ -583,11 +584,11 @@ function bindLeaseForms() {
         const durationRaw = String(data.get("duration_seconds") || "").trim();
         const startDate = String(data.get("start_date") || "").trim();
         if (!slotId || !targetUrl) {
-          throw new Error("Slot and target URL are required.");
+          throw new Error(t("Slot and target URL are required."));
         }
         const durationSeconds = Number(durationRaw);
         if (!Number.isFinite(durationSeconds) || durationSeconds <= 0 || !Number.isInteger(durationSeconds)) {
-          throw new Error("Select a lease duration.");
+          throw new Error(t("Select a lease duration."));
         }
         const startsAtUnix = parseStartDate(startDate);
         const msg = {
@@ -601,7 +602,7 @@ function bindLeaseForms() {
           },
         };
         const txHash = await submitTx([msg], config.gas_lease_slot || 220000);
-        showFlash(`Lease requested. Tx: ${txHash}`);
+        showFlash(t("Lease requested. Tx: {0}", txHash));
         setTimeout(() => window.location.reload(), 1500);
       } catch (err) {
         showFlash(err.message || String(err), true);
@@ -621,16 +622,16 @@ function bindPublisherRegisterForms() {
         const wallet = String(data.get("wallet") || "").trim();
         const referrer = String(data.get("referrer") || "").trim();
         if (!domain) {
-          throw new Error("Please generate registration details first (missing domain).");
+          throw new Error(t("Please generate registration details first (missing domain)."));
         }
         if (!wallet) {
-          throw new Error("Please generate registration details first (missing wallet).");
+          throw new Error(t("Please generate registration details first (missing wallet)."));
         }
         if (wallet !== state.address) {
-          throw new Error(`Connected wallet mismatch. connected=${state.address} form=${wallet}`);
+          throw new Error(t("Connected wallet mismatch. connected={0} form={1}", state.address, wallet));
         }
         if (referrer && !isLikelyGridAddress(referrer)) {
-          throw new Error("Referrer verifier address format looks invalid. Use congrid1... address.");
+          throw new Error(t("Referrer verifier address format looks invalid. Use congrid1... address."));
         }
 
         const verificationResponse = await fetch("/publishers/verify", {
@@ -640,7 +641,7 @@ function bindPublisherRegisterForms() {
         });
         const verification = await verificationResponse.json().catch(() => ({}));
         if (!verificationResponse.ok || verification.ok !== true) {
-          throw new Error(verification.error || "Could not verify the Congrid member badge on your homepage.");
+          throw new Error(verification.error || t("Could not verify the Congrid member badge on your homepage."));
         }
 
         const msg = {
@@ -655,7 +656,7 @@ function bindPublisherRegisterForms() {
           },
         };
         const txHash = await submitTx([msg], 220000);
-        showFlash(`Registration submitted; verifier confirmation pending. Tx: ${txHash}`, false, form);
+        showFlash(t("Registration submitted; verifier confirmation pending. Tx: {0}", txHash), false, form);
       } catch (err) {
         console.error("Wallet Action Error:", err);
         showFlash(err.message || String(err), true, form);

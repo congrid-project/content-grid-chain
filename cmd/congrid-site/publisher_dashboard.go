@@ -23,12 +23,12 @@ func (s *server) handlePublisherDashboard(baseURL string) http.HandlerFunc {
 
 		slots, err := s.slotStore.ListPublisherSlots(r.Context(), publisher)
 		if err != nil {
-			http.Error(w, "failed to load publisher slots", http.StatusInternalServerError)
+			http.Error(w, translate(requestLanguage(r), "failed to load publisher slots"), http.StatusInternalServerError)
 			return
 		}
 		leases, err := s.slotStore.ListPublisherLeases(r.Context(), publisher)
 		if err != nil {
-			http.Error(w, "failed to load leases", http.StatusInternalServerError)
+			http.Error(w, translate(requestLanguage(r), "failed to load leases"), http.StatusInternalServerError)
 			return
 		}
 
@@ -46,13 +46,13 @@ func (s *server) handlePublisherDashboard(baseURL string) http.HandlerFunc {
 			Slots:     slots,
 			Leases:    leases,
 		}
-		s.render(w, "publisher-dashboard.html", data)
+		s.render(w, r, "publisher-dashboard.html", data)
 	}
 }
 
 func (s *server) handlePublisherDashboardPost(baseURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, "wallet signing required", http.StatusMethodNotAllowed)
+		http.Error(w, translate(requestLanguage(r), "wallet signing required"), http.StatusMethodNotAllowed)
 	}
 }
 

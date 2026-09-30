@@ -3,70 +3,68 @@
 {{define "main"}}
 <section class="section">
   <div class="container">
-    <h1>Publishers</h1>
+    <h1>{{t "Publishers"}}</h1>
     <p class="lead">
-      Register your website as a Congrid publisher so it can appear in recommendation modules on other member sites. Add the Congrid member badge to your homepage and keep your site verified to remain eligible for rewards.
+      {{t "Register your website as a Congrid publisher so it can appear in recommendation modules on other member sites. Add the Congrid member badge to your homepage and keep your site verified to remain eligible for rewards."}}
     </p>
 
-    {{if .Flash}}<div class="callout">{{.Flash}}</div>{{end}}
+    {{if .Flash}}<div class="callout">{{t .Flash}}</div>{{end}}
 
     <div class="grid two">
       <div class="card">
-        <h2>Network values you'll use</h2>
+        <h2>{{t "Network values you'll use"}}</h2>
         <ul>
-          <li><strong>Chain ID:</strong> <code>{{.WalletConfig.ChainID}}</code></li>
-          <li><strong>RPC:</strong> <code>{{.WalletConfig.RPC}}</code></li>
-          <li><strong>Bech32 prefix:</strong> <code>congrid</code> (address starts with <code>congrid1...</code>)</li>
-          <li><strong>Fee denom:</strong> <code>{{if .WalletConfig.FeeDenom}}{{.WalletConfig.FeeDenom}}{{else}}ucongrid{{end}}</code></li>
-          <li><strong>Suggested gas price:</strong> <code>{{if .WalletConfig.GasPrice}}{{.WalletConfig.GasPrice}}{{else}}0.001ucongrid{{end}}</code></li>
+          <li><strong>{{t "Chain ID:"}}</strong> <code>{{.WalletConfig.ChainID}}</code></li>
+          <li><strong>{{t "RPC:"}}</strong> <code>{{.WalletConfig.RPC}}</code></li>
+          <li><strong>{{t "Bech32 prefix:"}}</strong> <code>congrid</code> {{t "(address starts with"}} <code>congrid1...</code>)</li>
+          <li><strong>{{t "Fee denom:"}}</strong> <code>{{if .WalletConfig.FeeDenom}}{{.WalletConfig.FeeDenom}}{{else}}ucongrid{{end}}</code></li>
+          <li><strong>{{t "Suggested gas price:"}}</strong> <code>{{if .WalletConfig.GasPrice}}{{.WalletConfig.GasPrice}}{{else}}0.001ucongrid{{end}}</code></li>
         </ul>
       </div>
       <div class="card">
-        <h2>Before you start</h2>
+        <h2>{{t "Before you start"}}</h2>
         <ul>
-          <li>You can edit your homepage template and deploy changes.</li>
-          <li>You have a Congrid wallet address (<code>congrid1...</code>).</li>
-          <li>Your homepage is publicly reachable and stable.</li>
+          <li>{{t "You can edit your homepage template and deploy changes."}}</li>
+          <li>{{t "You have a Congrid wallet address ("}}<code>congrid1...</code>).</li>
+          <li>{{t "Your homepage is publicly reachable and stable."}}</li>
         </ul>
       </div>
     </div>
 
-    <h2>Get your address with a third-party wallet</h2>
+    <h2>{{t "Get your address with a third-party wallet"}}</h2>
     <div class="grid two">
       <div class="card">
-        <h3>Recommended wallets</h3>
+        <h3>{{t "Recommended wallets"}}</h3>
         <ul>
-          <li><a href="https://www.keplr.app/get" target="_blank" rel="noreferrer">Keplr</a> — browser extension and mobile wallet.</li>
-          <li><a href="https://www.leapwallet.io/download" target="_blank" rel="noreferrer">Leap</a> — browser extension and mobile wallet.</li>
+          <li><a href="https://www.keplr.app/get" target="_blank" rel="noreferrer">Keplr</a> {{t "— browser extension and mobile wallet."}}</li>
         </ul>
       </div>
       <div class="card">
-        <h3>Address + key basics</h3>
+        <h3>{{t "Address + key basics"}}</h3>
         <ol>
-          <li>Install Keplr or Leap from the official site, then create a new wallet or import an existing one.</li>
-          <li>Copy your public Congrid address (<code>congrid1...</code>) from the wallet when this page asks for owner wallet.</li>
-          <li>Your recovery phrase or private key stays in the wallet. Save it offline and never paste it into Congrid.</li>
-          <li>If you use the browser extension, the connect button below can read your public address and ask the wallet to sign for you.</li>
+          <li>{{t "Install Keplr from the official site, then create a new wallet or import an existing one."}}</li>
+          <li>{{t "Copy your public Congrid address ("}}<code>congrid1...</code>{{t ") from the wallet when this page asks for owner wallet."}}</li>
+          <li>{{t "Your recovery phrase or private key stays in the wallet. Save it offline and never paste it into Congrid."}}</li>
+          <li>{{t "If you use the browser extension, the connect button below can read your public address and ask the wallet to sign for you."}}</li>
         </ol>
       </div>
     </div>
 
-    <h2>Step 1 — Connect wallet (optional but recommended)</h2>
+    <h2>{{t "Step 1 — Connect wallet (optional but recommended)"}}</h2>
     <div class="card">
-      <p class="muted">Connect Keplr/Leap to auto-fill your owner address and register on-chain directly in browser.</p>
+      <p class="muted">{{t "Connect Keplr to auto-fill your owner address and register on-chain directly in browser."}}</p>
       <div class="callout" style="margin-top:10px;">
-        <strong>Wallet:</strong> <span data-wallet-address>Not connected</span>
+        <strong>{{t "Wallet:"}}</strong> <span data-wallet-address>{{t "Not connected"}}</span>
         <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
-          <button class="btn btn-ghost" type="button" data-wallet-connect>Connect wallet</button>
+          <button class="btn btn-ghost" type="button" data-wallet-connect>{{t "Connect wallet"}}</button>
         </div>
       </div>
       <div class="callout" data-wallet-flash hidden></div>
     </div>
 
-    <h2>Step 2 — Enter domain + owner wallet</h2>
+    <h2>{{t "Step 2 — Enter domain + owner wallet"}}</h2>
     <p>
-      Enter your domain and wallet address to generate a registration command and the HTML code for your member badge.
-      If a verifier referred you, you can credit that verifier during registration.
+      {{t "Enter your domain and wallet address to generate a registration command and the HTML code for your member badge. If a verifier referred you, you can credit that verifier during registration."}}
     </p>
 
     <form class="card"
@@ -75,13 +73,13 @@
       data-chain-id="{{.WalletConfig.ChainID}}"
       data-rpc="{{.WalletConfig.RPC}}"
       data-gas-price="{{if .WalletConfig.GasPrice}}{{.WalletConfig.GasPrice}}{{else}}0.001ucongrid{{end}}">
-      <label class="label" for="publisher-domain">Website domain</label>
+      <label class="label" for="publisher-domain">{{t "Website domain"}}</label>
       <input class="input" id="publisher-domain" name="domain" placeholder="example.com" required />
 
-      <label class="label" for="publisher-wallet">Owner wallet address</label>
+      <label class="label" for="publisher-wallet">{{t "Owner wallet address"}}</label>
       <input class="input" id="publisher-wallet" name="wallet" placeholder="congrid1..." required />
 
-      <label class="label" for="publisher-referrer">Referrer verifier address (optional)</label>
+      <label class="label" for="publisher-referrer">{{t "Referrer verifier address (optional)"}}</label>
       <input
         class="input"
         id="publisher-referrer"
@@ -90,12 +88,12 @@
         aria-describedby="publisher-referrer-help"
       />
       <p class="muted" id="publisher-referrer-help">
-        Enter the Congrid address of the verifier that referred you. Re-registering the same domain can replace or clear this referrer after page verification.
+        {{t "Enter the Congrid address of the verifier that referred you. Re-registering the same domain can replace or clear this referrer after page verification."}}
       </p>
 
       <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
-        <button class="btn" type="submit">Generate registration command and embed code</button>
-        <button class="btn btn-outline" type="button" data-use-connected-wallet>Use connected wallet</button>
+        <button class="btn" type="submit">{{t "Generate registration command and embed code"}}</button>
+        <button class="btn btn-outline" type="button" data-use-connected-wallet>{{t "Use connected wallet"}}</button>
       </div>
     </form>
 
@@ -108,38 +106,36 @@
     </div>
 
     <p class="muted">
-      For verification, the link around your member badge must use an <code>href</code> of exactly <code>{{.BaseURL}}</code>.
-      Keep the member badge on your homepage (<code>/</code>). If you change the owner wallet, register again with the new wallet.
+      {{t "For verification, the link around your member badge must use an"}} <code>href</code> {{t "of exactly"}} <code>{{.BaseURL}}</code>{{t ". Keep the member badge on your homepage ("}}<code>/</code>{{t "). If you change the owner wallet, register again with the new wallet."}}
     </p>
 
-    <h2>Step 3 — Register on-chain</h2>
+    <h2>{{t "Step 3 — Register on-chain"}}</h2>
     <div class="card">
       <p class="muted" style="margin-top:8px;">
-        Browser wallet mode (recommended): click button below and approve transaction in Keplr/Leap.
+        {{t "Browser wallet mode (recommended): click button below and approve transaction in Keplr."}}
       </p>
       <form data-wallet-publisher-register>
         <input type="hidden" name="domain" value="" data-wallet-register-domain />
         <input type="hidden" name="wallet" value="" data-wallet-register-wallet />
         <input type="hidden" name="referrer" value="" data-wallet-register-referrer />
-        <button class="btn" type="submit">Register / re-register with connected wallet</button>
+        <button class="btn" type="submit">{{t "Register / re-register with connected wallet"}}</button>
         <div class="callout" data-wallet-flash hidden style="margin-top: 10px;"></div>
       </form>
       <p class="muted" style="margin-top:10px;">
-        CLI mode: use generated command and replace <code>&lt;local-key-name&gt;</code> with your local key alias.
+        {{t "CLI mode: use generated command and replace"}} <code>&lt;local-key-name&gt;</code> {{t "with your local key alias."}}
       </p>
     </div>
 
-    <h2>Step 4 — Stay healthy</h2>
+    <h2>{{t "Step 4 — Stay healthy"}}</h2>
     <p>
-      Verifiers regularly check that the member badge on your homepage matches your registered domain and wallet.
-      Keep your homepage accessible and your member badge in place to remain eligible for rewards.
-      To change your receiving wallet or referrer, make sure the wallet address in your member badge matches the wallet you connect, then register again. A new owner takes effect only after verifier consensus confirms the change.
+      {{t "Verifiers regularly check that the member badge on your homepage matches your registered domain and wallet. Keep your homepage accessible and your member badge in place to remain eligible for rewards. To change your receiving wallet or referrer, make sure the wallet address in your member badge matches the wallet you connect, then register again. A new owner takes effect only after verifier consensus confirms the change."}}
     </p>
   </div>
 </section>
 
 <script>
 (() => {
+  const t = window.CongridI18n.t;
   const form = document.querySelector("[data-publisher-onboarding-form]");
   if (!form) return;
 
@@ -193,8 +189,8 @@
 
   useConnectedBtn?.addEventListener("click", () => {
     const addr = String(connectedWalletEl?.textContent || "").trim();
-    if (!addr || addr === "Not connected") {
-      alert("Please connect your wallet first.");
+    if (!isLikelyGridAddress(addr)) {
+      alert(t("Please connect your wallet first."));
       return;
     }
     walletInput.value = addr;
@@ -210,19 +206,19 @@
     const referrer = String(referrerInput?.value || "").trim();
 
     if (!domain) {
-      alert("Please enter a valid website domain.");
+      alert(t("Please enter a valid website domain."));
       return;
     }
     if (!wallet) {
-      alert("Please enter a wallet address.");
+      alert(t("Please enter a wallet address."));
       return;
     }
     if (!isLikelyGridAddress(wallet)) {
-      alert("Wallet address format looks invalid. Use congrid1... address.");
+      alert(t("Wallet address format looks invalid. Use congrid1... address."));
       return;
     }
     if (referrer && !isLikelyGridAddress(referrer)) {
-      alert("Referrer verifier address format looks invalid. Use congrid1... address.");
+      alert(t("Referrer verifier address format looks invalid. Use congrid1... address."));
       return;
     }
 

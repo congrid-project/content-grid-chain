@@ -3,44 +3,41 @@
 {{define "main"}}
 <section class="section">
   <div class="container">
-    <h1>Claim Optional Starter Airdrop</h1>
+    <h1>{{t "Claim Optional Starter Airdrop"}}</h1>
     <p class="lead">
-      You can claim a small amount of Congrid tokens to help cover your first transaction fees.
-      Each <strong>primary domain</strong> can claim once.
+      {{t "You can claim a small amount of Congrid tokens to help cover your first transaction fees. Each"}} <strong>{{t "primary domain"}}</strong> {{t "can claim once."}}
     </p>
 
     <div class="callout">
-      <strong>Note:</strong> publisher registration can be submitted with zero fee when the transaction only contains the registration message.
-      Airdrop is optional and does not block registration. After verification, the transfer is queued and confirmed in the background.
+      <strong>{{t "Note:"}}</strong> {{t "publisher registration can be submitted with zero fee when the transaction only contains the registration message. Airdrop is optional and does not block registration. After verification, the transfer is queued and confirmed in the background."}}
     </div>
 
-    <h2>Get your address with a third-party wallet</h2>
+    <h2>{{t "Get your address with a third-party wallet"}}</h2>
     <div class="grid two">
       <div class="card">
-        <h3>Recommended wallets</h3>
+        <h3>{{t "Recommended wallets"}}</h3>
         <ul>
-          <li><a href="https://www.keplr.app/get" target="_blank" rel="noreferrer">Keplr</a> — browser extension and mobile wallet.</li>
-          <li><a href="https://www.leapwallet.io/download" target="_blank" rel="noreferrer">Leap</a> — browser extension and mobile wallet.</li>
+          <li><a href="https://www.keplr.app/get" target="_blank" rel="noreferrer">Keplr</a> {{t "— browser extension and mobile wallet."}}</li>
         </ul>
       </div>
       <div class="card">
-        <h3>Address + key safety</h3>
+        <h3>{{t "Address + key safety"}}</h3>
         <ol>
-          <li>Install Keplr or Leap from the official site, then create a wallet or import the one you already use.</li>
-          <li>Connect your wallet below to fill in your public Congrid address (<code>congrid1...</code>), or paste it into the airdrop form.</li>
-          <li>Keep your recovery phrase or private key inside the wallet and backed up offline.</li>
-          <li>Never paste your recovery phrase or private key into Congrid. This page only needs your public address.</li>
+          <li>{{t "Install Keplr from the official site, then create a wallet or import the one you already use."}}</li>
+          <li>{{t "Connect your wallet below to fill in your public Congrid address ("}}<code>congrid1...</code>{{t "), or paste it into the airdrop form."}}</li>
+          <li>{{t "Keep your recovery phrase or private key inside the wallet and backed up offline."}}</li>
+          <li>{{t "Never paste your recovery phrase or private key into Congrid. This page only needs your public address."}}</li>
         </ol>
       </div>
     </div>
 
     <div class="card" style="margin:16px 0;">
-      <h2>Connect wallet (optional)</h2>
-      <p class="muted">Connect Keplr/Leap to get your public Congrid address and automatically fill in the airdrop form.</p>
+      <h2>{{t "Connect wallet (optional)"}}</h2>
+      <p class="muted">{{t "Connect Keplr to get your public Congrid address and automatically fill in the airdrop form."}}</p>
       <div class="callout" style="margin-top:10px; overflow-wrap:anywhere;">
-        <strong>Wallet:</strong> <span data-wallet-address aria-live="polite">Not connected</span>
+        <strong>{{t "Wallet:"}}</strong> <span data-wallet-address aria-live="polite">{{t "Not connected"}}</span>
         <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
-          <button class="btn btn-ghost" type="button" data-wallet-connect>Connect wallet</button>
+          <button class="btn btn-ghost" type="button" data-wallet-connect>{{t "Connect wallet"}}</button>
         </div>
       </div>
       <div class="callout" data-wallet-flash role="status" hidden style="overflow-wrap:anywhere;"></div>
@@ -48,36 +45,36 @@
 
     <div class="grid two">
       <div class="card">
-        <h2>Requirements</h2>
+        <h2>{{t "Requirements"}}</h2>
         <ul>
-          <li>Your homepage (<code>/</code>) must include the official Congrid link <code>{{.BaseURL}}</code>.</li>
-          <li>The link must wrap an <code>&lt;img&gt;</code> whose <code>src</code> includes <code>publisher=</code> and <code>wallet=</code>.</li>
-          <li>The <code>wallet</code> parameter must match the address you enter below.</li>
+          <li>{{t "Your homepage ("}}<code>/</code>{{t ") must include the official Congrid link"}} <code>{{.BaseURL}}</code>.</li>
+          <li>{{t "The link must wrap an"}} <code>&lt;img&gt;</code> {{t "whose"}} <code>src</code> {{t "includes"}} <code>publisher=</code> {{t "and"}} <code>wallet=</code>.</li>
+          <li>{{t "The"}} <code>wallet</code> {{t "parameter must match the address you enter below."}}</li>
         </ul>
       </div>
       <div class="card" id="claim-form">
-        <h2>Claim</h2>
+        <h2>{{t "Claim"}}</h2>
         {{if .Flash}}
           <div class="callout" style="margin-bottom: 15px; border-color: rgba(96, 165, 250, 0.6); background: rgba(96, 165, 250, 0.15)">
-            <strong>{{.Flash}}</strong>
+            <strong>{{t .Flash}}</strong>
           </div>
         {{end}}
         <form method="POST" action="/airdrop#claim-form">
-          <label class="label">Website domain</label>
+          <label class="label">{{t "Website domain"}}</label>
           <input class="input" name="domain" placeholder="example.com" required />
 
-          <label class="label" for="airdrop-wallet">Wallet address</label>
+          <label class="label" for="airdrop-wallet">{{t "Wallet address"}}</label>
           <input class="input" id="airdrop-wallet" name="wallet" placeholder="congrid1..." data-wallet-autofill required />
 
-          <button class="btn" type="submit">Verify &amp; Queue Airdrop</button>
+          <button class="btn" type="submit">{{t "Verify & Queue Airdrop"}}</button>
         </form>
         <p class="muted" style="margin-top:10px;">
-          We do not create wallets on this website. Use Keplr or Leap to manage your wallet securely, then connect above or paste only your public address here.
+          {{t "We do not create wallets on this website. Use Keplr to manage your wallet securely, then connect above or paste only your public address here."}}
         </p>
       </div>
     </div>
 
-    <h2>Example member badge embed code</h2>
+    <h2>{{t "Example member badge embed code"}}</h2>
     <div class="code">
 <pre><code>&lt;div id="congrid-similar"&gt;
   &lt;a href="{{.BaseURL}}" rel="nofollow" style="display: inline-flex; align-items: center; gap: 8px;"&gt;

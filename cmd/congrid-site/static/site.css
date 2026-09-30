@@ -3,7 +3,7 @@
 .container{max-width:1050px;margin:0 auto;padding:0 20px}
 
 .nav{position:sticky;top:0;background:rgba(11,16,32,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);z-index:10}
-.nav-inner{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 0}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 20px}
 .brand{display:flex;align-items:center;gap:10px;color:var(--text);font-weight:700}
 .links{display:flex;gap:18px;align-items:center;margin-left:auto}
 .links a{color:var(--text);opacity:.8}
@@ -97,3 +97,25 @@ button.btn:disabled{opacity:.6;cursor:not-allowed}
 @media (max-width:900px){.lease-grid{grid-template-columns:1fr}}
 
 @media (max-width:900px){.grid.market-grid{grid-template-columns:1fr}.slot-meta{grid-template-columns:1fr}}
+
+.language-switch{display:flex;gap:4px;align-items:center;flex-shrink:0}
+.language-switch a{padding:6px 9px;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.85rem;white-space:nowrap}
+.language-switch a[aria-current="true"]{background:rgba(96,165,250,.2);border-color:var(--brand)}
+.language-switch a:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+@media(max-width:720px){.language-switch{margin-left:auto}}
+
+.architecture{display:grid;gap:16px}
+.architecture-layer{padding:18px;border:1px solid var(--brand);border-radius:16px;background:rgba(15,23,42,.7)}
+.architecture-layer h3{color:var(--brand);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.architecture h4{font-size:1.05rem;margin:12px 0 8px}
+.architecture p{font-size:.9rem;margin-bottom:0}
+.architecture-flow{display:flex;align-items:stretch;gap:8px;margin-top:16px}
+.architecture-step{flex:1;min-width:0;padding:12px;border:1px solid var(--border);border-radius:10px;overflow-wrap:anywhere}
+.architecture-step code{display:inline-block;font-size:.75rem}
+.architecture-arrow{align-self:center;color:var(--brand);font-size:1.5rem}
+.architecture-location{display:block;color:var(--brand);font-size:.75rem;font-weight:600}
+.architecture-verification{border-color:var(--brand2)}
+.architecture-verification h3,.architecture-verification .architecture-arrow{color:var(--brand2)}
+.architecture-randomness{color:#fde68a}
+.architecture-note{text-align:center}
+@media(max-width:900px){.architecture-flow{flex-direction:column}.architecture-arrow{transform:rotate(90deg)}}

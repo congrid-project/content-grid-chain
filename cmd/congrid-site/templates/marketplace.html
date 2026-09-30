@@ -3,71 +3,70 @@
 {{define "main"}}
 <section class="section">
   <div class="container">
-    <h1>Marketplace (deprecated)</h1>
+    <h1>{{t "Marketplace (deprecated)"}}</h1>
     <p class="lead">
-      Discover publisher slots, compare terms, and create lease transactions with your wallet.
-      Slot state and lease availability are loaded from chain data.
+      {{t "Discover publisher slots, compare terms, and create lease transactions with your wallet. Slot state and lease availability are loaded from chain data."}}
     </p>
 
     <div class="grid two">
       <div class="card">
-        <h2>Current chain config</h2>
+        <h2>{{t "Current chain config"}}</h2>
         <ul>
-          <li><strong>Chain ID:</strong> <code>{{.WalletConfig.ChainID}}</code></li>
-          <li><strong>RPC:</strong> <code>{{.WalletConfig.RPC}}</code></li>
-          <li><strong>Fee denom:</strong> <code>{{if .WalletConfig.FeeDenom}}{{.WalletConfig.FeeDenom}}{{else}}ucongrid{{end}}</code></li>
-          <li><strong>Gas price:</strong> <code>{{if .WalletConfig.GasPrice}}{{.WalletConfig.GasPrice}}{{else}}0.001ucongrid{{end}}</code></li>
+          <li><strong>{{t "Chain ID:"}}</strong> <code>{{.WalletConfig.ChainID}}</code></li>
+          <li><strong>{{t "RPC:"}}</strong> <code>{{.WalletConfig.RPC}}</code></li>
+          <li><strong>{{t "Fee denom:"}}</strong> <code>{{if .WalletConfig.FeeDenom}}{{.WalletConfig.FeeDenom}}{{else}}ucongrid{{end}}</code></li>
+          <li><strong>{{t "Gas price:"}}</strong> <code>{{if .WalletConfig.GasPrice}}{{.WalletConfig.GasPrice}}{{else}}0.001ucongrid{{end}}</code></li>
         </ul>
       </div>
       <div class="card">
-        <h2>Before leasing</h2>
+        <h2>{{t "Before leasing"}}</h2>
         <ul>
-          <li>Connect a wallet that has enough balance for lease + tx fee.</li>
-          <li>Prepare a valid landing URL (<code>https://...</code>) as lease target.</li>
-          <li>Pick term carefully: minimum/maximum duration is enforced by chain rules.</li>
+          <li>{{t "Connect a wallet that has enough balance for lease + tx fee."}}</li>
+          <li>{{t "Prepare a valid landing URL ("}}<code>https://...</code>{{t ") as lease target."}}</li>
+          <li>{{t "Pick term carefully: minimum/maximum duration is enforced by chain rules."}}</li>
         </ul>
       </div>
     </div>
 
     <div class="callout">
-      <strong>Wallet required:</strong> connect Keplr/Leap to sign lease tx.
-      <div class="muted">Wallet: <span data-wallet-address>Not connected</span></div>
-      <button class="btn btn-ghost" type="button" data-wallet-connect>Connect wallet</button>
-      <a href="/leases">View lease publish board →</a>
+      <strong>{{t "Wallet required:"}}</strong> {{t "connect Keplr to sign lease tx."}}
+      <div class="muted">{{t "Wallet:"}} <span data-wallet-address>{{t "Not connected"}}</span></div>
+      <button class="btn btn-ghost" type="button" data-wallet-connect>{{t "Connect wallet"}}</button>
+      <a href="/leases">{{t "View lease publish board →"}}</a>
     </div>
     <div class="callout" data-wallet-flash hidden></div>
 
     <div class="card">
-      <h3>Filter slots</h3>
+      <h3>{{t "Filter slots"}}</h3>
       <form class="filters" method="get" action="/marketplace">
         <div class="grid two">
           <div>
-            <label class="label" for="marketplace-search">Search</label>
-            <input class="input" id="marketplace-search" name="q" type="search" placeholder="domain, category, placement" value="{{.Query}}" />
+            <label class="label" for="marketplace-search">{{t "Search"}}</label>
+            <input class="input" id="marketplace-search" name="q" type="search" placeholder='{{t "domain, category, placement"}}' value="{{.Query}}" />
           </div>
           <div>
-            <label class="label" for="marketplace-sort">Sort by</label>
+            <label class="label" for="marketplace-sort">{{t "Sort by"}}</label>
             <select class="input" id="marketplace-sort" name="sort">
-              <option value="latest" {{if eq .Sort "latest"}}selected{{end}}>Latest updates</option>
-              <option value="price-low" {{if eq .Sort "price-low"}}selected{{end}}>Price: low to high</option>
-              <option value="price-high" {{if eq .Sort "price-high"}}selected{{end}}>Price: high to low</option>
-              <option value="traffic" {{if eq .Sort "traffic"}}selected{{end}}>Traffic</option>
-              <option value="publisher" {{if eq .Sort "publisher"}}selected{{end}}>Publisher name</option>
+              <option value="latest" {{if eq .Sort "latest"}}selected{{end}}>{{t "Latest updates"}}</option>
+              <option value="price-low" {{if eq .Sort "price-low"}}selected{{end}}>{{t "Price: low to high"}}</option>
+              <option value="price-high" {{if eq .Sort "price-high"}}selected{{end}}>{{t "Price: high to low"}}</option>
+              <option value="traffic" {{if eq .Sort "traffic"}}selected{{end}}>{{t "Traffic"}}</option>
+              <option value="publisher" {{if eq .Sort "publisher"}}selected{{end}}>{{t "Publisher name"}}</option>
             </select>
           </div>
         </div>
         <div class="filters-actions">
-          <button class="btn" type="submit">Apply</button>
-          <a class="btn btn-ghost" href="/marketplace">Reset</a>
+          <button class="btn" type="submit">{{t "Apply"}}</button>
+          <a class="btn btn-ghost" href="/marketplace">{{t "Reset"}}</a>
         </div>
       </form>
       {{if .Flash}}
-        <div class="callout">{{.Flash}}</div>
+        <div class="callout">{{t .Flash}}</div>
       {{end}}
     </div>
 
     {{if gt .Pager.Total 0}}
-      <div class="slot-summary muted">Showing {{.Pager.Start}}-{{.Pager.End}} of {{.Pager.Total}} slots.</div>
+      <div class="slot-summary muted">{{t "Showing"}} {{.Pager.Start}}-{{.Pager.End}} {{t "of"}} {{.Pager.Total}} {{t "slots."}}</div>
       <div class="grid market-grid">
         {{range .Slots}}
           <div class="card slot-card">
@@ -76,7 +75,7 @@
                 <h3>{{.Label}}</h3>
                 <div class="muted">{{.PublisherName}} ({{.Publisher}})</div>
               </div>
-              <span class="badge {{slotAvailabilityClass .}}">{{slotAvailabilityLabel .}}</span>
+              <span class="badge {{slotAvailabilityClass .}}">{{t (slotAvailabilityLabel .)}}</span>
             </div>
             <p class="muted">{{.Summary}}</p>
             {{if .Tags}}
@@ -87,95 +86,95 @@
 
             <div class="slot-meta">
               <div>
-                <span class="slot-meta-label">Placement</span>
+                <span class="slot-meta-label">{{t "Placement"}}</span>
                 <strong>{{.Placement}}</strong>
               </div>
               <div>
-                <span class="slot-meta-label">Rate</span>
-                <strong>{{formatRate .Rate}}</strong>
+                <span class="slot-meta-label">{{t "Rate"}}</span>
+                <strong>{{t (formatRate .Rate)}}</strong>
               </div>
               <div>
-                <span class="slot-meta-label">Traffic</span>
-                <strong>{{formatTraffic .Traffic}}</strong>
+                <span class="slot-meta-label">{{t "Traffic"}}</span>
+                <strong>{{t (formatTraffic .Traffic)}}</strong>
               </div>
             </div>
             <div class="slot-meta">
               <div>
-                <span class="slot-meta-label">Size</span>
+                <span class="slot-meta-label">{{t "Size"}}</span>
                 <strong>{{.Size}}</strong>
               </div>
               <div>
-                <span class="slot-meta-label">Category</span>
+                <span class="slot-meta-label">{{t "Category"}}</span>
                 <strong>{{.Category}}</strong>
               </div>
               <div>
-                <span class="slot-meta-label">Updated</span>
+                <span class="slot-meta-label">{{t "Updated"}}</span>
                 <strong>{{formatDate .UpdatedAt}}</strong>
               </div>
             </div>
 
             {{if .Lease}}
               <div class="callout">
-                <strong>Active lease:</strong> {{.Lease.Lessee}} until {{formatDate .Lease.EndsAt}}.<br />
-                <span class="muted">slot_id={{.Lease.SlotID}} · lease_id={{.Lease.LeaseID}}</span>
+                <strong>{{t "Active lease:"}}</strong> {{.Lease.Lessee}} {{t "until"}} {{formatDate .Lease.EndsAt}}.<br />
+                <span class="muted">{{t "slot_id="}}{{.Lease.SlotID}} {{t "· lease_id="}}{{.Lease.LeaseID}}</span>
               </div>
             {{end}}
 
             {{if .MinDurationSeconds}}
-              <div class="muted">Minimum term: {{(index (slotDurationOptions .) 0).Label}}</div>
+              <div class="muted">{{t "Minimum term:"}} {{t (index (slotDurationOptions .) 0).Label}}</div>
             {{end}}
 
             <div class="slot-actions">
-              <a class="btn btn-outline" href="/publisher/dashboard?publisher={{.Publisher}}">View publisher</a>
+              <a class="btn btn-outline" href="/publisher/dashboard?publisher={{.Publisher}}">{{t "View publisher"}}</a>
               {{if slotIsAvailable .}}
                 <details class="lease-form">
-                  <summary class="btn btn-ghost">Lease this slot</summary>
+                  <summary class="btn btn-ghost">{{t "Lease this slot"}}</summary>
                   <form method="post" action="/marketplace/lease" class="lease-grid" data-wallet-lease>
                     <input type="hidden" name="slot_id" value="{{.ID}}" />
-                    <label class="label">Target URL
+                    <label class="label">{{t "Target URL"}}
                       <input class="input" name="target_url" type="url" placeholder="https://yourbrand.com/landing" required />
                     </label>
-                    <label class="label">Start date
+                    <label class="label">{{t "Start date"}}
                       <input class="input" name="start_date" type="date" />
                     </label>
-                    <label class="label">Duration
+                    <label class="label">{{t "Duration"}}
                       <select class="input" name="duration_seconds" required>
-                        <option value="">Select duration</option>
+                        <option value="">{{t "Select duration"}}</option>
                         {{range slotDurationOptions .}}
-                          <option value="{{.Seconds}}">{{.Label}}</option>
+                          <option value="{{.Seconds}}">{{t .Label}}</option>
                         {{end}}
                       </select>
                     </label>
-                    <button class="btn" type="submit">Sign lease transaction</button>
+                    <button class="btn" type="submit">{{t "Sign lease transaction"}}</button>
                   </form>
                 </details>
               {{else}}
-                <span class="muted">Not available</span>
+                <span class="muted">{{t "Not available"}}</span>
               {{end}}
             </div>
           </div>
         {{end}}
       </div>
 
-      <nav class="pagination" aria-label="Pagination">
+      <nav class="pagination" aria-label='{{t "Pagination"}}'>
         <div class="slot-actions">
           {{if .Pager.HasPrev}}
-            <a class="btn btn-ghost" href="{{.Pager.PrevURL}}">Previous</a>
+            <a class="btn btn-ghost" href="{{.Pager.PrevURL}}">{{t "Previous"}}</a>
           {{else}}
-            <span class="muted">Previous</span>
+            <span class="muted">{{t "Previous"}}</span>
           {{end}}
           {{if .Pager.HasNext}}
-            <a class="btn btn-ghost" href="{{.Pager.NextURL}}">Next</a>
+            <a class="btn btn-ghost" href="{{.Pager.NextURL}}">{{t "Next"}}</a>
           {{else}}
-            <span class="muted">Next</span>
+            <span class="muted">{{t "Next"}}</span>
           {{end}}
         </div>
-        <div class="muted">Page {{.Pager.Page}} of {{.Pager.Pages}}</div>
+        <div class="muted">{{t "Page"}} {{.Pager.Page}} {{t "of"}} {{.Pager.Pages}}</div>
       </nav>
     {{else}}
       <div class="card">
-        <h3>No slots found</h3>
-        <p class="muted">Try a different search or clear filters.</p>
+        <h3>{{t "No slots found"}}</h3>
+        <p class="muted">{{t "Try a different search or clear filters."}}</p>
       </div>
     {{end}}
   </div>

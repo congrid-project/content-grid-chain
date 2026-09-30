@@ -3,57 +3,57 @@
 {{define "main"}}
 <section class="section">
   <div class="container">
-    <h1>Publisher + Verifier Guides</h1>
-    <p class="lead">Everything here is focused on joining Congrid as a publisher or a verifier.</p>
+    <h1>{{t "Publisher + Verifier Guides"}}</h1>
+    <p class="lead">{{t "Everything here is focused on joining Congrid as a publisher or a verifier."}}</p>
 
     <div class="grid two">
       <div class="card">
-        <h2>Become a Publisher</h2>
+        <h2>{{t "Become a Publisher"}}</h2>
         <p>
-          Register as a Congrid publisher so your website can appear in recommendation modules on other member sites. Keep your site verified to remain eligible for Congrid token rewards.
+          {{t "Register as a Congrid publisher so your website can appear in recommendation modules on other member sites. Keep your site verified to remain eligible for Congrid token rewards."}}
         </p>
         <ol>
-          <li>Prepare your domain and Congrid wallet.</li>
-          <li>Add the Congrid member badge to your homepage.</li>
-          <li>Register the domain and keep the homepage verified.</li>
+          <li>{{t "Prepare your domain and Congrid wallet."}}</li>
+          <li>{{t "Add the Congrid member badge to your homepage."}}</li>
+          <li>{{t "Register the domain and keep the homepage verified."}}</li>
         </ol>
-        <a href="/publishers">Open publisher guide →</a>
+        <a href="/publishers">{{t "Open publisher guide →"}}</a>
       </div>
 
       <div class="card">
-        <h2>Become a Verifier</h2>
+        <h2>{{t "Become a Verifier"}}</h2>
         <p>
-          Verifiers bond on-chain, validate publisher status, and earn a larger share of Congrid token rewards for accurate work.
+          {{t "Verifiers bond on-chain, validate publisher status, and earn a larger share of Congrid token rewards for accurate work."}}
         </p>
         <ol>
-          <li>Run the official Linux/macOS native installer.</li>
-          <li>Fund the verifier address printed by the installer.</li>
-          <li>Bond on-chain and monitor the managed verifier services.</li>
+          <li>{{t "Run the official Linux/macOS native installer."}}</li>
+          <li>{{t "Fund the verifier address printed by the installer."}}</li>
+          <li>{{t "Bond on-chain and monitor the managed verifier services."}}</li>
         </ol>
-        <a href="/verifiers">Open installer and verifier guide →</a>
+        <a href="/verifiers">{{t "Open installer and verifier guide →"}}</a>
       </div>
     </div>
 
     <div class="callout">
-      <strong>Shared network values:</strong>
-      Use chain ID <code>{{.WalletConfig.ChainID}}</code> and RPC <code>{{.WalletConfig.RPC}}</code> whenever wallet or CLI commands ask for Congrid network settings.
+      <strong>{{t "Shared network values:"}}</strong>
+      {{t "Use chain ID"}} <code>{{.WalletConfig.ChainID}}</code> {{t "and RPC"}} <code>{{.WalletConfig.RPC}}</code> {{t "whenever wallet or CLI commands ask for Congrid network settings."}}
     </div>
 
-    <h2>Role references</h2>
+    <h2>{{t "Role references"}}</h2>
     <div class="grid two">
       <div class="card">
-        <h3>Publisher references</h3>
+        <h3>{{t "Publisher references"}}</h3>
         <ul>
-          <li><a href="/publishers">Interactive publisher onboarding</a></li>
-          <li>Use the publisher page to generate your member badge embed code and register your domain.</li>
+          <li><a href="/publishers">{{t "Interactive publisher onboarding"}}</a></li>
+          <li>{{t "Use the publisher page to generate your member badge embed code and register your domain."}}</li>
         </ul>
       </div>
       <div class="card">
-        <h3>Verifier references</h3>
+        <h3>{{t "Verifier references"}}</h3>
         <ul>
-          <li><a href="/downloads/install.sh">Download the native installer</a></li>
-          <li><a href="/downloads/seeds.txt">Current network seed list</a></li>
-          <li><a href="/verifiers">Installation, bonding, and monitoring guide</a></li>
+          <li><a href="/downloads/install.sh">{{t "Download the native installer"}}</a></li>
+          <li><a href="/downloads/seeds.txt">{{t "Current network seed list"}}</a></li>
+          <li><a href="/verifiers">{{t "Installation, bonding, and monitoring guide"}}</a></li>
         </ul>
       </div>
     </div>

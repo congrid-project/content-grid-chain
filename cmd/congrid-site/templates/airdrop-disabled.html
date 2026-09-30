@@ -3,51 +3,50 @@
 {{define "main"}}
 <section class="section">
   <div class="container">
-    <h1>Airdrop</h1>
+    <h1>{{t "Airdrop"}}</h1>
     <p class="lead">
-      The airdrop page is currently online, but claiming is disabled on this deployment.
+      {{t "The airdrop page is currently online, but claiming is disabled on this deployment."}}
     </p>
 
     <div class="callout">
-      <strong>Status:</strong> Airdrop claims are not enabled right now.
+      <strong>{{t "Status:"}}</strong> {{t "Airdrop claims are not enabled right now."}}
     </div>
 
     <div class="card" style="margin-top:16px;">
-      <h2>Need a wallet address first?</h2>
+      <h2>{{t "Need a wallet address first?"}}</h2>
       <p>
-        Use a third-party wallet to create or import your wallet, then connect below to get your public Congrid address (<code>congrid1...</code>) for Congrid pages.
+        {{t "Use a third-party wallet to create or import your wallet, then connect below to get your public Congrid address ("}}<code>congrid1...</code>{{t ") for Congrid pages."}}
       </p>
       <ul>
-        <li><a href="https://www.keplr.app/get" target="_blank" rel="noreferrer">Keplr</a> — browser extension and mobile wallet.</li>
-        <li><a href="https://www.leapwallet.io/download" target="_blank" rel="noreferrer">Leap</a> — browser extension and mobile wallet.</li>
+        <li><a href="https://www.keplr.app/get" target="_blank" rel="noreferrer">Keplr</a> {{t "— browser extension and mobile wallet."}}</li>
       </ul>
       <div class="callout" style="margin-top:10px; overflow-wrap:anywhere;">
-        <strong>Wallet:</strong> <span data-wallet-address aria-live="polite">Not connected</span>
+        <strong>{{t "Wallet:"}}</strong> <span data-wallet-address aria-live="polite">{{t "Not connected"}}</span>
         <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
-          <button class="btn btn-ghost" type="button" data-wallet-connect>Connect wallet</button>
+          <button class="btn btn-ghost" type="button" data-wallet-connect>{{t "Connect wallet"}}</button>
         </div>
       </div>
       <div class="callout" data-wallet-flash role="status" hidden style="overflow-wrap:anywhere;"></div>
       <p class="muted">
-        Keep your recovery phrase or private key offline and never paste it into Congrid. Congrid pages only need your public address.
+        {{t "Keep your recovery phrase or private key offline and never paste it into Congrid. Congrid pages only need your public address."}}
       </p>
     </div>
 
     <div class="grid two" style="margin-top:16px;">
       <div class="card">
-        <h2>Why you might see this</h2>
+        <h2>{{t "Why you might see this"}}</h2>
         <ul>
-          <li>The server was started without the <code>--airdrop</code> flag.</li>
-          <li>No faucet key is configured for this environment.</li>
-          <li>Claims are paused temporarily for maintenance.</li>
+          <li>{{t "The server was started without the"}} <code>--airdrop</code> {{t "flag."}}</li>
+          <li>{{t "No faucet key is configured for this environment."}}</li>
+          <li>{{t "Claims are paused temporarily for maintenance."}}</li>
         </ul>
       </div>
       <div class="card">
-        <h2>What you can do now</h2>
+        <h2>{{t "What you can do now"}}</h2>
         <ul>
-          <li><a href="/publishers">Publisher onboarding</a></li>
-          <li><a href="/verifiers">Verifier onboarding</a></li>
-          <li><a href="/docs">Publisher + verifier guides</a></li>
+          <li><a href="/publishers">{{t "Publisher onboarding"}}</a></li>
+          <li><a href="/verifiers">{{t "Verifier onboarding"}}</a></li>
+          <li><a href="/docs">{{t "Publisher + verifier guides"}}</a></li>
         </ul>
       </div>
     </div>

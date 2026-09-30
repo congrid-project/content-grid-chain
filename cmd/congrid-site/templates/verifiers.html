@@ -3,41 +3,37 @@
 {{define "main"}}
 <section class="section">
   <div class="container">
-    <h1>Run a Congrid Verifier</h1>
+    <h1>{{t "Run a Congrid Verifier"}}</h1>
     <p class="lead">
-      Install a full Congrid node and verifier stack, or attach the verifier components to an
-      existing node, with one interactive command.
-      The official installer supports Linux and macOS, uses native binaries, and does not require Docker.
+      {{t "Install a full Congrid node and verifier stack, or attach the verifier components to an existing node, with one interactive command. The official installer supports Linux and macOS, uses native binaries, and does not require Docker."}}
     </p>
 
     <div class="grid two">
       <div class="card">
-        <h2>What the installer deploys</h2>
+        <h2>{{t "What the installer deploys"}}</h2>
         <ul>
-          <li><code>content-grid-d</code> full node</li>
-          <li><code>verifierd</code> assignment worker</li>
-          <li><code>indexerd</code> publisher index service</li>
-          <li>Chroma vector service</li>
-          <li>systemd services on Linux or launchd services on macOS</li>
+          <li><code>content-grid-d</code> {{t "full node"}}</li>
+          <li><code>verifierd</code> {{t "assignment worker"}}</li>
+          <li><code>indexerd</code> {{t "publisher index service"}}</li>
+          <li>{{t "Chroma vector service"}}</li>
+          <li>{{t "systemd services on Linux or launchd services on macOS"}}</li>
         </ul>
       </div>
       <div class="card">
-        <h2>Network configuration</h2>
+        <h2>{{t "Network configuration"}}</h2>
         <ul>
-          <li><strong>Chain ID:</strong> <code>{{.WalletConfig.ChainID}}</code></li>
-          <li><strong>Public RPC:</strong> <code>{{.WalletConfig.RPC}}</code></li>
-          <li><strong>Local RPC after install:</strong> <code>tcp://127.0.0.1:26657</code></li>
-          <li><strong>Fee denom:</strong> <code>{{if .WalletConfig.FeeDenom}}{{.WalletConfig.FeeDenom}}{{else}}ucongrid{{end}}</code></li>
-          <li><strong>Suggested gas price:</strong> <code>{{if .WalletConfig.GasPrice}}{{.WalletConfig.GasPrice}}{{else}}0.001ucongrid{{end}}</code></li>
+          <li><strong>{{t "Chain ID:"}}</strong> <code>{{.WalletConfig.ChainID}}</code></li>
+          <li><strong>{{t "Public RPC:"}}</strong> <code>{{.WalletConfig.RPC}}</code></li>
+          <li><strong>{{t "Local RPC after install:"}}</strong> <code>tcp://127.0.0.1:26657</code></li>
+          <li><strong>{{t "Fee denom:"}}</strong> <code>{{if .WalletConfig.FeeDenom}}{{.WalletConfig.FeeDenom}}{{else}}ucongrid{{end}}</code></li>
+          <li><strong>{{t "Suggested gas price:"}}</strong> <code>{{if .WalletConfig.GasPrice}}{{.WalletConfig.GasPrice}}{{else}}0.001ucongrid{{end}}</code></li>
         </ul>
       </div>
     </div>
 
-    <h2>Step 1 — Install the native verifier stack</h2>
+    <h2>{{t "Step 1 — Install the native verifier stack"}}</h2>
     <p>
-      Run this as a normal login user with sudo access on Linux. On macOS, run it as your
-      normal user without sudo. The installer downloads checksum-verified binaries, asks for
-      the required settings through your terminal, and fetches the seed list in full-stack mode.
+      {{t "Run this as a normal login user with sudo access on Linux. On macOS, run it as your normal user without sudo. The installer downloads checksum-verified binaries, asks for the required settings through your terminal, and fetches the seed list in full-stack mode."}}
     </p>
 
     <div class="code">
@@ -45,8 +41,7 @@
     </div>
 
     <p>
-      If <code>content-grid-d</code> is already running on this machine, install only Chroma,
-      indexerd, and verifierd with the existing-node mode:
+      {{t "If"}} <code>content-grid-d</code> {{t "is already running on this machine, install only Chroma, indexerd, and verifierd with the existing-node mode:"}}
     </p>
 
     <div class="code">
@@ -54,32 +49,23 @@
     </div>
 
     <p>
-      This mode verifies the existing RPC and gRPC endpoints, then uses isolated component
-      state. It does not replace, configure, stop, start, or restart the existing chain node.
+      {{t "This mode verifies the existing RPC and gRPC endpoints, then uses isolated component state. It does not replace, configure, stop, start, or restart the existing chain node."}}
     </p>
 
     <p>
-      You can also <a href="/downloads/install.sh">download and inspect the installer</a> before
-      running it. Re-running the same command safely updates the software and service definitions
-      while preserving chain data, keys, verifier state, and Chroma data.
+      {{t "You can also"}} <a href="/downloads/install.sh">{{t "download and inspect the installer"}}</a> {{t "before running it. Re-running the same command safely updates the software and service definitions while preserving chain data, keys, verifier state, and Chroma data."}}
     </p>
 
     <div class="callout">
-      <strong>Protect the verifier key:</strong>
-      choose whether to create a new key or recover an existing mnemonic during installation.
-      When a new key is created, the installer prints the path to its only mnemonic backup.
-      Move that file to secure offline storage before funding the address. The installer then
-      pauses on the new address so you can fund its bond and transaction fees before continuing;
-      funding does not submit the bond automatically.
+      <strong>{{t "Protect the verifier key:"}}</strong>
+      {{t "choose whether to create a new key or recover an existing mnemonic during installation. When a new key is created, the installer prints the path to its only mnemonic backup. Move that file to secure offline storage before funding the address. The installer then pauses on the new address so you can fund its bond and transaction fees before continuing; funding does not submit the bond automatically."}}
     </div>
 
-    <h2>Step 2 — Fund and bond the verifier</h2>
+    <h2>{{t "Step 2 — Fund and bond the verifier"}}</h2>
     <p>
-      The installer prints the verifier address when it finishes. Send enough
+      {{t "The installer prints the verifier address when it finishes. Send enough"}}
       <code>{{if .WalletConfig.FeeDenom}}{{.WalletConfig.FeeDenom}}{{else}}ucongrid{{end}}</code>
-      to that address for the bond and ongoing transaction fees, then submit the bond from the
-      same host. The examples use the default key name <code>verifier-key</code>; replace it if
-      you chose another name.
+      {{t "to that address for the bond and ongoing transaction fees, then submit the bond from the same host. The examples use the default key name"}} <code>verifier-key</code>{{t "; replace it if you chose another name."}}
     </p>
 
     <h3>Linux</h3>
@@ -97,10 +83,9 @@
     </div>
 
     <p>
-      With <code>--components-only</code>, use
-      <code>/usr/local/libexec/congrid/content-grid-d-client</code> as the Linux binary and
-      <code>/var/lib/congrid-components</code> for both <code>--home</code> and the keyring path
-      prefix.
+      {{t "With"}} <code>--components-only</code>{{t ", use"}}
+      <code>/usr/local/libexec/congrid/content-grid-d-client</code> {{t "as the Linux binary and"}}
+      <code>/var/lib/congrid-components</code> {{t "for both"}} <code>--home</code> {{t "and the keyring path prefix."}}
     </p>
 
     <h3>macOS</h3>
@@ -118,15 +103,14 @@
     </div>
 
     <p>
-      With <code>--components-only</code>, use
-      <code>~/.local/share/congrid/libexec/content-grid-d-client</code> as the macOS binary and
-      <code>~/.content-grid-components</code> as the home and keyring path prefix.
+      {{t "With"}} <code>--components-only</code>{{t ", use"}}
+      <code>~/.local/share/congrid/libexec/content-grid-d-client</code> {{t "as the macOS binary and"}}
+      <code>~/.content-grid-components</code> {{t "as the home and keyring path prefix."}}
     </p>
 
-    <h2>Step 3 — Monitor the verifier stack</h2>
+    <h2>{{t "Step 3 — Monitor the verifier stack"}}</h2>
     <p>
-      On Linux, inspect all four systemd services and follow verifier logs. Existing-node mode
-      manages only <code>congrid-chroma</code>, <code>congrid-indexer</code>, and
+      {{t "On Linux, inspect all four systemd services and follow verifier logs. Existing-node mode manages only"}} <code>congrid-chroma</code>, <code>congrid-indexer</code>{{t ", and"}}
       <code>congrid-verifier</code>.
     </p>
     <div class="code">
@@ -134,13 +118,13 @@
 sudo journalctl -u congrid-verifier -f</code></pre>
     </div>
 
-    <p>On macOS, inspect the launchd job and its log:</p>
+    <p>{{t "On macOS, inspect the launchd job and its log:"}}</p>
     <div class="code">
 <pre><code>launchctl print "gui/$(id -u)/net.congrid.verifier"
 tail -f "$HOME/.content-grid/logs/verifier.log"</code></pre>
     </div>
 
-    <p>Health endpoints and assignment queries are available locally on either platform:</p>
+    <p>{{t "Health endpoints and assignment queries are available locally on either platform:"}}</p>
     <div class="code">
 <pre><code>curl -fsS http://127.0.0.1:8000/healthz
 curl -fsS http://127.0.0.1:9100/healthz
@@ -155,16 +139,15 @@ curl -fsS http://127.0.0.1:9200/healthz
     </div>
 
     <ul>
-      <li>When this installer manages the full node, allow inbound TCP/26656 for P2P connectivity.</li>
-      <li>Alert on service exit, RPC disconnect, failed checks, and assignment backlog.</li>
-      <li>Keep enough balance available for verifier transaction fees.</li>
-      <li>Re-run the installer periodically to deploy published software updates.</li>
+      <li>{{t "When this installer manages the full node, allow inbound TCP/26656 for P2P connectivity."}}</li>
+      <li>{{t "Alert on service exit, RPC disconnect, failed checks, and assignment backlog."}}</li>
+      <li>{{t "Keep enough balance available for verifier transaction fees."}}</li>
+      <li>{{t "Re-run the installer periodically to deploy published software updates."}}</li>
     </ul>
 
     <div class="callout">
-      <strong>Verifier tip:</strong>
-      Keep the node online continuously. Missed or inaccurate checks reduce reward potential,
-      while verifier state is preserved across installer updates and service restarts.
+      <strong>{{t "Verifier tip:"}}</strong>
+      {{t "Keep the node online continuously. Missed or inaccurate checks reduce reward potential, while verifier state is preserved across installer updates and service restarts."}}
     </div>
   </div>
 </section>

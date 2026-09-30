@@ -23,7 +23,7 @@ func (s *server) handleLeases(baseURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		slots, err := s.slotStore.ListMarketplaceSlots(r.Context())
 		if err != nil {
-			http.Error(w, "failed to load leases", http.StatusInternalServerError)
+			http.Error(w, translate(requestLanguage(r), "failed to load leases"), http.StatusInternalServerError)
 			return
 		}
 
@@ -61,7 +61,7 @@ func (s *server) handleLeases(baseURL string) http.HandlerFunc {
 			return li.EndsAt.After(lj.EndsAt)
 		})
 
-		s.render(w, "leases.html", leasesPageData{
+		s.render(w, r, "leases.html", leasesPageData{
 			pageData: pageData{
 				Title:        "Leases — Congrid",
 				Description:  "Published lease placements and copy-ready embed snippets.",

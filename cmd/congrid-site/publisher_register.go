@@ -169,7 +169,7 @@ func (s *server) sendPublisherRegister(ctx context.Context, domain, fromKey stri
 }
 
 func (s *server) renderPublishersFlash(w http.ResponseWriter, r *http.Request, baseURL, msg string) {
-	s.render(w, "publishers.html", pageData{
+	s.render(w, r, "publishers.html", pageData{
 		Title:        "Become a Publisher — Congrid",
 		Description:  "Register as a Congrid publisher so your website can appear in recommendation modules on other member sites. Add your member badge and keep your site verified to earn rewards.",
 		BaseURL:      baseURL,
