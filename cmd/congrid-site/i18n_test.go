@@ -51,9 +51,9 @@ func TestEveryPageRendersAllLanguages(t *testing.T) {
 				require.Contains(t, body, `<html lang="`+lang+`">`)
 				require.Contains(t, body, `class="language-switch"`)
 				require.Contains(t, body, `hreflang="`+lang+`" aria-current="true"`)
-				if page.path == "/" && lang != "en" {
-					require.Contains(t, body, `class="architecture"`)
-					require.NotContains(t, body, `src="/static/assets/congrid-architecture.png"`)
+				if page.path == "/" {
+					require.Contains(t, body, `src="/static/assets/congrid-architecture.png"`)
+					require.NotContains(t, body, `class="architecture"`)
 				}
 				if lang == "zh" {
 					require.Contains(t, body, page.zh)

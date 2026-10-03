@@ -11,11 +11,19 @@
       <a href="/verifiers" {{if eq .Path "/verifiers"}}aria-current="page"{{end}}>{{t "Verifiers"}}</a>
       <a href="/docs" {{if eq .Path "/docs"}}aria-current="page"{{end}}>{{t "Guides"}}</a>
     </nav>
-    <nav class="language-switch" aria-label='{{t "Language"}}'>
-      <a href="{{languageURL "en"}}" lang="en" hreflang="en" {{if eq language "en"}}aria-current="true"{{end}}>EN</a>
-      <a href="{{languageURL "zh"}}" lang="zh" hreflang="zh" {{if eq language "zh"}}aria-current="true"{{end}}>中文</a>
-      <a href="{{languageURL "fr"}}" lang="fr" hreflang="fr" {{if eq language "fr"}}aria-current="true"{{end}}>FR</a>
-    </nav>
+    <details class="language-switch">
+      <summary class="language-button" aria-label='{{t "Language"}}' title='{{t "Language"}}'>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M3 12h18M12 3a16 16 0 0 1 0 18 16 16 0 0 1 0-18Z" />
+        </svg>
+      </summary>
+      <nav class="language-menu" aria-label='{{t "Language"}}'>
+        <a href="{{languageURL "en"}}" lang="en" hreflang="en" {{if eq language "en"}}aria-current="true"{{end}}>English</a>
+        <a href="{{languageURL "zh"}}" lang="zh" hreflang="zh" {{if eq language "zh"}}aria-current="true"{{end}}>中文</a>
+        <a href="{{languageURL "fr"}}" lang="fr" hreflang="fr" {{if eq language "fr"}}aria-current="true"{{end}}>Français</a>
+      </nav>
+    </details>
   </div>
 </header>
 {{end}}

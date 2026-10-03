@@ -38,7 +38,6 @@
   <div class="container">
     <h2>{{t "How Congrid works"}}</h2>
     <figure style="margin:0;">
-      {{if eq language "en"}}
       <img
         src="/static/assets/congrid-architecture.png"
         alt='{{t "Congrid architecture: indexerd and Chroma match member websites with related sites. drand seeds verifier assignments; verifierd checks websites and submits evidence through commit–reveal. Registry rules determine status and rewards, while Cosmos SDK and CometBFT provide block consensus."}}'
@@ -48,9 +47,6 @@
         decoding="async"
         style="display:block;width:100%;height:auto;"
       />
-      {{else}}
-      {{template "architecture" .}}
-      {{end}}
       <figcaption class="muted">{{t "Recommendations are computed off-chain. Verifiers check member websites and submit evidence; consensus validators finalize the ledger."}}</figcaption>
     </figure>
   </div>

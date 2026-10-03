@@ -4,7 +4,7 @@ A small Go web server for the Congrid (Content Grid Protocol) official website.
 
 ## Languages
 
-All pages support English, Chinese, and French. Use the `EN / 中文 / FR` buttons in the navigation. The server renders the selected language and remembers it in the `congrid_language` cookie, including subsequent form submissions. Use `?lang=en`, `?lang=zh`, or `?lang=fr` to link directly to a language; switching preserves other query parameters. English is the default.
+All pages support English, Chinese, and French. Click the globe icon in the navigation to open the language menu (`English / 中文 / Français`). The server renders the selected language and remembers it in the `congrid_language` cookie, including subsequent form submissions. Use `?lang=en`, `?lang=zh`, or `?lang=fr` to link directly to a language; switching preserves other query parameters. English is the default. All three homepages use the same untranslated architecture image.
 
 Translations for page content, metadata, status labels, and browser notices are maintained in `static/translations.json`. Wallet connections use Keplr.
 
