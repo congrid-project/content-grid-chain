@@ -1,6 +1,6 @@
 {{define "layout"}}
 <!doctype html>
-<html lang="{{language}}">
+<html lang="{{if .ContentLanguage}}{{.ContentLanguage}}{{else}}{{language}}{{end}}">
   <head>
     {{template "head" .}}
   </head>

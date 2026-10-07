@@ -1,0 +1,15 @@
+{{define "cms-login.html"}}{{template "layout" .}}{{end}}
+{{define "main"}}
+<section class="section"><div class="container cms-login-container">
+  <div class="pill">{{t "Congrid CMS"}}</div><h1>{{t "CMS sign in"}}</h1>
+  <p class="muted">{{t "Manage articles and announcements with your CMS account."}}</p>
+  {{if .Error}}<div class="callout cms-error" role="alert">{{t .Error}}</div>{{end}}
+  <form class="card cms-login-form" method="post" action="/cms/login">
+    <input type="hidden" name="csrf" value="{{.CSRF}}" />
+    <label class="label" for="username">{{t "Username"}}</label><input class="input" id="username" name="username" autocomplete="username" required maxlength="80" autofocus />
+    <label class="label" for="password">{{t "Password"}}</label><input class="input" id="password" type="password" name="password" autocomplete="current-password" required />
+    <button class="btn" type="submit">{{t "Sign in"}} →</button>
+  </form>
+  <p class="muted cms-login-note">{{t "This account is used only for content management."}}</p>
+</div></section>
+{{end}}

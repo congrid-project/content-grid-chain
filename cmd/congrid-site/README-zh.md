@@ -8,6 +8,77 @@ Congrid（内容网格协议）官方网站的小型 Go Web 服务器。
 
 页面正文、标题和描述、状态标签及浏览器提示的译文统一维护在 `static/translations.json` 中。钱包连接使用 Keplr。
 
+## 博客与内容管理
+
+公开博客入口为 `/blog`，文章网址为 `/blog/{slug}`，沿用官网的导航、深色配色和
+响应式布局。支持 Markdown 正文（链接、图片、表格、代码块）、中英法文章语言、
+新闻/指南/更新分类、作者、摘要、封面图片，以及独立 SEO 标题和描述。界面语言
+与文章语言独立，系统不会自动翻译文章正文。
+
+后台入口为 `/cms/login`，使用一个管理员账号，无公开注册。账号仅用于 `/cms`，
+主网站和博客均不需要登录。草稿与已保存版本的预览仅对管理员可见；发布后文章
+才会进入博客、站点地图和 RSS。改回草稿即撤下公开文章，其公开网址返回 404。
+首次发布后网址保持固定，以保留已有链接；编辑保留首次发布时间。永久删除需要
+勾选确认，同时编辑会检查版本，防止相互覆盖。
+
+### 管理员初始化
+
+默认 SQLite 文件为 `./congrid-cms.db`，保存文章、密码哈希和过期会话。
+生产环境建议指定 `/var/lib/congrid-site/cms.db`，由网站服务用户持有，放在公开
+downloads/static 目录之外。数据库权限为 `0600`，采用 WAL 模式。
+
+**不提供默认密码**。首次启动前配置：
+
+```bash
+export CONGRID_CMS_DB=/var/lib/congrid-site/cms.db
+export CONGRID_CMS_ADMIN_USER=admin
+export CONGRID_CMS_ADMIN_PASSWORD_FILE=/etc/congrid-site/cms-password
+```
+
+先创建密码文件，内容为 12–72 字节的密码，仅允许服务用户读取。文件末尾换行会
+移除，其他空格保留。也可通过 `CONGRID_CMS_ADMIN_PASSWORD` 环境变量传入密码；
+配置了密码文件时优先使用文件。将变量写入网站服务配置，保留原有链/RPC 启动
+参数，启动后访问 `https://congrid.net/cms/login`。
+
+初始化密码仅创建第一个账号，后续重启不会覆盖已保存凭据。未配置账号时公开
+博客仍可访问，但后台不能登录；系统没有对外开放的管理员初始化接口。创建账号
+后，普通启动无需继续提供初始化密码。
+
+| 参数 | 环境变量/默认值 | 用途 |
+| --- | --- | --- |
+| `--cms-db` | `CONGRID_CMS_DB`，默认 `./congrid-cms.db` | SQLite 文件路径 |
+| `--cms-admin-user` | `CONGRID_CMS_ADMIN_USER`，默认 `admin` | 初始化/重置用户名 |
+| `--cms-admin-password-file` | `CONGRID_CMS_ADMIN_PASSWORD_FILE` | 初始化/重置密码文件，未设置则读取 `CONGRID_CMS_ADMIN_PASSWORD` |
+| `--cms-reset-admin-password` | 默认 `false` | 设置管理员凭据、注销后台会话后退出 |
+
+忘记密码或需更换凭据时，修改密码文件后以服务用户执行；不需要链配置：
+
+```bash
+go build -o /tmp/congrid-site ./cmd/congrid-site
+/tmp/congrid-site \
+  --cms-db /var/lib/congrid-site/cms.db \
+  --cms-admin-user admin \
+  --cms-admin-password-file /etc/congrid-site/cms-password \
+  --cms-reset-admin-password
+```
+
+重置保留全部文章，但会注销所有 CMS 会话。备份应使用 SQLite 备份接口，或先停止
+网站再复制数据库；WAL 运行时不能仅复制正在使用的 `.db` 文件。
+
+后台会话有效期为 12 小时，Cookie 为 HttpOnly、SameSite=Strict，路径限于 `/cms`。
+HTTPS base URL 在反向代理终止 TLS 时也会启用 Secure Cookie；本地 HTTP 测试需使用
+与浏览器地址一致的 HTTP base URL。密码使用 bcrypt，数据库仅保存会话令牌哈希；
+写操作检查 CSRF 令牌和来源。按直接连接地址限制为每 10 分钟最多 10 次登录尝试，
+并限制密码校验并发。反向代理需额外按真实客户端 IP 限流，应用不会直接信任转发头。
+
+### SEO 与内容发现
+
+页面提供 canonical 网址、社交分享元信息和语言 alternate；文章另外提供
+`BlogPosting` JSON-LD、首次发布/更新时间和可选分享图片。`/sitemap.xml` 与
+`/feed.xml` 仅收录已发布内容。后台和预览设置 `noindex`、`no-store`，
+`/robots.txt` 排除 `/cms`。分页使用独立 canonical，分类/语言筛选结果不索引。
+部署并发布首批文章后，可将 `https://congrid.net/sitemap.xml` 提交至搜索引擎站长工具。
+
 ## 验证
 
 ```bash

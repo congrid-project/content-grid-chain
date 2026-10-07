@@ -47,6 +47,8 @@ Thumbs.db
 /app/data/
 
 # Local development artifacts
+/congrid-cms.db
+/congrid-cms.db-*
 /backups/
 /deploy/
 /localnet/

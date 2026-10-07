@@ -345,11 +345,11 @@
     "fr": "Dimensions"
   },
   "Category": {
-    "zh": "类别",
+    "zh": "分类",
     "fr": "Catégorie"
   },
   "Updated": {
-    "zh": "更新时间",
+    "zh": "更新于",
     "fr": "Mis à jour"
   },
   "Active lease:": {
@@ -1652,5 +1652,273 @@
   "wallet signing required": {
     "zh": "需要钱包签名",
     "fr": "Signature par portefeuille requise"
+  },
+  "Blog": {
+    "zh": "博客",
+    "fr": "Blog"
+  },
+  "Blog — Congrid": {
+    "zh": "博客 — Congrid",
+    "fr": "Blog — Congrid"
+  },
+  "News, practical guides and protocol updates from the Congrid network.": {
+    "zh": "Congrid 网络的新闻、实用指南与协议更新。",
+    "fr": "Actualités, guides pratiques et mises à jour du protocole du réseau Congrid."
+  },
+  "From the Congrid network": {
+    "zh": "来自 Congrid 网络",
+    "fr": "Du réseau Congrid"
+  },
+  "News, ideas and updates": {
+    "zh": "新闻、观点与更新",
+    "fr": "Actualités, idées et mises à jour"
+  },
+  "All categories": {
+    "zh": "全部分类",
+    "fr": "Toutes les catégories"
+  },
+  "Updates": {
+    "zh": "更新",
+    "fr": "Mises à jour"
+  },
+  "Article language": {
+    "zh": "文章语言",
+    "fr": "Langue de l’article"
+  },
+  "All languages": {
+    "zh": "全部语言",
+    "fr": "Toutes les langues"
+  },
+  "Read article": {
+    "zh": "阅读全文",
+    "fr": "Lire l’article"
+  },
+  "No articles yet": {
+    "zh": "暂无文章",
+    "fr": "Aucun article pour le moment"
+  },
+  "Published articles will appear here. Check back for news and guides from Congrid.": {
+    "zh": "已发布的文章会显示在这里，欢迎关注 Congrid 的新闻与指南。",
+    "fr": "Les articles publiés apparaîtront ici. Revenez pour les actualités et les guides de Congrid."
+  },
+  "Explore the guides": {
+    "zh": "查看指南",
+    "fr": "Consulter les guides"
+  },
+  "Page {0} · {1} articles": {
+    "zh": "第 {0} 页 · 共 {1} 篇文章",
+    "fr": "Page {0} · {1} articles"
+  },
+  "Private preview": {
+    "zh": "后台预览",
+    "fr": "Aperçu privé"
+  },
+  "This is the saved version. Drafts are visible only to CMS administrators.": {
+    "zh": "这是已保存的版本，草稿仅对 CMS 管理员可见。",
+    "fr": "Ceci est la version enregistrée. Les brouillons ne sont visibles que par l’administrateur du CMS."
+  },
+  "Edit article": {
+    "zh": "编辑文章",
+    "fr": "Modifier l’article"
+  },
+  "Breadcrumb": {
+    "zh": "当前位置",
+    "fr": "Fil d’Ariane"
+  },
+  "Draft": {
+    "zh": "草稿",
+    "fr": "Brouillon"
+  },
+  "Published": {
+    "zh": "已发布",
+    "fr": "Publié"
+  },
+  "All articles": {
+    "zh": "全部文章",
+    "fr": "Tous les articles"
+  },
+  "Become a publisher": {
+    "zh": "成为发布者",
+    "fr": "Devenir éditeur"
+  },
+  "Congrid CMS": {
+    "zh": "Congrid 内容管理",
+    "fr": "CMS Congrid"
+  },
+  "View blog": {
+    "zh": "查看博客",
+    "fr": "Voir le blog"
+  },
+  "Sign out": {
+    "zh": "退出登录",
+    "fr": "Se déconnecter"
+  },
+  "CMS sign in": {
+    "zh": "内容管理登录",
+    "fr": "Connexion au CMS"
+  },
+  "Manage articles and announcements with your CMS account.": {
+    "zh": "使用 CMS 账号管理文章和公告。",
+    "fr": "Gérez les articles et les annonces avec votre compte CMS."
+  },
+  "Username": {
+    "zh": "用户名",
+    "fr": "Nom d’utilisateur"
+  },
+  "Password": {
+    "zh": "密码",
+    "fr": "Mot de passe"
+  },
+  "Sign in": {
+    "zh": "登录",
+    "fr": "Se connecter"
+  },
+  "This account is used only for content management.": {
+    "zh": "此账号仅用于内容管理。",
+    "fr": "Ce compte sert uniquement à la gestion du contenu."
+  },
+  "Content management": {
+    "zh": "内容管理",
+    "fr": "Gestion du contenu"
+  },
+  "{0} articles": {
+    "zh": "共 {0} 篇文章",
+    "fr": "{0} articles"
+  },
+  "New article": {
+    "zh": "新建文章",
+    "fr": "Nouvel article"
+  },
+  "Preview": {
+    "zh": "预览",
+    "fr": "Aperçu"
+  },
+  "View": {
+    "zh": "查看",
+    "fr": "Voir"
+  },
+  "Your first article starts here": {
+    "zh": "从第一篇文章开始",
+    "fr": "Commencez votre premier article"
+  },
+  "Save a draft, preview it, then publish it to the blog.": {
+    "zh": "先保存草稿并预览，再发布到博客。",
+    "fr": "Enregistrez un brouillon, prévisualisez-le, puis publiez-le sur le blog."
+  },
+  "Article title": {
+    "zh": "文章标题",
+    "fr": "Titre de l’article"
+  },
+  "URL slug": {
+    "zh": "文章网址",
+    "fr": "Identifiant de l’URL"
+  },
+  "Use lowercase English letters, numbers and hyphens. Published URLs remain fixed to preserve links.": {
+    "zh": "使用小写英文字母、数字和短横线。已发布的网址保持固定，以保留已有链接。",
+    "fr": "Utilisez des lettres minuscules, des chiffres et des tirets. Les URL publiées restent fixes pour préserver les liens."
+  },
+  "Markdown content": {
+    "zh": "Markdown 正文",
+    "fr": "Contenu Markdown"
+  },
+  "Use ## for headings, **text** for bold, [text](https://...) for links and ![description](https://...) for images. Raw HTML is disabled.": {
+    "zh": "使用 ## 添加标题、**文字** 加粗、[文字](https://...) 添加链接、![说明](https://...) 添加图片。不支持原始 HTML。",
+    "fr": "Utilisez ## pour les titres, **texte** pour le gras, [texte](https://...) pour les liens et ![description](https://...) pour les images. Le HTML brut est désactivé."
+  },
+  "Publication": {
+    "zh": "发布设置",
+    "fr": "Publication"
+  },
+  "Author": {
+    "zh": "作者",
+    "fr": "Auteur"
+  },
+  "Save article": {
+    "zh": "保存文章",
+    "fr": "Enregistrer l’article"
+  },
+  "Preview saved version": {
+    "zh": "预览已保存版本",
+    "fr": "Aperçu de la version enregistrée"
+  },
+  "Published articles are immediately visible. Choose Draft to remove an article from the public blog.": {
+    "zh": "发布后文章立即对外可见。选择草稿可从公开博客撤下文章。",
+    "fr": "Les articles publiés sont immédiatement visibles. Choisissez Brouillon pour retirer un article du blog public."
+  },
+  "SEO and sharing": {
+    "zh": "SEO 与分享",
+    "fr": "SEO et partage"
+  },
+  "SEO title": {
+    "zh": "SEO 标题",
+    "fr": "Titre SEO"
+  },
+  "Optional. Defaults to the article title. Aim for a concise, descriptive title.": {
+    "zh": "选填，默认使用文章标题。建议使用简洁且明确的标题。",
+    "fr": "Facultatif. Le titre de l’article est utilisé par défaut. Préférez un titre concis et descriptif."
+  },
+  "SEO description": {
+    "zh": "SEO 描述",
+    "fr": "Description SEO"
+  },
+  "Optional. Defaults to the summary. Explain what readers will learn.": {
+    "zh": "选填，默认使用摘要。请说明读者可以从文章中了解什么。",
+    "fr": "Facultatif. Le résumé est utilisé par défaut. Expliquez ce que les lecteurs découvriront."
+  },
+  "Cover image URL": {
+    "zh": "封面图片地址",
+    "fr": "URL de l’image de couverture"
+  },
+  "Use an HTTPS image URL or a /static/ asset path. This image is also used for social sharing.": {
+    "zh": "使用 HTTPS 图片地址或 /static/ 资源路径。该图片也用于社交分享。",
+    "fr": "Utilisez une URL d’image HTTPS ou un chemin /static/. Cette image sert aussi au partage sur les réseaux sociaux."
+  },
+  "Delete article": {
+    "zh": "删除文章",
+    "fr": "Supprimer l’article"
+  },
+  "Deleting removes the article permanently. To hide it while keeping its content, save it as a draft.": {
+    "zh": "删除会永久移除文章。如需隐藏并保留内容，请将文章保存为草稿。",
+    "fr": "La suppression est définitive. Pour masquer l’article en conservant son contenu, enregistrez-le comme brouillon."
+  },
+  "I confirm permanent deletion": {
+    "zh": "我确认永久删除",
+    "fr": "Je confirme la suppression définitive"
+  },
+  "Article saved.": {
+    "zh": "文章已保存。",
+    "fr": "Article enregistré."
+  },
+  "Article deleted.": {
+    "zh": "文章已删除。",
+    "fr": "Article supprimé."
+  },
+  "Incorrect username or password.": {
+    "zh": "用户名或密码错误。",
+    "fr": "Nom d’utilisateur ou mot de passe incorrect."
+  },
+  "CMS administrator has not been configured. Set CONGRID_CMS_ADMIN_PASSWORD and restart the service.": {
+    "zh": "尚未配置 CMS 管理员，请设置 CONGRID_CMS_ADMIN_PASSWORD 后重启服务。",
+    "fr": "L’administrateur du CMS n’est pas configuré. Définissez CONGRID_CMS_ADMIN_PASSWORD et redémarrez le service."
+  },
+  "Another editor changed this article. Open the saved version in a new tab and compare it with your content before saving.": {
+    "zh": "文章已被其他编辑更新。请在新标签页打开已保存版本，与当前内容核对后再保存。",
+    "fr": "Un autre éditeur a modifié cet article. Ouvrez la version enregistrée dans un nouvel onglet et comparez votre contenu avant d’enregistrer."
+  },
+  "Filter": {
+    "zh": "筛选",
+    "fr": "Filtrer"
+  },
+  "Actions": {
+    "zh": "操作",
+    "fr": "Actions"
+  },
+  "Edit": {
+    "zh": "编辑",
+    "fr": "Modifier"
+  },
+  "Title": {
+    "zh": "标题",
+    "fr": "Titre"
   }
 }

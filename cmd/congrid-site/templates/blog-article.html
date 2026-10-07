@@ -1,0 +1,18 @@
+{{define "blog-article.html"}}{{template "layout" .}}{{end}}
+{{define "main"}}
+<section class="section"><div class="container article-container">
+  {{if .Preview}}<div class="callout" role="status"><strong>{{t "Private preview"}}</strong><p>{{t "This is the saved version. Drafts are visible only to CMS administrators."}}</p><a href="/cms/posts/{{.Post.ID}}/edit">← {{t "Edit article"}}</a></div>{{end}}
+  <nav class="article-breadcrumb" aria-label='{{t "Breadcrumb"}}'><a href="/">Congrid</a> / <a href="/blog">{{t "Blog"}}</a> / {{t .Post.Category}}</nav>
+  <article lang="{{.Post.Language}}">
+    <header class="article-header">
+      <div class="blog-meta"><span class="tag">{{t .Post.Category}}</span>{{if .Post.PublishedAt}}<time datetime="{{.Post.PublishedDate}}">{{.Post.PublishedDate}}</time>{{else}}<span>{{t "Draft"}}</span>{{end}}</div>
+      <h1>{{.Post.Title}}</h1>
+      <p class="lead">{{.Post.Summary}}</p>
+      <p class="muted">{{.Post.Author}} · {{t "Updated"}} <time datetime="{{.Post.UpdatedDate}}">{{.Post.UpdatedDate}}</time></p>
+    </header>
+    {{if .Post.CoverURL}}<img class="article-cover" src="{{.Post.CoverURL}}" alt="" decoding="async" />{{end}}
+    <div class="article-body">{{.HTML}}</div>
+  </article>
+  <div class="article-bottom"><a href="/blog">← {{t "All articles"}}</a><a href="/publishers">{{t "Become a publisher"}} →</a></div>
+</div></section>
+{{end}}

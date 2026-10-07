@@ -1,8 +1,34 @@
 {{define "head"}}
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>{{t .Title}}</title>
-<meta name="description" content="{{t .Description}}" />
+{{$title := .Title}}{{$description := .Description}}
+{{if not .RawMetadata}}{{$title = t .Title}}{{$description = t .Description}}{{end}}
+<title>{{$title}}</title>
+<meta name="description" content="{{$description}}" />
+{{if .NoIndex}}<meta name="robots" content="noindex, nofollow" />{{end}}
+{{$canonical := .CanonicalURL}}{{if not $canonical}}{{$canonical = seoCanonicalURL .BaseURL .Path language}}{{end}}
+{{if and $canonical (not .NoIndex)}}
+<link rel="canonical" href="{{$canonical}}" />
+<meta property="og:url" content="{{$canonical}}" />
+{{if not .ContentLanguage}}
+<link rel="alternate" hreflang="en" href="{{seoLanguageURL $canonical "en"}}" />
+<link rel="alternate" hreflang="zh" href="{{seoLanguageURL $canonical "zh"}}" />
+<link rel="alternate" hreflang="fr" href="{{seoLanguageURL $canonical "fr"}}" />
+<link rel="alternate" hreflang="x-default" href="{{seoLanguageURL $canonical "en"}}" />
+{{end}}{{end}}
+<meta property="og:site_name" content="Congrid" />
+<meta property="og:title" content="{{$title}}" />
+<meta property="og:description" content="{{$description}}" />
+<meta property="og:type" content="{{if .OGType}}{{.OGType}}{{else}}website{{end}}" />
+{{if .OGImage}}<meta property="og:image" content="{{.OGImage}}" />{{end}}
+<meta name="twitter:card" content="{{if .OGImage}}summary_large_image{{else}}summary{{end}}" />
+<meta name="twitter:title" content="{{$title}}" />
+<meta name="twitter:description" content="{{$description}}" />
+{{if .OGImage}}<meta name="twitter:image" content="{{.OGImage}}" />{{end}}
+{{if .ArticlePublished}}<meta property="article:published_time" content="{{.ArticlePublished}}" />{{end}}
+{{if .ArticleModified}}<meta property="article:modified_time" content="{{.ArticleModified}}" />{{end}}
+{{if .StructuredData}}<script type="application/ld+json">{{toJSON .StructuredData}}</script>{{end}}
+<link rel="alternate" type="application/rss+xml" title="Congrid Blog" href="/feed.xml" />
 <link rel="icon" href="/static/assets/congrid-logo.svg" type="image/svg+xml" />
 <link rel="stylesheet" href="/static/site.css" />
 <script>window.CongridMessages = {{toJSON clientMessages}};</script>

@@ -1,0 +1,19 @@
+{{define "cms-posts.html"}}{{template "layout" .}}{{end}}
+{{define "main"}}
+<section class="section"><div class="container">
+  {{template "cms-toolbar" .}}
+  <div class="cms-list-heading"><p class="muted">{{t "{0} articles" .Total}}</p><a class="btn" href="/cms/posts/new">+ {{t "New article"}}</a></div>
+  {{if .Posts}}
+  <div class="table-wrap"><table class="table cms-table">
+    <thead><tr><th>{{t "Title"}}</th><th>{{t "Status"}}</th><th>{{t "Category"}}</th><th>{{t "Updated"}}</th><th>{{t "Actions"}}</th></tr></thead>
+    <tbody>{{range .Posts}}<tr>
+      <td><a href="/cms/posts/{{.ID}}/edit">{{.Title}}</a><small class="muted cms-post-url">{{.URL}} · {{.Language}}</small></td>
+      <td>{{if eq .Status "published"}}<span class="badge badge-ok">{{t "Published"}}</span>{{else}}<span class="badge badge-muted">{{t "Draft"}}</span>{{end}}</td>
+      <td>{{t .Category}}</td><td>{{.UpdatedDate}}</td>
+      <td><div class="slot-actions"><a href="/cms/posts/{{.ID}}/edit">{{t "Edit"}}</a><a href="/cms/posts/{{.ID}}/preview" target="_blank" rel="noopener">{{t "Preview"}}</a>{{if eq .Status "published"}}<a href="{{.URL}}" target="_blank" rel="noopener">{{t "View"}} ↗</a>{{end}}</div></td>
+    </tr>{{end}}</tbody>
+  </table></div>
+  {{else}}<div class="card blog-empty"><h2>{{t "Your first article starts here"}}</h2><p class="muted">{{t "Save a draft, preview it, then publish it to the blog."}}</p><a href="/cms/posts/new">{{t "New article"}} →</a></div>{{end}}
+  <nav class="pagination" aria-label='{{t "Pagination"}}'><span class="muted">{{t "Page {0} · {1} articles" .Page .Total}}</span><div class="slot-actions">{{if .PreviousURL}}<a href="{{.PreviousURL}}">← {{t "Previous"}}</a>{{end}}{{if .NextURL}}<a href="{{.NextURL}}">{{t "Next"}} →</a>{{end}}</div></nav>
+</div></section>
+{{end}}

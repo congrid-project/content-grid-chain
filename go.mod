@@ -11,6 +11,8 @@ require (
 	github.com/cosmos/cosmos-sdk v0.53.4
 	github.com/lib/pq v1.10.9
 	github.com/spf13/cobra v1.10.1
+	github.com/yuin/goldmark v1.8.6
+	golang.org/x/crypto v0.48.0
 	modernc.org/sqlite v1.49.1
 )
 
@@ -304,7 +306,6 @@ require (
 	go.uber.org/zap v1.27.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	golang.org/x/arch v0.17.0 // indirect
-	golang.org/x/crypto v0.48.0 // indirect
 	golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6 // indirect
 	golang.org/x/mod v0.33.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect

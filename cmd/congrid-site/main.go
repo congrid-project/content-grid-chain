@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"database/sql"
 	"embed"
 	"encoding/json"
 	"errors"
@@ -34,10 +36,14 @@ type server struct {
 
 func main() {
 	var (
-		addr       = flag.String("addr", ":8080", "listen address")
-		baseURL    = flag.String("base-url", "https://congrid.net", "public base URL used in copyable snippets")
-		requestLog = flag.Bool("request-log", true, "log requests")
-		downloads  = flag.String("downloads-dir", defaultDownloadsDir(), "directory containing public release downloads")
+		addr            = flag.String("addr", ":8080", "listen address")
+		baseURL         = flag.String("base-url", "https://congrid.net", "public base URL used in copyable snippets")
+		requestLog      = flag.Bool("request-log", true, "log requests")
+		downloads       = flag.String("downloads-dir", defaultDownloadsDir(), "directory containing public release downloads")
+		cmsDB           = flag.String("cms-db", envOrDefault("CONGRID_CMS_DB", "./congrid-cms.db"), "SQLite database path for CMS content, administrator and sessions")
+		cmsAdmin        = flag.String("cms-admin-user", envOrDefault("CONGRID_CMS_ADMIN_USER", "admin"), "CMS administrator username for first setup or explicit reset")
+		cmsPasswordFile = flag.String("cms-admin-password-file", os.Getenv("CONGRID_CMS_ADMIN_PASSWORD_FILE"), "CMS bootstrap password file; defaults to CONGRID_CMS_ADMIN_PASSWORD")
+		cmsResetAdmin   = flag.Bool("cms-reset-admin-password", false, "set CMS administrator credentials, revoke all sessions, then exit (no chain configuration required)")
 
 		airdropEnabled         = flag.Bool("airdrop", false, "enable airdrop endpoint (requires funded faucet key)")
 		airdropDB              = flag.String("airdrop-db", "./congrid-airdrop.db", "SQLite claim database path (legacy JSON at this path is migrated automatically)")
@@ -77,6 +83,27 @@ func main() {
 	templates, err := buildPageTemplates(siteFS)
 	if err != nil {
 		log.Fatalf("template init: %v", err)
+	}
+	cmsStore, err := openCMSStore(context.Background(), *cmsDB)
+	if err != nil {
+		log.Fatalf("CMS database init: %v", err)
+	}
+	defer cmsStore.Close()
+	cmsPassword, err := cmsAdminPassword(*cmsPasswordFile)
+	if err != nil {
+		log.Fatalf("CMS credentials: %v", err)
+	}
+	if err := cmsStore.configureAdmin(context.Background(), *cmsAdmin, cmsPassword, *cmsResetAdmin); err != nil {
+		log.Fatalf("CMS account init: %v", err)
+	}
+	if *cmsResetAdmin {
+		log.Print("CMS administrator configured; all CMS sessions revoked")
+		return
+	}
+	if _, _, err := cmsStore.admin(context.Background()); errors.Is(err, sql.ErrNoRows) {
+		log.Print("CMS sign-in disabled until CONGRID_CMS_ADMIN_PASSWORD or a CMS password file is configured")
+	} else if err != nil {
+		log.Fatalf("CMS account lookup: %v", err)
 	}
 
 	subStatic := mustSub(siteFS, "static")
@@ -158,6 +185,10 @@ func main() {
 		walletCfg: walletCfg,
 		regCfg:    regCfg,
 	}
+	cms, err := newCMSApp(s, cmsStore, *baseURL)
+	if err != nil {
+		log.Fatalf("CMS init: %v", err)
+	}
 	downloadHandler, err := newDownloadHandler(*downloads)
 	if err != nil {
 		log.Fatalf("downloads init: %v", err)
@@ -165,6 +196,7 @@ func main() {
 	log.Printf("congrid-site downloads served from %s", downloadHandler.root)
 
 	mux := http.NewServeMux()
+	cms.registerRoutes(mux)
 	mux.Handle("GET /static/", http.StripPrefix("/static/", s.static))
 	mux.Handle("GET /downloads/{filename}", downloadHandler)
 	if walletRPCProxy != nil {
@@ -278,6 +310,8 @@ func envOrDefault(name, fallback string) string {
 
 func buildPageTemplates(efs embed.FS) (map[string]*template.Template, error) {
 	funcs := template.FuncMap{
+		"seoCanonicalURL": seoCanonicalURL,
+		"seoLanguageURL":  seoLanguageURL,
 		"toJSON": func(v any) template.JS {
 			b, err := json.Marshal(v)
 			if err != nil {
@@ -368,6 +402,10 @@ func buildPageTemplates(efs embed.FS) (map[string]*template.Template, error) {
 }
 
 func (s *server) render(w http.ResponseWriter, r *http.Request, name string, data any) {
+	s.renderStatus(w, r, name, data, http.StatusOK)
+}
+
+func (s *server) renderStatus(w http.ResponseWriter, r *http.Request, name string, data any, status int) {
 	t, ok := s.templates[name]
 	if !ok {
 		log.Printf("render %s: template not found", name)
@@ -383,28 +421,44 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, name string, dat
 		return
 	}
 	localized.Funcs(languageTemplateFuncs(lang, r))
-	http.SetCookie(w, &http.Cookie{
-		Name: languageCookie, Value: lang, Path: "/", MaxAge: 365 * 24 * 60 * 60,
-		HttpOnly: true, Secure: r.TLS != nil, SameSite: http.SameSiteLaxMode,
-	})
-	w.Header().Set("Content-Language", lang)
-	w.Header().Add("Vary", "Cookie")
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := localized.ExecuteTemplate(w, name, data); err != nil {
+	var rendered bytes.Buffer
+	if err := localized.ExecuteTemplate(&rendered, name, data); err != nil {
 		log.Printf("render %s: %v", name, err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
+	http.SetCookie(w, &http.Cookie{
+		Name: languageCookie, Value: lang, Path: "/", MaxAge: 365 * 24 * 60 * 60,
+		HttpOnly: true, Secure: r.TLS != nil, SameSite: http.SameSiteLaxMode,
+	})
+	contentLanguage := lang
+	if view, ok := data.(cmsView); ok && validLanguage(view.ContentLanguage) {
+		contentLanguage = view.ContentLanguage
+	}
+	w.Header().Set("Content-Language", contentLanguage)
+	w.Header().Add("Vary", "Cookie")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(status)
+	_, _ = w.Write(rendered.Bytes())
 }
 
 type pageData struct {
-	Title        string
-	Description  string
-	BaseURL      string
-	Path         string
-	NowYear      int
-	Flash        string
-	WalletConfig WalletConfig
+	NoIndex          bool
+	RawMetadata      bool
+	ContentLanguage  string
+	CanonicalURL     string
+	OGType           string
+	OGImage          string
+	ArticlePublished string
+	ArticleModified  string
+	StructuredData   any
+	Title            string
+	Description      string
+	BaseURL          string
+	Path             string
+	NowYear          int
+	Flash            string
+	WalletConfig     WalletConfig
 }
 
 type PublisherRegisterConfig struct {

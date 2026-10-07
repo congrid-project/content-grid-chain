@@ -1,0 +1,48 @@
+{{define "blog.html"}}{{template "layout" .}}{{end}}
+{{define "main"}}
+<section class="hero blog-hero"><div class="container">
+  <div class="pill">{{t "From the Congrid network"}}</div>
+  <h1>{{t "News, ideas and updates"}}</h1>
+  <p class="lead">{{t "News, practical guides and protocol updates from the Congrid network."}}</p>
+  <div class="blog-filter-row">
+    <form method="get" action="/blog" class="blog-filters">
+      <input type="hidden" name="lang" value="{{language}}" />
+      <label>{{t "Category"}}<select class="input" name="category">
+        <option value="">{{t "All categories"}}</option>
+        <option {{if eq .Category "News"}}selected{{end}} value="News">{{t "News"}}</option>
+        <option {{if eq .Category "Guides"}}selected{{end}} value="Guides">{{t "Guides"}}</option>
+        <option {{if eq .Category "Updates"}}selected{{end}} value="Updates">{{t "Updates"}}</option>
+      </select></label>
+      <label>{{t "Article language"}}<select class="input" name="content_lang">
+        <option value="">{{t "All languages"}}</option>
+        <option {{if eq .ContentFilter "en"}}selected{{end}} value="en">English</option>
+        <option {{if eq .ContentFilter "zh"}}selected{{end}} value="zh">中文</option>
+        <option {{if eq .ContentFilter "fr"}}selected{{end}} value="fr">Français</option>
+      </select></label>
+      <button class="btn btn-outline" type="submit">{{t "Filter"}}</button>
+    </form>
+    <a class="blog-rss" href="/feed.xml">RSS ↗</a>
+  </div>
+</div></section>
+<section class="section"><div class="container">
+  <div class="grid blog-grid">
+  {{range .Posts}}
+    <article class="card blog-card" lang="{{.Language}}">
+      {{if .CoverURL}}<a href="{{.URL}}" tabindex="-1" aria-hidden="true"><img class="blog-cover" src="{{.CoverURL}}" alt="" loading="lazy" decoding="async" /></a>{{end}}
+      <div class="blog-card-content">
+        <div class="blog-meta"><span class="tag">{{t .Category}}</span><time datetime="{{.PublishedDate}}">{{.PublishedDate}}</time><span>{{.Language}}</span></div>
+        <h2><a href="{{.URL}}">{{.Title}}</a></h2>
+        <p class="muted">{{.Summary}}</p>
+        <a class="blog-read" href="{{.URL}}">{{t "Read article"}} →</a>
+      </div>
+    </article>
+  {{else}}
+    <div class="card blog-empty"><h2>{{t "No articles yet"}}</h2><p class="muted">{{t "Published articles will appear here. Check back for news and guides from Congrid."}}</p><a href="/docs">{{t "Explore the guides"}} →</a></div>
+  {{end}}
+  </div>
+  <nav class="pagination" aria-label='{{t "Pagination"}}'>
+    <span class="muted">{{t "Page {0} · {1} articles" .Page .Total}}</span>
+    <div class="slot-actions">{{if .PreviousURL}}<a class="btn btn-outline" href="{{.PreviousURL}}">← {{t "Previous"}}</a>{{end}}{{if .NextURL}}<a class="btn btn-outline" href="{{.NextURL}}">{{t "Next"}} →</a>{{end}}</div>
+  </nav>
+</div></section>
+{{end}}

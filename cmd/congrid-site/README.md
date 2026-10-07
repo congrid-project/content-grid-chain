@@ -8,6 +8,86 @@ All pages support English, Chinese, and French. Click the globe icon in the navi
 
 Translations for page content, metadata, status labels, and browser notices are maintained in `static/translations.json`. Wallet connections use Keplr.
 
+## Blog and CMS
+
+The public blog at `/blog` shares the site's theme and navigation. Articles support
+Markdown, English/Chinese/French content, News/Guides/Updates categories, an author,
+summary, optional cover image, SEO title and description. The interface language
+and article language are independent; content is not automatically translated.
+
+Manage content at `/cms/login`. There is one administrator account with no public
+registration. The account is used only for `/cms`; public pages require no login.
+Drafts and saved previews are private. Publishing adds the article to the blog,
+`/sitemap.xml` and `/feed.xml`; saving it as Draft removes it from all three and its
+public URL returns 404. Previously published slugs remain fixed to preserve links.
+Concurrent edits use a revision check; permanent deletion requires confirmation.
+
+### Administrator setup
+
+SQLite stores articles, the password hash and expiring sessions in
+`./congrid-cms.db` by default. Use a persistent production path such as
+`/var/lib/congrid-site/cms.db`, owned by the site service user and outside public
+downloads/static directories. The database is created with `0600` permissions and
+uses WAL. There is **no default password**. Before the first start, configure:
+
+```bash
+export CONGRID_CMS_DB=/var/lib/congrid-site/cms.db
+export CONGRID_CMS_ADMIN_USER=admin
+export CONGRID_CMS_ADMIN_PASSWORD_FILE=/etc/congrid-site/cms-password
+```
+
+Create the password file beforehand with a 12–72 byte password, readable only by
+the service user. Final line endings are removed; other whitespace is preserved.
+Alternatively use `CONGRID_CMS_ADMIN_PASSWORD` in the process environment; a
+configured password file takes precedence. Keep these variables in the service
+configuration and retain the existing chain/RPC startup arguments. Then sign in
+at `https://congrid.net/cms/login`.
+
+The bootstrap secret creates only the first account. Restarts do not overwrite
+saved credentials. Without an account the public blog works, but CMS sign-in is
+unavailable; there is no public setup endpoint. After setup, the bootstrap secret
+is no longer needed for normal startup.
+
+| Flag | Environment/default | Purpose |
+| --- | --- | --- |
+| `--cms-db` | `CONGRID_CMS_DB`, otherwise `./congrid-cms.db` | SQLite filesystem path |
+| `--cms-admin-user` | `CONGRID_CMS_ADMIN_USER`, otherwise `admin` | Initial/reset username |
+| `--cms-admin-password-file` | `CONGRID_CMS_ADMIN_PASSWORD_FILE` | Initial/reset password file; otherwise use `CONGRID_CMS_ADMIN_PASSWORD` |
+| `--cms-reset-admin-password` | `false` | Set credentials, revoke all CMS sessions and exit |
+
+To rotate credentials, update the password file and run as the service user. This
+command preserves articles and needs no chain configuration:
+
+```bash
+go build -o /tmp/congrid-site ./cmd/congrid-site
+/tmp/congrid-site \
+  --cms-db /var/lib/congrid-site/cms.db \
+  --cms-admin-user admin \
+  --cms-admin-password-file /etc/congrid-site/cms-password \
+  --cms-reset-admin-password
+```
+
+Back up with SQLite's backup API or stop the site before copying the database;
+copying only a live `.db` file can omit changes still in WAL.
+
+Sessions last 12 hours. Cookies are HttpOnly, SameSite=Strict and scoped to `/cms`.
+An HTTPS base URL enables Secure cookies behind a TLS proxy. For local HTTP use a
+base URL matching the browser origin. Passwords use bcrypt, session tokens are
+stored as hashes, and mutations check CSRF tokens and the request origin. Sign-in
+is limited to 10 attempts per 10 minutes per direct peer address, with bounded
+password-check concurrency. Behind a reverse proxy, also configure client-IP
+login limits there; the app does not trust arbitrary forwarded headers.
+
+### SEO and discovery
+
+Pages have canonical URLs, social metadata and language alternates. Articles add
+`BlogPosting` JSON-LD, publication/update timestamps and an optional sharing image.
+The sitemap and RSS contain only published content. CMS and previews carry
+`noindex`/`no-store`, and `robots.txt` excludes `/cms`. Pagination uses distinct
+canonical URLs; category/language filter results are excluded from indexing.
+After deployment and publishing your first articles, submit
+`https://congrid.net/sitemap.xml` to your search engine tools.
+
 ## Validation
 
 ```bash

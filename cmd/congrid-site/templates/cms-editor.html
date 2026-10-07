@@ -1,0 +1,39 @@
+{{define "cms-editor.html"}}{{template "layout" .}}{{end}}
+{{define "main"}}
+<section class="section"><div class="container">
+  {{template "cms-toolbar" .}}
+  <form method="post" action="{{if .Post.ID}}/cms/posts/{{.Post.ID}}/edit{{else}}/cms/posts/new{{end}}" class="cms-editor">
+    <input type="hidden" name="csrf" value="{{.CSRF}}" /><input type="hidden" name="revision" value="{{.Post.Revision}}" />
+    <div class="card cms-writing">
+      <label class="label" for="title">{{t "Article title"}}</label><input class="input cms-title-input" id="title" name="title" value="{{.Post.Title}}" maxlength="200" required />
+      <label class="label" for="slug">{{t "URL slug"}}</label><div class="cms-slug"><span>/blog/</span><input class="input" id="slug" name="slug" value="{{.Post.Slug}}" maxlength="120" pattern="[a-z0-9]+(-[a-z0-9]+)*" {{if .Post.PublishedAt}}readonly{{end}} required /></div>
+      <p class="cms-help muted">{{t "Use lowercase English letters, numbers and hyphens. Published URLs remain fixed to preserve links."}}</p>
+      <label class="label" for="summary">{{t "Summary"}}</label><textarea class="input" id="summary" name="summary" rows="3" maxlength="500" required>{{.Post.Summary}}</textarea>
+      <label class="label" for="body">{{t "Markdown content"}}</label>
+      <p class="cms-help muted">{{t "Use ## for headings, **text** for bold, [text](https://...) for links and ![description](https://...) for images. Raw HTML is disabled."}}</p>
+      <textarea class="input cms-body-input" id="body" name="body" rows="24" maxlength="100000" required spellcheck="true">{{.Post.Body}}</textarea>
+    </div>
+    <aside class="cms-settings">
+      <div class="card">
+        <h2>{{t "Publication"}}</h2>
+        <label class="label" for="status">{{t "Status"}}</label><select class="input" id="status" name="status"><option value="draft" {{if eq .Post.Status "draft"}}selected{{end}}>{{t "Draft"}}</option><option value="published" {{if eq .Post.Status "published"}}selected{{end}}>{{t "Published"}}</option></select>
+        <label class="label" for="category">{{t "Category"}}</label><select class="input" id="category" name="category"><option value="News" {{if eq .Post.Category "News"}}selected{{end}}>{{t "News"}}</option><option value="Guides" {{if eq .Post.Category "Guides"}}selected{{end}}>{{t "Guides"}}</option><option value="Updates" {{if eq .Post.Category "Updates"}}selected{{end}}>{{t "Updates"}}</option></select>
+        <label class="label" for="language">{{t "Article language"}}</label><select class="input" id="language" name="language"><option value="en" {{if eq .Post.Language "en"}}selected{{end}}>English</option><option value="zh" {{if eq .Post.Language "zh"}}selected{{end}}>中文</option><option value="fr" {{if eq .Post.Language "fr"}}selected{{end}}>Français</option></select>
+        <label class="label" for="author">{{t "Author"}}</label><input class="input" id="author" name="author" value="{{.Post.Author}}" maxlength="100" required />
+        <div class="cms-save-actions"><button class="btn" type="submit">{{t "Save article"}}</button>{{if .Post.ID}}<a href="/cms/posts/{{.Post.ID}}/preview" target="_blank" rel="noopener">{{t "Preview saved version"}} ↗</a>{{end}}</div>
+        <p class="cms-help muted">{{t "Published articles are immediately visible. Choose Draft to remove an article from the public blog."}}</p>
+      </div>
+      <div class="card">
+        <h2>{{t "SEO and sharing"}}</h2>
+        <label class="label" for="seo_title">{{t "SEO title"}}</label><input class="input" id="seo_title" name="seo_title" value="{{.Post.SEOTitle}}" maxlength="200" />
+        <p class="cms-help muted">{{t "Optional. Defaults to the article title. Aim for a concise, descriptive title."}}</p>
+        <label class="label" for="seo_description">{{t "SEO description"}}</label><textarea class="input" id="seo_description" name="seo_description" rows="4" maxlength="500">{{.Post.SEODescription}}</textarea>
+        <p class="cms-help muted">{{t "Optional. Defaults to the summary. Explain what readers will learn."}}</p>
+        <label class="label" for="cover_url">{{t "Cover image URL"}}</label><input class="input" id="cover_url" name="cover_url" value="{{.Post.CoverURL}}" maxlength="2000" placeholder="https://..." />
+        <p class="cms-help muted">{{t "Use an HTTPS image URL or a /static/ asset path. This image is also used for social sharing."}}</p>
+      </div>
+    </aside>
+  </form>
+  {{if .Post.ID}}<details class="card cms-delete"><summary>{{t "Delete article"}}</summary><p class="muted">{{t "Deleting removes the article permanently. To hide it while keeping its content, save it as a draft."}}</p><form method="post" action="/cms/posts/{{.Post.ID}}/delete"><input type="hidden" name="csrf" value="{{.CSRF}}" /><input type="hidden" name="revision" value="{{.Post.Revision}}" /><label><input type="checkbox" name="confirm" value="delete" required /> {{t "I confirm permanent deletion"}}</label><button class="btn cms-danger" type="submit">{{t "Delete article"}}</button></form></details>{{end}}
+</div></section>
+{{end}}

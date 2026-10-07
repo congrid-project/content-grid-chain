@@ -1,0 +1,12 @@
+{{define "cms-toolbar"}}
+<div class="cms-toolbar">
+  <div><div class="pill">{{t "Congrid CMS"}}</div><h1>{{t .Title}}</h1></div>
+  <div class="cms-tools">
+    <a href="/cms/posts">{{t "All articles"}}</a><a href="/blog" target="_blank" rel="noopener">{{t "View blog"}} ↗</a>
+    <span class="muted">{{.Username}}</span>
+    <form method="post" action="/cms/logout"><input type="hidden" name="csrf" value="{{.CSRF}}" /><button class="btn btn-ghost" type="submit">{{t "Sign out"}}</button></form>
+  </div>
+</div>
+{{if .Error}}<div class="callout cms-error" role="alert">{{t .Error}}</div>{{end}}
+{{if .Notice}}<div class="callout" role="status">{{t .Notice}}</div>{{end}}
+{{end}}
