@@ -79,11 +79,30 @@ HTTPS base URL 在反向代理终止 TLS 时也会启用 Secure Cookie；本地 
 `/robots.txt` 排除 `/cms`。分页使用独立 canonical，分类/语言筛选结果不索引。
 部署并发布首批文章后，可将 `https://congrid.net/sitemap.xml` 提交至搜索引擎站长工具。
 
+### 使用部署脚本
+
+在网站服务器上准备好 `/etc/congrid-site/cms-password` 后，在仓库目录执行：
+
+```bash
+bash scripts/deploy-congrid-site.sh
+```
+
+脚本要求 systemd 247+，自动生成 `congrid-site.service.d/50-cms.conf`，保留原有
+`ExecStart` 和链/RPC 参数。systemd 通过 `LoadCredential` 把密码文件提供给服务，
+脚本不会输出密码，也不会将密码内容写入服务环境变量或命令行。
+SQLite 使用 `/var/lib/congrid-site/cms/cms.db`，由 systemd 管理目录权限和持久化；
+首次管理员用户名为 `admin`，重新部署不会重置已创建的账号或数据库。
+如果原有 `ExecStart` 含 `--cms-db` 或 `--cms-admin-password-file`，先移除这两个覆盖
+参数，以使用脚本管理的配置。已有其他路径的 CMS 数据库需先安排备份和迁移。
+脚本检查主页标识、博客及已配置账号的登录页，失败会回滚二进制和 CMS 服务配置。
+部署后访问 `/blog` 和 `/cms/login`。
+
 ## 验证
 
 ```bash
 go test ./cmd/congrid-site
 node --test cmd/congrid-site/testdata/wallet.test.mjs
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/tests -v
 ```
 
 ## 本地运行

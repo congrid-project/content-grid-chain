@@ -88,11 +88,27 @@ canonical URLs; category/language filter results are excluded from indexing.
 After deployment and publishing your first articles, submit
 `https://congrid.net/sitemap.xml` to your search engine tools.
 
+### Deployment script
+
+On the website server, prepare `/etc/congrid-site/cms-password`, then run
+`bash scripts/deploy-congrid-site.sh` from the repository. Requires systemd 247+.
+The script adds `congrid-site.service.d/50-cms.conf` while preserving the existing
+`ExecStart` and chain/RPC arguments. `LoadCredential` passes the password file to
+the service without printing its contents or putting them in the command line or
+unit environment. SQLite persists at `/var/lib/congrid-site/cms/cms.db`, with its
+directory managed by systemd. The initial username is `admin`; subsequent deploys
+do not reset the account or database. Remove existing `--cms-db` or
+`--cms-admin-password-file` arguments to use these managed settings, and arrange a
+backup/migration first if CMS content already exists at another path. Local health
+checks cover the homepage badge, blog and configured CMS sign-in page. Failure
+restores the prior binary and CMS drop-in. Visit `/blog` and `/cms/login` afterward.
+
 ## Validation
 
 ```bash
 go test ./cmd/congrid-site
 node --test cmd/congrid-site/testdata/wallet.test.mjs
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/tests -v
 ```
 
 ## Run locally
