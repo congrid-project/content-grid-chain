@@ -51,7 +51,7 @@ Fields:
 - `drand`: embedded delivery settings (`disabled`, `api_base_url`, `request_timeout_seconds`, deterministic fallback controls `relay_stagger_seconds` / `relay_max_delay_seconds`, and optional message-specific `fee_granter`)
 - `submit`: tx submission settings for `content-grid-d`
   - `binary`
-  - `chain_id`, `node`, `from`, `keyring_backend`, `keyring_dir`, `keyring_passphrase_env`, `home`
+  - `node`, `from`, `keyring_backend`, `keyring_dir`, `keyring_passphrase_env`, `home`
   - `gas`, `gas_adjustment`, `fees`, `gas_prices`, `fee_granter`, `broadcast_mode`, `yes`
 
 For production, use `gas=250000`, empty `fees`, and

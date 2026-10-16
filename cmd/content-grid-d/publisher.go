@@ -4,15 +4,16 @@ import (
 	"fmt"
 	"strings"
 
-	registryoffchain "content-grid-chain/offchain/registry"
-	"content-grid-chain/x/registry"
-	typespb "content-grid-chain/x/registry/typespb"
-
 	"github.com/spf13/cobra"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
+
+	"content-grid-chain/internal/network"
+	registryoffchain "content-grid-chain/offchain/registry"
+	"content-grid-chain/x/registry"
+	typespb "content-grid-chain/x/registry/typespb"
 )
 
 func publisherCommand() *cobra.Command {
@@ -77,7 +78,7 @@ func publisherRegisterCommand() *cobra.Command {
 	// NOTE: We intentionally do NOT support a /.well-known/content-grid.txt proof flow.
 	// Publisher ownership verification is based solely on the homepage containing at least one congrid.net link.
 	cmd.Flags().String(flags.FlagFrom, "", "Name or address of private key with which to sign")
-	cmd.Flags().String(flags.FlagChainID, "", "The network chain ID")
+	cmd.Flags().String(flags.FlagChainID, network.DefaultChainID, "The network chain ID")
 	cmd.Flags().String(flags.FlagNode, "tcp://localhost:26657", "<host>:<port> to CometBFT rpc interface for this chain")
 	cmd.Flags().String(flags.FlagKeyringBackend, "os", "Select keyring's backend (os|file|kwallet|pass|test|memory)")
 	cmd.Flags().String(flags.FlagKeyringDir, "", "The client Keyring directory; if omitted, the default 'home' directory will be used")

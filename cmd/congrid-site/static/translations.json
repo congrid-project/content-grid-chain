@@ -228,10 +228,6 @@
     "zh": "当前链配置",
     "fr": "Configuration actuelle de la chaîne"
   },
-  "Chain ID:": {
-    "zh": "链 ID：",
-    "fr": "Identifiant de chaîne :"
-  },
   "RPC:": {
     "zh": "RPC：",
     "fr": "RPC :"
@@ -960,18 +956,6 @@
     "zh": "通用网络参数：",
     "fr": "Paramètres réseau communs :"
   },
-  "Use chain ID": {
-    "zh": "使用链 ID",
-    "fr": "Utilisez l’identifiant de chaîne"
-  },
-  "and RPC": {
-    "zh": "及 RPC",
-    "fr": "et le RPC"
-  },
-  "whenever wallet or CLI commands ask for Congrid network settings.": {
-    "zh": "作为钱包或 CLI 命令要求的 Congrid 网络配置。",
-    "fr": "lorsque le portefeuille ou les commandes CLI demandent les paramètres réseau Congrid."
-  },
   "Role references": {
     "zh": "角色参考资料",
     "fr": "Ressources par rôle"
@@ -1533,9 +1517,9 @@
     "zh": "服务器端注册需要提供服务器密钥环中的签名密钥名。",
     "fr": "L’inscription côté serveur nécessite le nom d’une clé de signature du trousseau du serveur."
   },
-  "Server is missing chain-id/node config.": {
-    "zh": "服务器缺少链 ID 或节点配置。",
-    "fr": "La configuration d’identifiant de chaîne ou de nœud est manquante sur le serveur."
+  "Registration service is unavailable. Please try again later.": {
+    "zh": "注册服务暂时不可用，请稍后重试。",
+    "fr": "Le service d’inscription est indisponible. Veuillez réessayer plus tard."
   },
   "Cannot resolve key {0} in server keyring.": {
     "zh": "无法在服务器密钥环中找到密钥 {0}。",

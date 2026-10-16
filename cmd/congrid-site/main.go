@@ -21,6 +21,8 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"content-grid-chain/internal/network"
 )
 
 //go:embed templates/*.html templates/partials/*.html static/* static/assets/*
@@ -55,7 +57,7 @@ func main() {
 		airdropAllowHTTP       = flag.Bool("airdrop-allow-http-verification", false, "allow insecure HTTP website verification (development only)")
 		airdropAllowPrivate    = flag.Bool("airdrop-allow-private-targets", false, "allow verification targets resolving to private/special IPs (development only)")
 		airdropWorker          = flag.Bool("airdrop-worker", true, "process queued airdrop transfers; enable on exactly one instance per faucet key")
-		chainID                = flag.String("chain-id", "", "chain id")
+		chainID                = flag.String("chain-id", network.DefaultChainID, "chain id")
 		nodeRPC                = flag.String("node", "", "rpc endpoint (e.g. tcp://127.0.0.1:26657)")
 		walletRPC              = flag.String("wallet-rpc", "", "public rpc endpoint used by browser wallets (defaults to base-url /rpc reverse proxy)")
 		walletREST             = flag.String("wallet-rest", "", "public rest endpoint used by browser wallets (defaults to base-url /rest reverse proxy)")

@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"content-grid-chain/internal/network"
 )
 
 type Config struct {
@@ -146,6 +148,9 @@ func (c *Config) applyDefaults() {
 	}
 	if c.Submit.Binary == "" {
 		c.Submit.Binary = "content-grid-d"
+	}
+	if c.Submit.ChainID == "" {
+		c.Submit.ChainID = network.DefaultChainID
 	}
 	if c.Submit.Node == "" {
 		c.Submit.Node = "tcp://localhost:26657"

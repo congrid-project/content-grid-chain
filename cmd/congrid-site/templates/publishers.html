@@ -14,7 +14,6 @@
       <div class="card">
         <h2>{{t "Network values you'll use"}}</h2>
         <ul>
-          <li><strong>{{t "Chain ID:"}}</strong> <code>{{.WalletConfig.ChainID}}</code></li>
           <li><strong>{{t "RPC:"}}</strong> <code>{{.WalletConfig.RPC}}</code></li>
           <li><strong>{{t "Bech32 prefix:"}}</strong> <code>congrid</code> {{t "(address starts with"}} <code>congrid1...</code>)</li>
           <li><strong>{{t "Fee denom:"}}</strong> <code>{{if .WalletConfig.FeeDenom}}{{.WalletConfig.FeeDenom}}{{else}}ucongrid{{end}}</code></li>
@@ -70,7 +69,6 @@
     <form class="card"
       data-publisher-onboarding-form
       data-base-url="{{.BaseURL}}"
-      data-chain-id="{{.WalletConfig.ChainID}}"
       data-rpc="{{.WalletConfig.RPC}}"
       data-gas-price="{{if .WalletConfig.GasPrice}}{{.WalletConfig.GasPrice}}{{else}}0.001ucongrid{{end}}">
       <label class="label" for="publisher-domain">{{t "Website domain"}}</label>
@@ -154,7 +152,6 @@
   const walletRegisterReferrerInput = document.querySelector("[data-wallet-register-referrer]");
 
   const baseURL = (form.dataset.baseUrl || "https://congrid.net").replace(/\/$/, "");
-  const chainID = String(form.dataset.chainId || "").trim();
   const rpc = String(form.dataset.rpc || "").trim();
   const gasPrice = String(form.dataset.gasPrice || "0.001ucongrid").trim();
 
@@ -226,7 +223,6 @@
       `./content-grid-d publisher register ${domain}`,
       `  --from <local-key-name>`,
       referrer ? `  --referrer ${referrer}` : "",
-      chainID ? `  --chain-id ${chainID}` : "",
       rpc ? `  --node ${rpc}` : "",
       gasPrice ? `  --gas-prices ${gasPrice}` : "",
       "  --gas auto --gas-adjustment 1.3",

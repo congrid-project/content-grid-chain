@@ -71,7 +71,7 @@ congrid-native/
 curl -fsSL https://congrid.net/downloads/install.sh | bash
 ```
 
-脚本核对两台节点的 chain ID、节点 ID、同步状态、同高度区块哈希和可信区块时间，
+脚本核对两台节点所属网络、节点 ID、同步状态、同高度区块哈希和可信区块时间，
 并检查链上解绑期足够长。可信高度取两台最新高度的较小值减 20，必须大于 90000；
 可信块不能早于当前时间一小时。信任期为 24 小时。请保持系统时钟准确。
 
@@ -135,8 +135,8 @@ curl -fsSL https://congrid.net/downloads/install.sh |
 ```
 
 该模式会询问现有节点的 RPC 和 gRPC 地址，默认分别为
-`127.0.0.1:26657`、`127.0.0.1:9090`。安装前会调用 RPC `/status`，确认返回的
-chain ID 是 `congrid-main`，并检查 gRPC TCP 端口可连接。RPC 和 gRPC 只需对本机
+`127.0.0.1:26657`、`127.0.0.1:9090`。安装前会调用 RPC `/status`，确认节点
+连接到 Congrid 主网，并检查 gRPC TCP 端口可连接。RPC 和 gRPC 只需对本机
 组件可访问，不需要暴露到公网。
 
 组件模式只安装并管理 `chromad`、`indexerd` 和 `verifierd`。它不会覆盖
@@ -179,9 +179,8 @@ Linux 会通过 apt/dnf/yum/zypper/pacman 补齐依赖。macOS 自带 Python 3 �
 - 创建新 verifier key，或通过 mnemonic 恢复现有 key；
 - verifier 交易 gas prices。
 
-全节点安装固定使用 `congrid-main`，并校验主网 genesis 的 SHA-256。
+全节点安装会校验主网 genesis 的 SHA-256。
 新节点通过升级后的快照进行状态同步；等同步完成后才启动 indexer 和 verifier。
-组件模式仍可通过 `CONGRID_CHAIN_ID` 选择要连接的链。
 
 drand delivery 默认启用且不再询问。多个 verifier 可以安全地同时启用，程序会按
 确定性顺序选择主投递者和后备投递者。只有已经确认网络中存在其他投递节点的高级
@@ -342,7 +341,7 @@ tail -f ~/.content-grid/logs/verifier.log
 - verifier pending state；
 - chromad 数据。
 
-已有节点的 chain ID 必须与输入一致；安装器不会使用下载的 genesis 覆盖已有
+已有节点必须连接到 Congrid 主网；安装器不会使用下载的 genesis 覆盖已有
 genesis。1.5.0 没有自动重置例外。未由此状态同步安装器管理的节点应使用
 `--components-only` 安装组件，不能直接使用完整安装模式接管。
 

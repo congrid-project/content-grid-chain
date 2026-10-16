@@ -7,9 +7,6 @@ import (
 	"io"
 	"os"
 	"strings"
-	"time"
-
-	"content-grid-chain/app"
 
 	"github.com/spf13/cobra"
 
@@ -18,6 +15,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"content-grid-chain/app"
+	"content-grid-chain/internal/network"
 )
 
 const (
@@ -86,7 +86,7 @@ func devnetCommand() *cobra.Command {
 				return err
 			}
 			if chainID == "" {
-				chainID = fmt.Sprintf("grid-devnet-%d", time.Now().Unix())
+				chainID = network.DefaultChainID
 			}
 
 			allocationCoins, err := sdk.ParseCoinsNormalized(bankAmount)
@@ -168,7 +168,7 @@ func devnetCommand() *cobra.Command {
 	cmd.Flags().String(flagDevnetBankAmount, defaultDevnetBank, "total tokens to allocate to the validator genesis account (coin format)")
 	cmd.Flags().String(flagDevnetBondAmount, defaultDevnetBond, "self delegation amount included in the gentx (coin format)")
 	cmd.Flags().Bool(flagDevnetForce, false, "remove any existing data at --home before scaffolding")
-	cmd.Flags().String(flags.FlagChainID, "", "explicit chain-id to set in the genesis (default: generated)")
+	cmd.Flags().String(flags.FlagChainID, network.DefaultChainID, "The network chain ID")
 
 	return cmd
 }

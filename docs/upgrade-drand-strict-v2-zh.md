@@ -118,7 +118,6 @@ content-grid-d tx upgrade software-upgrade "$UPGRADE_NAME" \
   --upgrade-info "$UPGRADE_INFO" \
   --deposit <governance-deposit> \
   --from <proposer-key> \
-  --chain-id <chain-id> \
   --node <rpc-url> \
   --gas auto \
   --gas-adjustment 1.4 \
@@ -134,7 +133,6 @@ content-grid-d tx upgrade software-upgrade "$UPGRADE_NAME" \
 content-grid-d query gov proposal <proposal-id>
 content-grid-d tx gov vote <proposal-id> yes \
   --from <voter-key> \
-  --chain-id <chain-id> \
   --node <rpc-url> \
   --fees <fee> \
   -y
@@ -222,7 +220,6 @@ content-grid-d tx upgrade cancel-software-upgrade \
   --summary "Explain the reason for cancellation" \
   --deposit <governance-deposit> \
   --from <proposer-key> \
-  --chain-id <chain-id> \
   --node <rpc-url> \
   --fees <fee> \
   -y

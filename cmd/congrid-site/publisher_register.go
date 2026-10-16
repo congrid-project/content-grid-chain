@@ -38,7 +38,7 @@ func (s *server) handlePublisherRegister(baseURL string) http.HandlerFunc {
 			return
 		}
 		if s.regCfg.ChainID == "" || s.regCfg.NodeRPC == "" {
-			s.renderPublishersFlash(w, r, baseURL, "Server is missing chain-id/node config.")
+			s.renderPublishersFlash(w, r, baseURL, "Registration service is unavailable. Please try again later.")
 			return
 		}
 

@@ -23,7 +23,6 @@
   },
   "submit": {
     "binary": "content-grid-d",
-    "chain_id": "congrid-main",
     "node": "tcp://localhost:26657",
     "from": "verifier-key",
     "keyring_backend": "os",

@@ -12,7 +12,6 @@
       <div class="card">
         <h2>{{t "Current chain config"}}</h2>
         <ul>
-          <li><strong>{{t "Chain ID:"}}</strong> <code>{{.WalletConfig.ChainID}}</code></li>
           <li><strong>{{t "RPC:"}}</strong> <code>{{.WalletConfig.RPC}}</code></li>
           <li><strong>{{t "Fee denom:"}}</strong> <code>{{if .WalletConfig.FeeDenom}}{{.WalletConfig.FeeDenom}}{{else}}ucongrid{{end}}</code></li>
           <li><strong>{{t "Gas price:"}}</strong> <code>{{if .WalletConfig.GasPrice}}{{.WalletConfig.GasPrice}}{{else}}0.001ucongrid{{end}}</code></li>

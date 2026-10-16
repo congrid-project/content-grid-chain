@@ -130,7 +130,6 @@ go run ./cmd/congrid-site \
   --base-url http://localhost:8080 \
   --downloads-dir ./cmd/congrid-site/downloads \
   --slots-store chain \
-  --chain-id <chain-id> \
   --node <rpc-url> \
   --slots-grpc <grpc-host:port>
 ```
@@ -162,7 +161,6 @@ export CONGRID_FAUCET_KEYRING_PASSPHRASE='<file-keyring-passphrase>'
 go run ./cmd/congrid-site \
   --airdrop \
   --airdrop-db ./congrid-airdrop.db \
-  --chain-id <chain-id> \
   --node <rpc-url> \
   --slots-grpc <grpc-host:port> \
   --keyring-backend file \

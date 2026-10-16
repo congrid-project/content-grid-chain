@@ -9,11 +9,12 @@ import (
 	"strings"
 	"testing"
 
-	"content-grid-chain/app"
-
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
 	sdkversion "github.com/cosmos/cosmos-sdk/version"
 	"github.com/stretchr/testify/require"
+
+	"content-grid-chain/app"
+	"content-grid-chain/internal/network"
 )
 
 // TestCLISmokeLifecycle exercises the minimal CLI flow used in the quick-start docs.
@@ -23,9 +24,8 @@ func TestCLISmokeLifecycle(t *testing.T) {
 	}
 
 	homeDir := t.TempDir()
-	chainID := "grid-cli-smoke"
 
-	runCLI(t, homeDir, "init", "smoke-node", "--chain-id", chainID)
+	runCLI(t, homeDir, "init", "smoke-node")
 
 	configPath := filepath.Join(homeDir, "config", "config.toml")
 	configContents := string(readFile(t, configPath))
@@ -36,7 +36,7 @@ func TestCLISmokeLifecycle(t *testing.T) {
 	require.NotEmpty(t, addr)
 
 	runCLI(t, homeDir, "genesis", "add-genesis-account", addr, "100000000ucongrid")
-	runCLI(t, homeDir, "genesis", "gentx", "validator", "1000000ucongrid", "--chain-id", chainID, "--keyring-backend", "test")
+	runCLI(t, homeDir, "genesis", "gentx", "validator", "1000000ucongrid", "--keyring-backend", "test")
 	runCLI(t, homeDir, "genesis", "collect-gentxs")
 
 	genesisPath := filepath.Join(homeDir, "config", "genesis.json")
@@ -44,6 +44,8 @@ func TestCLISmokeLifecycle(t *testing.T) {
 
 	var doc map[string]any
 	require.NoError(t, json.Unmarshal(contents, &doc))
+	require.Equal(t, network.DefaultChainID, doc["chain_id"])
+	require.Contains(t, string(readFile(t, filepath.Join(homeDir, "config", "client.toml"))), `chain-id = "congrid-main"`)
 	appState, ok := doc["app_state"].(map[string]any)
 	require.True(t, ok, "missing app_state")
 	genutil, ok := appState["genutil"].(map[string]any)
@@ -108,17 +110,35 @@ func TestDevnetCommand(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping CLI smoke test in short mode")
 	}
+	for _, chainID := range []string{"", "grid-devnet-smoke"} {
+		name := chainID
+		if name == "" {
+			name = "default"
+		}
+		t.Run(name, func(t *testing.T) {
+			testDevnetCommand(t, chainID)
+		})
+	}
+}
 
+func testDevnetCommand(t *testing.T, chainID string) {
+	t.Helper()
 	homeDir := t.TempDir()
-	chainID := "grid-devnet-smoke"
 
-	runCLI(t, homeDir, "devnet", "--moniker", "devnet-node", "--chain-id", chainID, "--keyring-backend", "test")
+	args := []string{"devnet", "--moniker", "devnet-node", "--keyring-backend", "test"}
+	if chainID != "" {
+		args = append(args, "--chain-id", chainID)
+	} else {
+		chainID = network.DefaultChainID
+	}
+	runCLI(t, homeDir, args...)
 
 	genesisPath := filepath.Join(homeDir, "config", "genesis.json")
 	contents := readFile(t, genesisPath)
 
 	var doc map[string]any
 	require.NoError(t, json.Unmarshal(contents, &doc))
+	require.Equal(t, chainID, doc["chain_id"])
 	appState, ok := doc["app_state"].(map[string]any)
 	require.True(t, ok, "missing app_state")
 	genutil, ok := appState["genutil"].(map[string]any)

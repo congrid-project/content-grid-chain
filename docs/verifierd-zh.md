@@ -58,7 +58,7 @@ cp offchain/verifierd/config.example.json offchain/verifierd/config.json
   - `fee_granter`：可选的 drand 消息手续费代付账户
 - `submit`：`content-grid-d` 的交易提交配置
   - `binary`
-  - `chain_id`、`node`、`from`、`keyring_backend`、`keyring_dir`、`keyring_passphrase_env`、`home`
+  - `node`、`from`、`keyring_backend`、`keyring_dir`、`keyring_passphrase_env`、`home`
   - `gas`、`gas_adjustment`、`fees`、`gas_prices`、`fee_granter`、`broadcast_mode`、`yes`
 
 生产建议使用 `gas=250000`、`fees=""`、`gas_prices="0.001ucongrid"`。
@@ -84,7 +84,6 @@ printf '%s\n' '<keyring-passphrase>' > ~/.congrid-verifier.pass
 chmod 600 ~/.congrid-verifier.mnemonic ~/.congrid-verifier.pass
 
 cat > .env.verifier <<'EOF'
-CONGRID_CHAIN_ID=congrid-main
 CONGRID_NODE_RPC_URL=tcp://127.0.0.1:26657
 CONGRID_NODE_GRPC_ADDR=127.0.0.1:9090
 CONGRID_VERIFIER_KEY_NAME=verifier-key

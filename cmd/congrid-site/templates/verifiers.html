@@ -22,7 +22,6 @@
       <div class="card">
         <h2>{{t "Network configuration"}}</h2>
         <ul>
-          <li><strong>{{t "Chain ID:"}}</strong> <code>{{.WalletConfig.ChainID}}</code></li>
           <li><strong>{{t "Public RPC:"}}</strong> <code>{{.WalletConfig.RPC}}</code></li>
           <li><strong>{{t "Local RPC after install:"}}</strong> <code>tcp://127.0.0.1:26657</code></li>
           <li><strong>{{t "Fee denom:"}}</strong> <code>{{if .WalletConfig.FeeDenom}}{{.WalletConfig.FeeDenom}}{{else}}ucongrid{{end}}</code></li>
@@ -76,7 +75,6 @@
   --home /var/lib/congrid \
   --keyring-backend file \
   --keyring-dir /var/lib/congrid/keyrings/verifier \
-  --chain-id {{.WalletConfig.ChainID}} \
   --node tcp://127.0.0.1:26657 \
   --gas-prices {{if .WalletConfig.GasPrice}}{{.WalletConfig.GasPrice}}{{else}}0.001ucongrid{{end}} \
   -y</code></pre>
@@ -96,7 +94,6 @@
   --home "$HOME/.content-grid" \
   --keyring-backend file \
   --keyring-dir "$HOME/.content-grid/keyrings/verifier" \
-  --chain-id {{.WalletConfig.ChainID}} \
   --node tcp://127.0.0.1:26657 \
   --gas-prices {{if .WalletConfig.GasPrice}}{{.WalletConfig.GasPrice}}{{else}}0.001ucongrid{{end}} \
   -y</code></pre>

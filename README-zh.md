@@ -72,7 +72,7 @@ IBC Core 与 ICS-20 转账已接入，并提供双链应用测试和 Hermes 本�
 
 ## 使用协议
 
-Chain ID、RPC 地址、genesis 和 seed peer 等网络专属信息，应以网络运营方或官方发布包提供的值为准。
+RPC 地址、genesis 和 seed peer 等网络专属信息，应以网络运营方或官方发布包提供的值为准。
 
 ### 注册 Publisher
 
@@ -104,7 +104,6 @@ Chain ID、RPC 地址、genesis 和 seed peer 等网络专属信息，应以网�
 ```bash
 ./content-grid-d publisher register example.com \
   --from <publisher-key> \
-  --chain-id <chain-id> \
   --node <rpc-url> \
   --fees 0ucongrid
 ```

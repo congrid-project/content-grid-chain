@@ -72,7 +72,7 @@ See the [IBC testing and deployment runbook](docs/ibc.md).
 
 ## Use the protocol
 
-Network-specific values such as the chain ID, RPC endpoint, genesis file, and seed peers must come from the network operator or official release bundle.
+The RPC endpoint, genesis file, and seed peers must come from the network operator or official release bundle.
 
 ### Register a publisher
 
@@ -104,7 +104,6 @@ Register the domain:
 ```bash
 ./content-grid-d publisher register example.com \
   --from <publisher-key> \
-  --chain-id <chain-id> \
   --node <rpc-url> \
   --fees 0ucongrid
 ```

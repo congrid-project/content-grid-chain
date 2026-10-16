@@ -47,8 +47,7 @@ Create a self-contained single-validator network:
 
 ```bash
 ./content-grid-d devnet \
-  --home ./devnet-home \
-  --chain-id grid-dev-1
+  --home ./devnet-home
 
 ./content-grid-d start --home ./devnet-home
 ```
@@ -64,14 +63,13 @@ Use this setup when a change needs peer discovery, multiple consensus validators
    ```bash
    make build
 
-   CHAIN_ID=grid-local-1
    NODE1_HOME=./localnet/node1
    NODE2_HOME=./localnet/node2
    NODE3_HOME=./localnet/node3
 
-   ./content-grid-d init node1 --chain-id "$CHAIN_ID" --home "$NODE1_HOME"
-   ./content-grid-d init node2 --chain-id "$CHAIN_ID" --home "$NODE2_HOME"
-   ./content-grid-d init node3 --chain-id "$CHAIN_ID" --home "$NODE3_HOME"
+   ./content-grid-d init node1 --home "$NODE1_HOME"
+   ./content-grid-d init node2 --home "$NODE2_HOME"
+   ./content-grid-d init node3 --home "$NODE3_HOME"
 
    ./content-grid-d keys add node1 --home "$NODE1_HOME" --keyring-backend test
    ./content-grid-d keys add node2 --home "$NODE2_HOME" --keyring-backend test
@@ -96,9 +94,9 @@ Use this setup when a change needs peer discovery, multiple consensus validators
    cp "$NODE1_HOME/config/genesis.json" "$NODE2_HOME/config/genesis.json"
    cp "$NODE1_HOME/config/genesis.json" "$NODE3_HOME/config/genesis.json"
 
-   ./content-grid-d genesis gentx node1 1000000ucongrid --chain-id "$CHAIN_ID" --home "$NODE1_HOME" --keyring-backend test
-   ./content-grid-d genesis gentx node2 1000000ucongrid --chain-id "$CHAIN_ID" --home "$NODE2_HOME" --keyring-backend test
-   ./content-grid-d genesis gentx node3 1000000ucongrid --chain-id "$CHAIN_ID" --home "$NODE3_HOME" --keyring-backend test
+   ./content-grid-d genesis gentx node1 1000000ucongrid --home "$NODE1_HOME" --keyring-backend test
+   ./content-grid-d genesis gentx node2 1000000ucongrid --home "$NODE2_HOME" --keyring-backend test
+   ./content-grid-d genesis gentx node3 1000000ucongrid --home "$NODE3_HOME" --keyring-backend test
    ```
 
 4. Copy the `gentx` files to node 1, collect them, and redistribute the final genesis:

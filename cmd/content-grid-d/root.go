@@ -10,6 +10,7 @@ import (
 	cmtcfg "github.com/cometbft/cometbft/config"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
 	"cosmossdk.io/depinject"
@@ -39,6 +40,7 @@ import (
 	"github.com/spf13/cast"
 
 	"content-grid-chain/app"
+	"content-grid-chain/internal/network"
 	"content-grid-chain/x/tokenomics"
 )
 
@@ -91,6 +93,9 @@ func NewRootCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if clientCtx.ChainID == "" {
+				clientCtx = clientCtx.WithChainID(network.DefaultChainID)
+			}
 
 			if err := client.SetCmdClientContextHandler(clientCtx, cmd); err != nil {
 				return err
@@ -107,8 +112,25 @@ func NewRootCmd() *cobra.Command {
 	if err := autoCliOpts.EnhanceRootCommand(rootCmd); err != nil {
 		panic(err)
 	}
+	setDefaultChainID(rootCmd)
 
 	return rootCmd
+}
+
+// SDK and AutoCLI commands each declare their own chain-id flags.
+func setDefaultChainID(cmd *cobra.Command) {
+	for _, flagSet := range []*pflag.FlagSet{cmd.Flags(), cmd.PersistentFlags()} {
+		if flag := flagSet.Lookup(flags.FlagChainID); flag != nil {
+			if err := flag.Value.Set(network.DefaultChainID); err != nil {
+				panic(err)
+			}
+			flag.DefValue = network.DefaultChainID
+			flag.Usage = "The network chain ID"
+		}
+	}
+	for _, child := range cmd.Commands() {
+		setDefaultChainID(child)
+	}
 }
 
 func ProvideClientContext(

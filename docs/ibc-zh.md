@@ -77,7 +77,7 @@ python3 scripts/ibc/localnet.py \
 2. 用生产状态副本演练升级并核对余额、验证人集合和业务状态。
    与验证人协调统一的升级高度，保存数据库、配置和二进制备份。
 3. 按现有治理流程提交 `MsgSoftwareUpgrade`，计划名称如上，高度使用
-   实际协商结果。无需更换 chain ID 或 genesis。
+   实际协商结果。保留现有 genesis。
 4. 旧节点到高度时写入 `data/upgrade-info.json` 并停止共识。CometBFT
    的进程和 RPC 可能仍在运行；应正常停止节点后切换到新二进制。
 5. 新版在加载数据库前根据该计划新增 `ibc`、`transfer` 两个存储。
@@ -98,8 +98,8 @@ content-grid-d query ibc channel channels --node "$CONGRID_RPC"
 
 依据 [Osmosis 接入指南](https://docs.osmosis.zone/integrate/list-asset/transfer/)：
 
-- 先验证正式 Congrid 网络的 chain ID、genesis、稳定出块及公网 RPC/REST/gRPC。
-- 选择受支持的 Osmosis 端点，配置 Hermes 两端的 chain ID、地址前缀、
+- 先验证正式 Congrid 网络的 genesis、稳定出块及公网 RPC/REST/gRPC。
+- 选择受支持的 Osmosis 端点，配置 Hermes 两端的地址前缀、
   节点地址、手续费及资金充足的专用中继账户。Osmosis 侧还需要 OSMO 手续费预算。
 - 依据两端实际 unbonding period 设置 trusting period，保持客户端及时更新。
   本地脚本的 `trusted_node=true` 和通配 channel 过滤器只用于隔离测试，
@@ -119,7 +119,7 @@ content-grid-d query ibc channel channels --node "$CONGRID_RPC"
 ```bash
 content-grid-d tx ibc-transfer transfer transfer "$CONGRID_CHANNEL" \
   "$OSMOSIS_RECEIVER" 1000000ucongrid \
-  --chain-id "$CONGRID_CHAIN_ID" --node "$CONGRID_RPC" \
+  --node "$CONGRID_RPC" \
   --home "$CONGRID_NODE_HOME" --from "$CONGRID_SENDER_KEY" \
   --gas auto --gas-adjustment 1.3 --gas-prices 0.001ucongrid \
   --packet-timeout-timestamp 600000000000

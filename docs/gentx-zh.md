@@ -30,23 +30,22 @@
 ### A. 协调机
 
 ```bash
-export CHAIN_ID=congrid-main-1
 export COORD_HOME=/tmp/congrid-genesis-coord
 
 rm -rf "$COORD_HOME"
-./content-grid-d init coordinator --chain-id "$CHAIN_ID" --home "$COORD_HOME"
+./content-grid-d init coordinator --home "$COORD_HOME"
 ```
 
 ### B. val1 / val2 各自机器
 
 ```bash
 # val1 机器
-./content-grid-d init val1 --chain-id "$CHAIN_ID" --home ~/.content-grid
+./content-grid-d init val1 --home ~/.content-grid
 ./content-grid-d keys add val1 --home ~/.content-grid --keyring-backend file
 ./content-grid-d keys show val1 --address --home ~/.content-grid --keyring-backend file
 
 # val2 机器
-./content-grid-d init val2 --chain-id "$CHAIN_ID" --home ~/.content-grid
+./content-grid-d init val2 --home ~/.content-grid
 ./content-grid-d keys add val2 --home ~/.content-grid --keyring-backend file
 ./content-grid-d keys show val2 --address --home ~/.content-grid --keyring-backend file
 ```
@@ -70,13 +69,11 @@ rm -rf "$COORD_HOME"
 ```bash
 # val1
 ./content-grid-d genesis gentx val1 1000000ucongrid \
-  --chain-id "$CHAIN_ID" \
   --home ~/.content-grid \
   --keyring-backend file
 
 # val2
 ./content-grid-d genesis gentx val2 1000000ucongrid \
-  --chain-id "$CHAIN_ID" \
   --home ~/.content-grid \
   --keyring-backend file
 ```

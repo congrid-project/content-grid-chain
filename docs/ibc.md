@@ -49,7 +49,7 @@ At the halt, stop the old process and install the new binary. CometBFT can halt
 consensus without exiting its RPC process. Before database load, the new binary
 uses `data/upgrade-info.json` to add the `ibc` and `transfer` stores at exactly the
 planned height. The handler initializes the new modules without reinitializing
-existing module state. Do not replace genesis, change the chain ID, skip this
+existing module state. Do not replace genesis, skip this
 upgrade, or start the new binary against the old database before the halt.
 
 Afterward, verify resumed blocks, module versions and business state, then query:

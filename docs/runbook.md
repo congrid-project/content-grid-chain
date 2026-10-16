@@ -49,7 +49,7 @@ If the file is missing, initialize first (single-node local baseline):
 
 ```bash
 cd /home/eking/workspace/congrid.net
-./content-grid-d devnet --home /home/eking/.content-grid --chain-id content-grid-dev-1
+./content-grid-d devnet --home /home/eking/.content-grid
 ```
 
 Then start:
@@ -127,7 +127,6 @@ go run ./cmd/congrid-site \
   --base-url https://congrid.net \
   --downloads-dir /var/lib/congrid-site/downloads \
   --slots-store chain \
-  --chain-id congrid-main \
   --node tcp://127.0.0.1:26657 \
   --slots-grpc 127.0.0.1:9090 \
   --keyring-backend os

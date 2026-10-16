@@ -54,7 +54,6 @@ to 2, fills missing quicknet metadata, and forces `drand_enabled=true` and
      --upgrade-info "$UPGRADE_INFO" \
      --deposit <governance-deposit> \
      --from <proposer-key> \
-     --chain-id <chain-id> \
      --node <rpc-url> \
      --fees <fee> \
      -y
